@@ -11,8 +11,9 @@ RAR[6]={n:'傳說',st:'★6',sc:1.33,ln:4,el:0.18,col:[255,184,70],fr:[255,140,2
 const LMN=[1,1,1,1,1,1.1,1.25];
 const lmOf=it=>Math.max(it&&it.lm||1,LMN[it?it.r:0]||1);
 // 掉落權重：菁英／地獄／深淵
-Object.assign(DIFFS[2],{pk:0.7,og:0.05});Object.assign(DIFFS[3],{pk:1.5,og:0.2});Object.assign(DIFFS[4],{pk:2.6,og:0.5});
-const PITY={pk:40,og:120};
+// W1：夢幻、傳說權重 ×1.2（原 0.7/0.05、1.5/0.2、2.6/0.5），保底 40/120 → 35/100
+Object.assign(DIFFS[2],{pk:0.84,og:0.06});Object.assign(DIFFS[3],{pk:1.8,og:0.24});Object.assign(DIFFS[4],{pk:3.12,og:0.6});
+const PITY={pk:35,og:100};
 function rarWeights(D,minR){const p=D.pur,wb=D.wb||[60,28],up=D.sh?1+D.sh*0.5:1;return [[0,wb[0]],[1,wb[1]],[2,7*up],[3,3*up],[4,p],[5,D.pk||0],[6,D.og||0]].filter(x=>x[0]>=minR&&x[1]>0)}
 window.rollRar=(minR=0)=>{if(M24.force!=null){const f=M24.force;M24.force=null;return f}const ws=rarWeights(DIF(),minR);let tot=ws.reduce((a,b)=>a+b[1],0),r=Math.random()*tot;for(const [k,w] of ws){if((r-=w)<0)return k}return minR};
 function rarPct(D,r,minR=0){const ws=rarWeights(D,minR),tot=ws.reduce((a,b)=>a+b[1],0),x=ws.find(w=>w[0]===r);return x?x[1]/tot*100:0}

@@ -2,7 +2,7 @@
 // ==== a_core.js
 // ===== M2.1 (v0.6) =====  load after mon.js
 // ---------- tunables ----------
-const TFP_MOB=0.003,TFP_BOSS=0.02;           // 變身藥水 掉落率
+const TFP_MOB=0.0036,TFP_BOSS=0.024;         // 多比的變身藥水 掉落率（W1：+20%）
 const CHG={cd:3.5,dur:0.56,v:1600,stun:1.2,bstun:0.45,bdelay:0.5};  // 肩撞
 const STP={cd:6,dur:0.62,rx:240,ry:70,slow:3,k:0.6};                // 踱地
 const DTAP=0.28;                                                    // 連按判定（秒）
@@ -40,7 +40,7 @@ function m21Export(){try{const j=JSON.stringify(SAVE,null,1);const a=document.cr
 function m21Import(){const f=document.createElement('input');f.type='file';f.accept='.json,application/json';f.onchange=async()=>{try{const o=JSON.parse(await f.files[0].text());if(!m21Valid(o)){m21Toast('這不是有效的存檔檔案');return}
     if(!confirm('要用匯入的存檔取代目前進度嗎？（目前進度會先自動備份成 .bak）'))return;migrate(o);m21Migrate(o);o.ts=Date.now();SAVE=o;m2Save();calcGS();buildTints();m21AudioApply();m21Toast('匯入完成')}catch(e){m21Toast('匯入失敗：'+e)}};f.click()}
 window.m2Assets=(o=>()=>[...o(),'i_tfpot','i_tfpot_big','i_tfpot2','i_tfpot2_big'])(window.m2Assets);
-ITEMN.tfpot='變身藥水';ITEMN.tfpot2='惡魔貓變身藥水';
+ITEMN.tfpot='多比的變身藥水';ITEMN.tfpot2='惡魔貓變身藥水';
 // ---------- audio buses (music / sfx → master → speakers + recorder) ----------
 const AB=(()=>{const master=AC.createGain(),mus=AC.createGain(),fx=AC.createGain();mus.connect(master);fx.connect(master);master.connect(AC.destination);
   let rec=null;try{rec=AC.createMediaStreamDestination();master.connect(rec)}catch(e){}return {master,mus,fx,rec,buf:{}}})();
@@ -185,11 +185,11 @@ window.spr=(o=>(n,sx,sy,op={})=>{const s=S0;if(s&&n.startsWith('kudas_')&&s.P&&s
 window.drawM2Fx=(o=>(SX,shy)=>{o(SX,shy);m21DrawMoveFx(SX,shy);m21DrawStatus(SX,shy);m21DrawPoof(SX,shy)})(window.drawM2Fx);
 // ==== d_tf.js
 // ---------- 變身藥水：苦達 → 搗蛋鬼（1）／惡魔貓（2） ----------
-// 純外觀：所有招式 1:1 對應苦達的招式，傷害/判定/時間/節奏/冷卻/狀態完全相同；只換圖、特效外觀與叫聲。
-// 唯一的數值差異是「變身被動」：惡魔貓 金幣 +20%、搗蛋鬼 有色裝備掉落率 +3%（加算，不含白裝）。
+// 所有招式 1:1 對應苦達的招式，判定/時間/節奏/冷卻/狀態完全相同；只換圖、特效外觀與叫聲。
+// 數值差異只有「變身被動」：惡魔貓 金幣 +20%；搗蛋鬼（多比的變身藥水）有色裝備掉落率 +3%（加算，不含白裝）＋所有攻擊力 +5%（W1，見 src26/w1.js）。
 // 變身只存在這次遊戲：跨關卡保留；死亡或手動解除就變回苦達；關掉遊戲就結束（不寫進存檔）。
 // 動畫表：web/a/pk/、web/a/dc/（tools/pk_sync.py 從 monsters/playable/* 只讀複製），與苦達同格式 220x150、腳底 (100,140)
-const TFS={1:{pre:'prank',dir:'a/pk/',nm:'搗蛋鬼',pot:'變身藥水',ic:'i_tfpot',bonus:'有色裝備掉落率 +3%',col:[200,150,255],ready:false},
+const TFS={1:{pre:'prank',dir:'a/pk/',nm:'搗蛋鬼',pot:'多比的變身藥水',ic:'i_tfpot',bonus:'有色裝備掉落率 +3%、所有攻擊力 +5%',col:[200,150,255],ready:false},
   2:{pre:'dcat',dir:'a/dc/',nm:'惡魔貓',pot:'惡魔貓變身藥水',ic:'i_tfpot2',bonus:'獲得金幣 +20%',col:[255,130,120],ready:false}};
 const PK=TFS[1];
 for(const k of [1,2]){const F=TFS[k];(async()=>{try{const r=await fetch(F.dir+'meta_'+F.pre+'.json',{cache:'no-store'});if(!r.ok)return;const j=await r.json();
@@ -247,9 +247,9 @@ function m21BagBtns(it,inp){let act=null;const e=it&&isEq(it);
 function m21BulkSell(){const L=SAVE.inv.filter(i=>i.r===1&&!isEq(i));if(!L.length)return;let g=0;for(const it of L)g+=sellPrice(it);SAVE.inv=SAVE.inv.filter(i=>!L.includes(i));SAVE.gold+=g;if(S0)S0.gold=SAVE.gold;
   UI.msg=[`賣掉 ${L.length} 件綠色裝備　+${g.toLocaleString('en-US')} 金幣`,performance.now()];sfx('coin',0.5);m2Save()}
 function m21BagKeys(inp){if(!inp)return;if(press(['KeyG']))m21BulkSell();if(press(['KeyU']))m21Transform(SAVE.tf===1?0:1);if(press(['KeyY']))m21Transform(SAVE.tf===2?0:2)}
-function m21PotTip(k,x0){const F=TFS[k],x=Math.min(x0,1280-330),y=420;rrect(x,y,x+320,y+104,8,'rgba(16,10,14,0.95)',rgb(F.col),2);
+function m21PotTip(k,x0){const F=TFS[k],x=Math.min(x0,1280-372),y=420;rrect(x,y,x+362,y+104,8,'rgba(16,10,14,0.95)',rgb(F.col),2);
   T(F.pot+(k===2?'（極稀有）':''),x+12,y+18,FS(17),F.col,2,[0,0,0],'lm');T('變身被動：'+F.bonus,x+12,y+44,FN(14),[255,226,120],2,[0,0,0],'lm');
-  T('外觀變成'+F.nm+'，戰鬥數值、招式完全跟苦達一樣',x+12,y+66,FN(12),[220,210,200],2,[0,0,0],'lm');T('死亡、手動解除或關掉遊戲就變回苦達　'+(k===2?'Y':'U')+' 使用',x+12,y+86,FN(12),[200,190,180],2,[0,0,0],'lm')}
+  T('外觀變成'+F.nm+(k===1?'，招式跟苦達一樣（攻擊力另 +5%）':'，戰鬥數值、招式完全跟苦達一樣'),x+12,y+66,FN(12),[220,210,200],2,[0,0,0],'lm');T('死亡、手動解除或關掉遊戲就變回苦達　'+(k===2?'Y':'U')+' 使用',x+12,y+86,FN(12),[200,190,180],2,[0,0,0],'lm')}
 function m21Bag(inp){const c=UI.conf;const modal=c&&!c[2];bagUI(inp&&!modal);if(!modal)return;const it=invItem(c[0]);if(!it){UI.conf=null;return}
   X.save();X.fillStyle='rgba(0,0,0,0.6)';X.fillRect(0,0,W,H);X.restore();panelBG(380,230,900,470);const sell=c[1]==='sell';
   T(sell?'確定要賣掉這件英雄裝？':'確定要分解這件英雄裝？',640,270,FS(24),[255,236,200],3,[0,0,0],'mm');gearCard(it,410,300,72,false);T(RAR[it.r].st+itName(it),500,320,FS(20),RAR[it.r].col,2,[0,0,0],'lm');
@@ -519,7 +519,7 @@ window.stepPlayer=(o=>function(...a){const r=o.apply(this,a);try{const s=S0,P=s&
 window.__chirp=m21Chirp;window.__meow=m21Meow;window.__chirpN=()=>CHIRP.n||0;
 // ==== j_tfbonus.js
 // ---------- 變身被動（唯一的數值差異）＋惡魔貓藥水掉落 ----------
-const TFP2_MOB=0.001,TFP2_BOSS=0.008;   // 惡魔貓變身藥水（極稀有）
+const TFP2_MOB=0.0012,TFP2_BOSS=0.0096; // 惡魔貓變身藥水（極稀有；W1：+20%）
 const TFB={gold:0.20,drop:0.03};          // 惡魔貓 金幣 +20%；搗蛋鬼 有色裝備（綠/藍/紫…，不含白）掉落率 +3%（加算）
 window.m2Gold=(o=>function(a){if(SAVE&&SAVE.tf===2&&a>0)a=Math.round(a*(1+TFB.gold));return o(a)})(window.m2Gold);
 window.m2Drop=(o=>function(m){const r=o.apply(this,arguments);

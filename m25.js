@@ -94,10 +94,10 @@ const fmt=n=>Math.round(n).toLocaleString('en-US');
 function m25Open(){if(UI.kind)return;if(mode==='play'){if(paused)return;paused=true;pauseWhy='char'}m2UI('char');UI.tab=0;UI.as=0;UI.conf=null;sfx('ready',0.3)}
 // 面板用的分項
 function m25Rows(){const g=grow25(),G=GS,g0=G.g0||G,m=g.ms,bard=isBard(),hp0=HERO[HEROK].hp,w=eqItem('w');
-  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,cls=bard?1:BAL24.kudasWm,atkM=(1+G.g25.atk)*cls,tf=SAVE.tf|0;
+  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,cls=bard?1:BAL24.kudasWm,tf=SAVE.tf|0,tfA=!bard&&tf===1?1.05:1,atkM=(1+G.g25.atk)*cls*tfA;
   const R=[];
   R.push(['體力 HP',fmt(HPMAX),[fmt(hp0),pct(g.lvHp),'—','—',pct(g.awk.hp),'—']]);
-  R.push(['攻擊力',`${Math.round(we[0]*atkM)}~${Math.round(we[1]*atkM)}`,[w?`武器 ${wr[0]}~${wr[1]}`:'26~34',pct(g.lvAtk),w?itName(w).slice(0,6):'—',enh?pct(enh):'—',pct(g.awk.atk),bard?'—':'職業 ×'+cls.toFixed(2)]]);
+  R.push(['攻擊力',`${Math.round(we[0]*atkM)}~${Math.round(we[1]*atkM)}`,[w?`武器 ${wr[0]}~${wr[1]}`:'26~34',pct(g.lvAtk),w?itName(w).slice(0,6):'—',enh?pct(enh):'—',pct(g.awk.atk),bard?'—':'職業 ×'+cls.toFixed(2)+(tfA>1?'　搗蛋鬼 +5%':'')]]);
   R.push(['暴擊率',(32+G.crit*100).toFixed(1)+'%',['32%',m.crit?pct(m.crit):'—',pct(g0.crit),'—',pct(g.awk.crit),'詩人增益時 55%']]);
   const ec=enhCdmg(SAVE.slot&&SAVE.slot.e|0);R.push(['暴擊傷害',pct(G.cdmg),['—',m.cdmg?pct(m.cdmg):'—',pct(g0.cdmg-ec),ec?pct(ec):'—','—','—']]);
   R.push(['受到傷害',pct(-G.def),['—',m.def?pct(-m.def):'—',pct(-g0.def),'—','—','上限 −60%']]);
