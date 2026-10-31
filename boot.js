@@ -3,9 +3,16 @@
   const fail=t=>{msg(t);$('boot').classList.add('err')};
   try{
     if(!('serviceWorker' in navigator)){fail('這個瀏覽器不支援離線網頁程式（Service Worker）。請用 Safari 或 Chrome 開啟，並關閉「私密瀏覽」。');return}
-    const reg=await navigator.serviceWorker.register('sw.js');
+    let reg=await navigator.serviceWorker.register('sw.js');
     if(!navigator.serviceWorker.controller){msg('第一次開啟：準備離線資料…');
-      await new Promise(r=>{navigator.serviceWorker.addEventListener('controllerchange',r,{once:true});const iv=setInterval(()=>{if(navigator.serviceWorker.controller){clearInterval(iv);r()}},200)})}
+      // 安裝失敗（例如網站剛更新、檔案還沒同步完）時 service worker 會變成 redundant：重試最多 3 次，不要卡在這個畫面
+      for(let k=0;!navigator.serviceWorker.controller;k++){
+        const res=await new Promise(r=>{const iv=setInterval(()=>{if(navigator.serviceWorker.controller){clearInterval(iv);r('ok')}
+            const w=reg.installing||reg.waiting||reg.active;if(!w||w.state==='redundant'){clearInterval(iv);r('fail')}},250);
+          navigator.serviceWorker.addEventListener('controllerchange',()=>{clearInterval(iv);r('ok')},{once:true})});
+        if(res==='ok')break;if(k>=3)throw new Error('離線資料準備失敗');
+        msg('第一次開啟：準備離線資料…（重試 '+(k+1)+'）');await new Promise(r=>setTimeout(r,1500*(k+1)));
+        try{await reg.unregister()}catch(e){}reg=await navigator.serviceWorker.register('sw.js?retry='+Date.now())}}
     try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
     const ogg=(()=>{try{return new Audio().canPlayType('audio/ogg; codecs="vorbis"')!==''}catch(e){return false}})();const aud=ogg?'ogg':'m4a';
     await fetch('__cfg?aud='+aud,{cache:'no-store'});
