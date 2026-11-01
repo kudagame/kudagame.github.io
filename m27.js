@@ -15,7 +15,7 @@ const AR={sp:330,spy:165,air:320,jv:1200,
   roll:{cd:1.0,dur:0.36,dist:300},
   snipe:{cd:18,dur:8,cost:5,n:3,dm:1.2,rm:1.2,drMul:1.2,drV:2300,drRng:1400,shotGap:0.22,drGap:0.45},
   ult:{dur:2.4,ticks:6,tickMul:0.6,finMul:1.0,len:1400,dy:92,brk:8,iF:2.05},
-  air:{max:2}};
+  airMax:2};   // 空中射擊次數上限（不能叫 air：會蓋掉上面的空中移動速度 air:320，跳起來 P.x 變 NaN、人物消失）
 // 龍矢量表：打中 +0.5（間隔 0.1 秒）、技能 +4、集中轉換 +3、挨打 +3（間隔 0.4 秒）、狙擊龍矢命中 +2 → 用 test/sim_ar.js＋t_ar_sim.mjs 量測，調到和詩人樂章差不多的等待時間
 const DRG={max:100,hit:0.5,hitGap:0.1,skill:4,rh:3,hurt:3,hurtGap:0.4,dr:2};
 const BAL27={wm:0.72,hurt:1.10};   // 全域倍率：依 test/sim24.js 對打模擬結果調整（design/archer_final_zh.md 平衡表）
@@ -136,13 +136,13 @@ function aStep(dt){const s=S0,P=s.P,t=s.t;if(P.wgCD==null){P.wgCD=0;P.rnCD=0;P.f
   else if(dodgeP&&ground&&P.rlCD<=0&&(!a||cancelOK||['ash','ach','aw','afi','ar'].includes(a.type))){arStartRoll(mx||P.face);if(mx)P.face=mx}
   else if(kP&&ground&&(!a||cancelOK||a.type==='ach')){if(down){if(P.rnCD<=0)arStartRain();else s.denyRn=t}else{if(P.wgCD<=0)arStartWing();else s.denyK=t}}
   else if(lP&&ground&&(!a||cancelOK||a.type==='ach')){if(down){if(P.flCD<=0)arStartFlip();else s.denyFl=t}else{if(P.fiCD<=0)arStartFire();else s.denyL=t}}
-  else if(jP&&(!P.act||cancelOK)){if(P.h>20){if((P.airN||0)<AR.air.max){P.airN=(P.airN||0)+1;aAct('aa',0.2,{hitAt:0.05})}}else if(ground)aAct('ach',9,{})}
+  else if(jP&&(!P.act||cancelOK)){if(P.h>20){if((P.airN||0)<AR.airMax){P.airN=(P.airN||0)+1;aAct('aa',0.2,{hitAt:0.05})}}else if(ground)aAct('ach',9,{})}
   else if(wantJump&&ground&&!P.act){P.vh=AR.jv;P.h=0.01;P.airN=0;sfx('jump',0.3)}
   const A=P.act;if(A&&A.type!=='as'){const u=['au','aro','af'].includes(A.type)?1:arSpd();A.t+=dt*(A.type==='ach'?1:u);arActStep(A,dt,mx,my,jH)}
   // 移動
   const B=P.act;const ox=P.x,oy=P.y;let mvk=0;
   if(!B)mvk=1;else if(B.type==='ash')mvk=AR.shot.mvk;else if(B.type==='ach')mvk=B.t<0.5?AR.shot.mvk:AR.chg.mvk;else if(B.type==='aa')mvk=1;
-  if(mvk>0){const sp=(P.h>0?AR.air:AR.sp)*mvk*(1+(B?0:GS.ms||0));let vx=mx*sp,vy=my*AR.spy*mvk;if(mx&&my){vx*=0.85;vy*=0.85}P.x+=vx*dt;P.y+=vy*dt;
+  if(mvk>0){const sp=(P.h>0?AR.air:AR.sp)*mvk*(1+(B?0:GS.ms||0));let vx=mx*sp,vy=my*AR.spy*mvk;if(mx&&my){vx*=0.85;vy*=0.85}if(Number.isFinite(vx))P.x+=vx*dt;if(Number.isFinite(vy))P.y+=vy*dt;
     if(mx&&(!B||B.type==='aa'||(B.type==='ash'&&B.t>B.hitAt)))P.face=mx>0?1:-1;else if(mx&&B&&B.type==='ach'&&B.t<0.1)P.face=mx>0?1:-1}
   const lo=s.lock?s.cam+40:30,hi=s.lock?s.cam+W-40:WW-30;P.x=clamp(P.x,lo,hi);P.y=clamp(P.y,YMIN,YMAX);
   P.kspd=Math.abs(P.x-ox)/dt;P.mspd=Math.hypot(P.x-ox,P.y-oy)/dt;
@@ -660,4 +660,21 @@ AR.flip.mul=0.9;     // 0.6 → 0.9：脫離招（無敵＋後退）順便有傷
 // 苦達斯：踱地（冷卻 6 秒）傷害只有大劍（冷卻 2.2 秒）的 1/3 → ×1.6，定位＝被包圍時 360° 緩速
 const STP_W2=1.6;
 window.m21StompImpact=(o=>function(){const sv=B22.mul;B22.mul=STP_W2;try{return o.apply(this,arguments)}finally{B22.mul=sv}})(window.m21StompImpact);
+
+// ---- src27/h_safe.js
+// ===== 熱修：主角位置／跳躍安全網（三位角色都套用，包在 stepPlayer 最外層）=====
+// 起因：三杯兔子 AR 物件有兩個 air（空中速度 320 被空中射擊上限 {max:2} 蓋掉），跳起來時 P.x 變 NaN → 人物畫不出來、鏡頭也壞掉
+// 安全網：(1) 位置／高度／速度出現 NaN、Infinity 就還原到上一格的值（沒有就放回地面）；(2) 不在特殊動作中卻離地超過 3 秒 → 強制落地
+const SAFE_AIR=3.0,SAFE_ACT=['au','bu','stomp','tf','b4'];
+window.stepPlayer=(o=>function(dt){const s=S0,P=s&&s.P;const p0=P?{x:P.x,y:P.y,h:P.h,vh:P.vh}:null;const r=o.apply(this,arguments);
+  try{if(!P||!p0)return r;const fin=Number.isFinite;let bad=0;
+    if(!fin(P.x)){P.x=fin(p0.x)?p0.x:clamp(s.cam+640,30,WW-30);bad=1}
+    if(!fin(P.y)){P.y=fin(p0.y)?p0.y:552;bad=1}
+    if(!fin(P.h)||!fin(P.vh)){P.h=0;P.vh=0;bad=1}
+    if(!fin(s.cam))s.cam=clamp(P.x-640,0,CAMMAX);
+    if(bad)(window.__err=window.__err||[]).push('safe: bad player pos '+HEROK);
+    const sp=P.act&&SAFE_ACT.includes(P.act.type);
+    if(P.h>0&&!sp){P.airT=(P.airT||0)+dt;if(P.airT>SAFE_AIR){P.h=0;P.vh=0;P.airN=0;P.airT=0;if(P.act&&['aa','ba','air'].includes(P.act.type))P.act=null;(window.__err=window.__err||[]).push('safe: force land '+HEROK)}}
+    else P.airT=0}catch(e){}
+  return r})(window.stepPlayer);
 
