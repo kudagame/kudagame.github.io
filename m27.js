@@ -662,19 +662,33 @@ const STP_W2=1.6;
 window.m21StompImpact=(o=>function(){const sv=B22.mul;B22.mul=STP_W2;try{return o.apply(this,arguments)}finally{B22.mul=sv}})(window.m21StompImpact);
 
 // ---- src27/h_safe.js
-// ===== 熱修：主角位置／跳躍安全網（三位角色都套用，包在 stepPlayer 最外層）=====
+// ===== 熱修：卡死安全網（三位角色都套用，包在 stepPlayer 最外層）=====
 // 起因：三杯兔子 AR 物件有兩個 air（空中速度 320 被空中射擊上限 {max:2} 蓋掉），跳起來時 P.x 變 NaN → 人物畫不出來、鏡頭也壞掉
-// 安全網：(1) 位置／高度／速度出現 NaN、Infinity 就還原到上一格的值（沒有就放回地面）；(2) 不在特殊動作中卻離地超過 3 秒 → 強制落地
-const SAFE_AIR=3.0,SAFE_ACT=['au','bu','stomp','tf','b4'];
+// 安全網（正常遊玩不會觸發；觸發時記在 window.__err，'safe:' 開頭）：
+//  (1) 主角位置／高度／速度出現 NaN、Infinity → 還原上一格的值（沒有就放回畫面中間的地面）；鏡頭 NaN → 重新對準主角
+//  (2) 主角跑出關卡範圍（x 超出 0–WW、y 超出 YMIN–YMAX 20px 以上）→ 拉回範圍內
+//  (3) 不在特殊動作中卻離地超過 3 秒、或高度超過 500（正常跳最高約 165）→ 強制落地
+//  (4) 同一個動作超過 12 秒還沒結束（最長的狙擊模式 8.7 秒）→ 結束動作；倒地時間超過 3 秒 → 縮成 1 秒
+//  (5) 怪物位置 NaN／跑出關卡、血量 NaN → 拉回畫面／血量改 1（不然波次永遠清不掉、鏡頭鎖住）
+const SAFE_AIR=3.0,SAFE_ACT=['au','bu','stomp'];
+const safeLog=m=>{const e=(window.__err=window.__err||[]);if(e.length<200)e.push('safe: '+m)};
 window.stepPlayer=(o=>function(dt){const s=S0,P=s&&s.P;const p0=P?{x:P.x,y:P.y,h:P.h,vh:P.vh}:null;const r=o.apply(this,arguments);
-  try{if(!P||!p0)return r;const fin=Number.isFinite;let bad=0;
-    if(!fin(P.x)){P.x=fin(p0.x)?p0.x:clamp(s.cam+640,30,WW-30);bad=1}
-    if(!fin(P.y)){P.y=fin(p0.y)?p0.y:552;bad=1}
-    if(!fin(P.h)||!fin(P.vh)){P.h=0;P.vh=0;bad=1}
+  try{if(!P||!p0)return r;const fin=Number.isFinite,t=s.t;
+    if(!fin(P.x)){P.x=fin(p0.x)?p0.x:clamp(fin(s.cam)?s.cam+640:200,30,WW-30);safeLog('bad x '+HEROK)}
+    if(!fin(P.y)){P.y=fin(p0.y)?p0.y:clamp(552,YMIN,YMAX);safeLog('bad y '+HEROK)}
+    if(!fin(P.h)||!fin(P.vh)){P.h=0;P.vh=0;safeLog('bad h '+HEROK)}
+    if(P.x<0||P.x>WW){P.x=clamp(P.x,30,WW-30);safeLog('x out '+HEROK)}
+    if(P.y<YMIN-20||P.y>YMAX+20){P.y=clamp(P.y,YMIN,YMAX);safeLog('y out '+HEROK)}
     if(!fin(s.cam))s.cam=clamp(P.x-640,0,CAMMAX);
-    if(bad)(window.__err=window.__err||[]).push('safe: bad player pos '+HEROK);
     const sp=P.act&&SAFE_ACT.includes(P.act.type);
-    if(P.h>0&&!sp){P.airT=(P.airT||0)+dt;if(P.airT>SAFE_AIR){P.h=0;P.vh=0;P.airN=0;P.airT=0;if(P.act&&['aa','ba','air'].includes(P.act.type))P.act=null;(window.__err=window.__err||[]).push('safe: force land '+HEROK)}}
-    else P.airT=0}catch(e){}
+    if(P.h>500||(P.h>0&&!sp&&(P.airT=(P.airT||0)+dt)>SAFE_AIR)){P.h=0;P.vh=0;P.airN=0;P.airT=0;if(P.act&&['aa','ba','air'].includes(P.act.type))P.act=null;safeLog('force land '+HEROK)}
+    else if(P.h<=0)P.airT=0;
+    if(P.act){if(P.act!==P.safeA){P.safeA=P.act;P.safeT0=t}else if(t-P.safeT0>12){safeLog('act timeout '+P.act.type);P.act=null;P.safeA=null;if(P.h>0){P.h=0;P.vh=0}}}else P.safeA=null;
+    if(P.downU>t+3)P.downU=t+1;
+    for(const m of s.mobs||[]){if(m.gone)continue;
+      if(!fin(m.x)||m.x<-300||m.x>WW+300){m.x=clamp(fin(P.x)?P.x+(m.x<P.x?-500:500):640,60,WW-60);safeLog('mob x '+m.kind)}
+      if(!fin(m.y)){m.y=clamp(552,YMIN,YMAX);safeLog('mob y '+m.kind)}
+      if(m.h!=null&&!fin(m.h)){m.h=0;m.vh=0}
+      if(m.hp!=null&&!fin(m.hp)&&!m.dying){m.hp=1;safeLog('mob hp '+m.kind)}}}catch(e){}
   return r})(window.stepPlayer);
 
