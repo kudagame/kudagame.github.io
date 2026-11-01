@@ -52,7 +52,11 @@ const MS25={
   bard:[[5,{ttl:'街頭藝人'},'稱號「街頭藝人」'],[10,{mvcd:0.03},'滑行／跪奏冷卻 −3%'],[15,{idea:0.10},'樂想增益持續 +10%'],[20,{def:0.02},'受到傷害 −2%'],
     [25,{ttl:'酒館歌手',gold:0.03},'稱號「酒館歌手」＋金幣 +3%'],[30,{mvcd:0.03},'滑行／跪奏冷卻 −3%（累計 −6%）'],[35,{skd:0.03},'技能傷害 +3%'],[40,{idea:0.10},'樂想增益持續 +10%（累計 +20%）'],
     [45,{drop:0.03},'裝備掉落率 +3%'],[50,{ttl:'旅行詩人',ms:0.03},'稱號「旅行詩人」＋移動速度 +3%'],[55,{crit:0.01},'暴擊率 +1%'],[60,{def:0.02},'受到傷害 −2%（累計 −4%）'],
-    [65,{ttl:'傳說的吟遊詩人',awk:1},'稱號「傳說的吟遊詩人」＋開啟覺醒']]};
+    [65,{ttl:'傳說的吟遊詩人',awk:1},'稱號「傳說的吟遊詩人」＋開啟覺醒']],
+  archer:[[5,{ttl:'新手獵人'},'稱號「新手獵人」'],[10,{mvcd:0.03},'技能冷卻 −3%'],[15,{crit:0.01},'暴擊率 +1%'],[20,{dragon:0.05},'龍矢／絕招傷害 +5%'],
+    [25,{ttl:'森林巡守',gold:0.03},'稱號「森林巡守」＋金幣 +3%'],[30,{mvcd:0.03},'技能冷卻 −3%（累計 −6%）'],[35,{cdmg:0.05},'暴擊傷害 +5%'],[40,{dragon:0.05},'龍矢／絕招傷害 +5%（累計 +10%）'],
+    [45,{drop:0.03},'裝備掉落率 +3%'],[50,{ttl:'神射手',ms:0.03},'稱號「神射手」＋移動速度 +3%'],[55,{crit:0.01},'暴擊率 +1%（累計 +2%）'],[60,{def:0.02},'受到傷害 −2%'],
+    [65,{ttl:'傳說的長弓兵',awk:1},'稱號「傳說的長弓兵」＋開啟覺醒']]};
 const msList=(k)=>MS25[k||HEROK]||MS25.kudas;
 const msAt=L=>{const m=msList().find(x=>x[0]===L);return m?{L:m[0],f:m[1],tx:m[2]}:null};
 const msNext=L=>{const m=msList().find(x=>x[0]>L);return m?{L:m[0],f:m[1],tx:m[2]}:null};
@@ -62,8 +66,8 @@ function msTitle(L,k){let t='';for(const [l,f] of msList(k))if(l<=L&&f.ttl)t=f.t
 const AWK={atk:{n:'攻擊',per:0.01,cap:10,u:'%'},hp:{n:'體力',per:0.015,cap:10,u:'%'},crit:{n:'暴擊率',per:0.005,cap:10,u:'%'},
   ms:{n:'移動速度',per:0.01,cap:6,u:'%'},drop:{n:'掉寶率',per:0.02,cap:10,u:'%'},cls:{n:'職業',per:0.03,cap:10,u:'%'}};
 const AWK_ORDER=['atk','hp','crit','ms','drop','cls'];
-const awkClsName=()=>isBard()?'樂想持續':'斬風威力';
-const awkPer=k=>k==='cls'&&isBard()?0.05:AWK[k].per;
+const awkClsName=()=>isBard()?'樂想持續':HEROK==='archer'?'龍矢威力':'斬風威力';
+const awkPer=k=>k==='cls'&&isBard()?0.05:k==='cls'&&HEROK==='archer'?0.04:AWK[k].per;
 function awkV(k){const A=SAVE&&SAVE.awk;return A&&A.a?(A.a[k]|0)*awkPer(k):0}
 const awkSpent=()=>{const A=SAVE&&SAVE.awk;let n=0;if(A&&A.a)for(const k in A.a)n+=A.a[k]|0;return n};
 const awkFree=()=>Math.max(0,((SAVE&&SAVE.awk&&SAVE.awk.pts)|0)-awkSpent());
@@ -77,7 +81,7 @@ window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{if(SAVE){const 
   GS.g0={crit:GS.crit,cdmg:GS.cdmg,def:GS.def,dodge:GS.dodge,kdr:GS.kdr,ms:GS.ms,mvcd:GS.mvcd||0,skd:GS.skd};
   GS.crit+=(m.crit||0)+g.awk.crit;GS.cdmg+=m.cdmg||0;GS.skd+=m.skd||0;GS.ms+=(m.ms||0)+g.awk.ms;
   GS.def=Math.min(0.6,GS.def+(m.def||0));GS.kdr=Math.min(0.8,GS.kdr+(m.kdr||0));GS.mvcd=Math.min(0.5,(GS.mvcd||0)+(m.mvcd||0));
-  GS.g25={atk:g.lvAtk+g.awk.atk,wind:(m.wind||0)+(isBard()?0:g.awk.cls),idea:(m.idea||0)+(isBard()?g.awk.cls:0),drop:(m.drop||0)+g.awk.drop,gold:m.gold||0};
+  GS.g25={atk:g.lvAtk+g.awk.atk,wind:(m.wind||0)+(HEROK==='kudas'?g.awk.cls:0),idea:(m.idea||0)+(isBard()?g.awk.cls:0),dragon:(m.dragon||0)+(HEROK==='archer'?g.awk.cls:0),drop:(m.drop||0)+g.awk.drop,gold:m.gold||0};
   BD.buff=BD0.buff*(1+GS.g25.idea)}}catch(e){}return r})(window.calcGS);
 window.m2Dmg=(o=>function(v,m,mv,crit){const r=o.apply(this,arguments);if(mv==='pet'||typeof r!=='number'||!GS.g25)return r;
   return Math.round(r*(1+GS.g25.atk)*(mv==='wind'?1+GS.g25.wind:1))})(window.m2Dmg);
@@ -94,10 +98,10 @@ const fmt=n=>Math.round(n).toLocaleString('en-US');
 function m25Open(){if(UI.kind)return;if(mode==='play'){if(paused)return;paused=true;pauseWhy='char'}m2UI('char');UI.tab=0;UI.as=0;UI.conf=null;sfx('ready',0.3)}
 // 面板用的分項
 function m25Rows(){const g=grow25(),G=GS,g0=G.g0||G,m=g.ms,bard=isBard(),hp0=HERO[HEROK].hp,w=eqItem('w');
-  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,cls=bard?1:BAL24.kudasWm,tf=SAVE.tf|0,tfA=!bard&&tf===1?1.05:1,atkM=(1+G.g25.atk)*cls*tfA;
+  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,ar=HEROK==='archer',cls=bard?1:ar?(typeof BAL27!=='undefined'?BAL27.wm:1):BAL24.kudasWm,tf=SAVE.tf|0,tfA=!bard&&tf===1?1.05:1,atkM=(1+G.g25.atk)*cls*tfA;
   const R=[];
   R.push(['體力 HP',fmt(HPMAX),[fmt(hp0),pct(g.lvHp),'—','—',pct(g.awk.hp),'—']]);
-  R.push(['攻擊力',`${Math.round(we[0]*atkM)}~${Math.round(we[1]*atkM)}`,[w?`武器 ${wr[0]}~${wr[1]}`:'26~34',pct(g.lvAtk),w?itName(w).slice(0,6):'—',enh?pct(enh):'—',pct(g.awk.atk),bard?'—':'職業 ×'+cls.toFixed(2)+(tfA>1?'　搗蛋鬼 +5%':'')]]);
+  R.push(['攻擊力',`${Math.round(we[0]*atkM)}~${Math.round(we[1]*atkM)}`,[w?`武器 ${wr[0]}~${wr[1]}`:'26~34',pct(g.lvAtk),w?itName(w).slice(0,6):'—',enh?pct(enh):'—',pct(g.awk.atk),bard||cls===1?'—':'職業 ×'+cls.toFixed(2)+(tfA>1?'　搗蛋鬼 +5%':'')]]);
   R.push(['暴擊率',(32+G.crit*100).toFixed(1)+'%',['32%',m.crit?pct(m.crit):'—',pct(g0.crit),'—',pct(g.awk.crit),'詩人增益時 55%']]);
   const ec=enhCdmg(SAVE.slot&&SAVE.slot.e|0);R.push(['暴擊傷害',pct(G.cdmg),['—',m.cdmg?pct(m.cdmg):'—',pct(g0.cdmg-ec),ec?pct(ec):'—','—','—']]);
   R.push(['受到傷害',pct(-G.def),['—',m.def?pct(-m.def):'—',pct(-g0.def),'—','—','上限 −60%']]);
@@ -108,6 +112,7 @@ function m25Rows(){const g=grow25(),G=GS,g0=G.g0||G,m=g.ms,bard=isBard(),hp0=HER
   R.push(['掉寶率',pct(G.g25.drop+(tf===1?0.03:0)),['—',m.drop?pct(m.drop):'—','—','—',pct(g.awk.drop),tf===1?'搗蛋鬼 +3%':'—']]);
   R.push(['金幣加成',pct(G.g25.gold+(tf===2?0.2:0)),['—',m.gold?pct(m.gold):'—','—','—','—',tf===2?'惡魔貓 +20%':'—']]);
   if(bard)R.push(['樂想增益',(BD.buff).toFixed(1)+'秒',['6.0秒',m.idea?pct(m.idea,0):'—','—','—',pct(g.awk.cls,0),'—']]);
+  else if(ar)R.push(['龍矢威力',pct(G.g25.dragon||0,0),['—',m.dragon?pct(m.dragon,0):'—','—','—',pct(g.awk.cls,0),G.sp==='SP17'?'龍骨 +15%':'—']]);
   else R.push(['斬風威力',pct(G.g25.wind,0),['—',m.wind?pct(m.wind,0):'—','—','—',pct(g.awk.cls,0),'—']]);
   R.push(['特殊能力',G.sp&&SPW[G.sp]?SPW[G.sp].a:'—',['—','—',G.sp&&SPW[G.sp]?SPW[G.sp].n:'—','—','—',tf?(['','搗蛋鬼','惡魔貓'][tf]||'變身中'):'—']]);
   return R}

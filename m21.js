@@ -35,7 +35,7 @@ function m21Migrate(S){const D=newSave();
     for(const it of S.inv){it.e=0;it.pity={}}S.slotMig=1}
   if(typeof S.slot.pity!=='object')S.slot.pity={};S.slot.e=clamp(S.slot.e|0,0,15);
   S.pots=Math.max(0,S.pots|0);S.pots2=Math.max(0,S.pots2|0);S.tf=0;if(S.v<4)S.v=4;return S}
-function m21Export(){try{const j=JSON.stringify(SAVE,null,1);const a=document.createElement('a');const d=new Date();const p=n=>String(n).padStart(2,'0');
+function m21Export(){try{const j=JSON.stringify(typeof m27Park==='function'?m27Park(SAVE):SAVE,null,1);const a=document.createElement('a');const d=new Date();const p=n=>String(n).padStart(2,'0');
   a.download=`存檔備份_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);m21Toast('已匯出存檔（存到瀏覽器的「下載」資料夾）')}catch(e){m21Toast('匯出失敗：'+e)}}
 function m21Import(){const f=document.createElement('input');f.type='file';f.accept='.json,application/json';f.onchange=async()=>{try{const o=JSON.parse(await f.files[0].text());if(!m21Valid(o)){m21Toast('這不是有效的存檔檔案');return}
     if(!confirm('要用匯入的存檔取代目前進度嗎？（目前進度會先自動備份成 .bak）'))return;migrate(o);m21Migrate(o);o.ts=Date.now();SAVE=o;m2Save();calcGS();buildTints();m21AudioApply();m21Toast('匯入完成')}catch(e){m21Toast('匯入失敗：'+e)}};f.click()}
@@ -383,7 +383,7 @@ function m21Manual(){if(!CLICK||!SAVE)return false;const A=[[150,()=>m21Mute('mu
 // ---------- HUD：肩撞／踱地 冷卻、相機按鈕、變身標記 ----------
 window.drawHUD=(o=>(cx0,shy)=>{o(cx0,shy);const s=S0,P=s.P,t=s.t;if(!P)return;
   const B=[[872,'肩撞','→→',P.chgCD||0,CHG.cd*(1-(GS.mvcd||0)),s.denyChg],[934,'踱地','↓↓',P.stpCD||0,STP.cd*(1-(GS.mvcd||0)),s.denyStp]];
-  for(const [x,l,k,cd,mx,deny] of B){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
+  for(const [x,l,k,cd,mx,deny] of (HEROK==='archer'?[]:B)){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
     T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');if(deny&&t-deny<0.3)circ(x,y,r+3,null,'rgb(255,90,70)',2)}
   const cx=1248,cy=64;circ(cx,cy,17,REC.on?'rgba(120,20,20,0.9)':'rgba(30,24,20,0.85)',REC.on?'rgb(255,120,110)':'rgb(200,170,120)',2);m21CamIcon(cx,cy,REC.on&&Math.floor(t*2)%2===0);

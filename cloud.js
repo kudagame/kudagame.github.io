@@ -12,7 +12,7 @@ function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){
   h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0')}
 const body=o=>{const c=Object.assign({},o);delete c.ts;return JSON.stringify(c)};
 const hashSave=o=>hashStr(body(o));
-const curSave=()=>{try{return typeof SAVE!=='undefined'?SAVE:null}catch(e){return null}};
+const curSave=()=>{try{return typeof SAVE!=='undefined'?(SAVE&&typeof m27Park==='function'?m27Park(SAVE):SAVE):null}catch(e){return null}};  // M2.7：雲端也存「停車」版（舊版讀得懂）
 const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const syncRec=uid=>{const r=lsGet('m2cloud_sync')||{};return r[uid]||null};

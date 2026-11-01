@@ -3,7 +3,7 @@
 (()=>{
 // ---------- 版本：只改這裡 ----------
 // web：網頁版更新序號；native：手機 APK／電腦版的版本（約每 5 次網頁版更新才重出，並寫上它已包含到哪一版網頁更新）
-const GAME_VER={web:'W1',native:'M2.5e',nativeHas:''};
+const GAME_VER={web:'W2',native:'M2.5e',nativeHas:''};
 const isWebBuild=()=>!!window.__cloud||!!window.ERINN_FIREBASE;   // cloud.js 只在網頁版載入
 const gameVerLabel=window.gameVerLabel=function(){return isWebBuild()?'網頁版 '+GAME_VER.web:GAME_VER.native+(GAME_VER.nativeHas?'（含 '+GAME_VER.nativeHas+'）':'')}
 // 位置：右下角「私人非商業同人試作」正上方。觸控版的按鈕（返回／確定…）蓋到右下角時，兩行一起移到按鈕上方；字級依畫面縮放，手機上也看得清楚
@@ -20,7 +20,7 @@ window.drawTitle=(o=>function(){const T0=window.T;let hid=false;window.T=functio
   return r})(window.drawTitle);
 // ---------- 搗蛋鬼變身：所有攻擊力 +5% ----------
 const TF1_ATK=1.05;
-const w1TfAtk=()=>{try{return typeof SAVE!=='undefined'&&SAVE&&SAVE.tf===1&&!(typeof isBard==='function'&&isBard())}catch(e){return false}};
+const w1TfAtk=()=>{try{return typeof SAVE!=='undefined'&&SAVE&&SAVE.tf===1&&!(typeof isBard==='function'&&isBard())&&(typeof HEROK==='undefined'||HEROK==='kudas')}catch(e){return false}};
 window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{if(GS&&GS.wm&&w1TfAtk())GS.wm*=TF1_ATK}catch(e){}return r})(window.calcGS);
 window.m2Dmg=(o=>function(v,m,mv,crit){const r=o.apply(this,arguments);return (mv!=='pet'&&typeof r==='number'&&w1TfAtk())?Math.round(r*TF1_ATK):r})(window.m2Dmg);
 // 變身／解除都重算（m24 已包一層，這裡再保險一次；calcGS 是純計算，重算兩次結果一樣）

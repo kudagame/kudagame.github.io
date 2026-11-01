@@ -247,7 +247,12 @@ const SPW={
  SP10:{n:'尖叫雞',c:'b',r:4,st:['canyon'],src:'any',d:0,tf:1,a:'咕咕咕──',tx:'三連音第 3 圈換成雞叫：15% 讓敵人嚇破膽 1 秒（有嚇破膽符文再 +5%）'},
  SP11:{n:'廣場大聲公',c:'b',r:5,st:['spider'],src:'any',d:2,a:'大聲公廣播',tx:'三連音、旋律衝擊範圍 +30%，第 3 圈擊退小怪。樂想效果持續時間 +25%'},
  SP12:{n:'吹笛人的魔笛',c:'b',r:5,st:['crystal'],src:'any',d:3,a:'跟我走',tx:'跪地彈奏後 3 秒內每秒 12% 把一隻小怪變老鼠 3 秒（首領免疫）。老鼠跟著你走，受到傷害 +30%'},
- SP13:{n:'流浪者吉他盒',c:'b',r:6,st:null,src:'boss',d:4,a:'其實是吉他盒',tx:'旋律衝擊結束時扇形噴出 6 發音符彈（各 30%）。後跳無敵時間 +0.15 秒'}};
+ SP13:{n:'流浪者吉他盒',c:'b',r:6,st:null,src:'boss',d:4,a:'其實是吉他盒',tx:'旋律衝擊結束時扇形噴出 6 發音符彈（各 30%）。後跳無敵時間 +0.15 秒'},
+ // M2.7 三杯兔子（長弓）專屬：效果實作在 src27/a_archer.js（搜尋 SP14～SP17）
+ SP14:{n:'胡蘿蔔長弓',c:'a',r:4,st:['money'],src:'any',d:0,tf:1,a:'兔子的點心',tx:'每射 20 發普攻，下一發變成胡蘿蔔箭（傷害 ×2、擊退）。撿到食物時啃一口回復 3% HP'},
+ SP15:{n:'晒衣竿長弓',c:'a',r:5,st:['canyon'],src:'any',d:2,a:'順便晒衣服',tx:'箭雨範圍 +30%，綠霧多留 1 秒；霧裡的敵人受到傷害 +8%'},
+ SP16:{n:'風向雞弓',c:'a',r:5,st:['crystal'],src:'boss',d:2,a:'看風向',tx:'翻滾後 2 秒內下一發普攻必定暴擊（冷卻 4 秒）。後翻扇射多 1 支箭'},
+ SP17:{n:'龍骨狙擊長弓',c:'a',r:6,st:null,src:'boss',d:4,a:'龍之吐息',tx:'狙擊模式龍矢 3 發 → 4 發，龍矢與絕招傷害 +15%，絕招光束寬度 +30%'}};
 const SPSUB=0.20;
 M24.sp=SPW;
 window.m2Assets=(o=>()=>o().concat(Object.keys(SPW).map(k=>'i_'+k.toLowerCase())))(window.m2Assets);
@@ -256,8 +261,8 @@ function m24SpPool(r){const st=STGD().id,d=RUN.d,c=heroCls();return Object.keys(
   if(D.src==='boss'&&!M24.boss)return false;const stOK=!D.st||D.st.includes(st)||(D.tf&&SAVE.tf);return stOK})}
 window.rollDrop=(o=>minR=>{const it=o(minR);if(it&&it.t==='w'&&it.r>=4&&!it.sp&&!M24.noSp&&Math.random()<SPSUB){const P=m24SpPool(it.r);if(P.length)m24MakeSp(it,RCH(P))}return it})(window.rollDrop);
 window.m2BossLoot=(o=>function(){M24.boss=1;try{return o.apply(this,arguments)}finally{M24.boss=0}})(window.m2BossLoot);
-// 轉蛋：紫色武器 20% 換成紫色特殊武器（苦達＝三日法棍、詩人＝尖叫雞）
-if(typeof drawOne==='function')window.drawOne=(o=>function(){const n0=UI.drawn?UI.drawn.length:0;const r=o.apply(this,arguments);try{const L=UI.drawn||[];for(let i=n0;i<L.length;i++){const it=L[i];if(it&&it.t==='w'&&it.r===4&&!it.sp&&Math.random()<SPSUB)m24MakeSp(it,heroCls()==='b'?'SP10':'SP02')}}catch(e){}return r})(window.drawOne);
+// 轉蛋：紫色武器 20% 換成紫色特殊武器（苦達＝三日法棍、詩人＝尖叫雞、三杯兔子＝胡蘿蔔長弓）
+if(typeof drawOne==='function')window.drawOne=(o=>function(){const n0=UI.drawn?UI.drawn.length:0;const r=o.apply(this,arguments);try{const L=UI.drawn||[];for(let i=n0;i<L.length;i++){const it=L[i];if(it&&it.t==='w'&&it.r===4&&!it.sp&&Math.random()<SPSUB)m24MakeSp(it,heroCls()==='b'?'SP10':heroCls()==='a'?'SP14':'SP02')}}catch(e){}return r})(window.drawOne);
 window.itName=(o=>it=>it&&it.sp&&SPW[it.sp]?SPW[it.sp].n:o(it))(window.itName);
 window.itemLines=(o=>it=>{const out=o(it);if(it&&it.sp&&SPW[it.sp]){const D=SPW[it.sp],R=RAR[D.r];out.splice(1,0,['特殊能力',`【${D.a}】${D.tx}`,lit(R.col,0.3)]);out.push(['限制','能力不能重洗、不能繼承；不能升級、不能當升級素材',[200,190,180]])}return out})(window.itemLines);
 window.gearIconC=(o=>it=>{if(!(it&&it.sp))return o(it);const key='sp_'+it.sp;if(GIC[key])return GIC[key];const im=IMG['i_'+it.sp.toLowerCase()];if(!im||!im.complete||!im.naturalWidth)return o(Object.assign({},it,{sp:null}));
@@ -406,6 +411,6 @@ window.m21Migrate=(o=>S=>{o(S);m24Mig(S);return S})(window.m21Migrate);
 const BAL24={kudasWm:1.10,d3:{drop:0.85},d4:{dmg:3.9,drop:1.30}};
 Object.assign(DIFFS[3],BAL24.d3);Object.assign(DIFFS[4],BAL24.d4);
 // 苦達斯：同裝備下清關比詩人慢 15–25%、深淵死亡次數約 2 倍 → 傷害倍率 ×1.10
-window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{if(!isBard()&&GS&&GS.wm)GS.wm*=BAL24.kudasWm}catch(e){}return r})(window.calcGS);
-window.m2Dmg=(o=>function(v,m,mv,crit){const r=o.apply(this,arguments);return (mv!=='pet'&&!isBard()&&typeof r==='number')?Math.round(r*BAL24.kudasWm):r})(window.m2Dmg);
+window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{if(HEROK==='kudas'&&GS&&GS.wm)GS.wm*=BAL24.kudasWm}catch(e){}return r})(window.calcGS);
+window.m2Dmg=(o=>function(v,m,mv,crit){const r=o.apply(this,arguments);return (mv!=='pet'&&HEROK==='kudas'&&typeof r==='number')?Math.round(r*BAL24.kudasWm):r})(window.m2Dmg);
 

@@ -3,7 +3,10 @@
 // Port of the v6.1 offline renderer (scene6.py / hud6.py / spr6.py / font5.py) to a realtime canvas game.
 const W=1280,H=720,S=3,SS=2,TITLE='夜路走多總匯三明治 艾爾琳之旅 試玩版';
 const cv=document.getElementById('c'),X=cv.getContext('2d');X.imageSmoothingEnabled=false;
-const Q=new URLSearchParams(location.search);const AUTO=Q.get('auto')==='1';
+const Q=new URLSearchParams(location.search);const AUTO=Q.get('auto')==='1'&&(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||location.protocol==='file:');   // W2：自動遊玩只在本機測試開放（網頁正式版不吃 ?auto=1）
+// W2：公開網頁版移除主控台除錯指令（無敵、給物品、跳關…）；localhost／file 測試時照常保留
+const LOCALDEV=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||location.protocol==='file:';
+if(!LOCALDEV)for(const k of['__inv','__key','__state','__stage','__frozenAI','__m2','__m22','__m23','__m27','__sp','__mon','__AI','__rec','__slide','__wh','__chirp','__meow','__chirpN','__autoAll','__cnt'])try{Object.defineProperty(window,k,{get(){return undefined},set(v){},configurable:false})}catch(e){}
 window.__err=[];window.addEventListener('error',e=>{window.__err.push(String(e.message)+' @'+e.lineno)});
 function fit(){const k=Math.min(innerWidth/W,innerHeight/H);const kk=k>=1?Math.floor(k*100)/100:k;cv.style.width=(W*kk)+'px';cv.style.height=(H*kk)+'px'}
 addEventListener('resize',fit);fit();
@@ -462,7 +465,7 @@ function step(dt){const s=S0;
   s.cam+=(tgt-s.cam)*Math.min(1,dt*4);
   s.mobs=s.mobs.filter(m=>!m.gone);s.dmg=s.dmg.filter(e=>t-e.t<1.1);s.fx=s.fx.filter(e=>t-e.t0<2.5);s.heals=s.heals.filter(e=>t-e.t<1.2);s.procs=s.procs.filter(p=>t-p[0]<1.2);if(s.log.length>12)s.log.splice(0,s.log.length-12);
   s.shakes=s.shakes.filter(e=>t<e[0]+e[2]);
-  if(P.dead&&t-P.deadT>1.2&&mode==='play'){mode='dead'}
+  if(P.dead&&t-P.deadT>(window.koHold?koHold():1.2)&&mode==='play'){mode='dead'}
 }
 // ================= drawing (scene6.draw_frame) =================
 function shadowE(sx,sy,w,h=0){const k=Math.max(0.4,1-h/260),ww=Math.floor(w*k);X.fillStyle='rgba(60,24,10,0.372)';X.beginPath();X.ellipse(sx,sy,ww,ww*0.25,0,0,Math.PI*2);X.fill()}

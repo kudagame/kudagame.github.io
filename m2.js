@@ -86,7 +86,7 @@ async function m2Load(){let a=null,b=null;try{const r=await fetch('load',{cache:
   SAVE=m21Pick(a,b)||newSave();migrate(SAVE);m21Migrate(SAVE);
   m2Save();if(Q.get('rich')==='1'){SAVE.gold=Math.max(SAVE.gold,250000);SAVE.shards=Math.max(SAVE.shards,60);SAVE.clear={canyon:3,s2:3,mine:3,spider:3,crystal:1}}
   calcGS();buildTints()}
-addEventListener('pagehide',()=>{if(!SAVE)return;try{localStorage.setItem('m2save',JSON.stringify(SAVE));navigator.sendBeacon&&navigator.sendBeacon('save',new Blob([JSON.stringify(SAVE)],{type:'application/json'}))}catch(e){}});
+addEventListener('pagehide',()=>{if(!SAVE)return;try{const j=JSON.stringify(typeof m27Park==='function'?m27Park(SAVE):SAVE);localStorage.setItem('m2save',j);navigator.sendBeacon&&navigator.sendBeacon('save',new Blob([j],{type:'application/json'}))}catch(e){}});
 function m2Assets(){return ['b4mine','b4room','b4_stone','b4_stele','npc_prank','npc_prank_big','npc_cat',...Object.keys(B4A).map(k=>'b4_'+k),...META.names.filter(n=>n.startsWith('kudas')).map(n=>'m_'+n)]}
 // ---------- items ----------
 const RR=(a,b)=>a+(b-a)*Math.random(),RRI=(a,b)=>Math.floor(RR(a,b+1)),RCH=a=>a[Math.floor(Math.random()*a.length)];
@@ -423,7 +423,7 @@ function bagUI(inp){const L=bagList();UI.sel=clamp(UI.sel,0,Math.max(0,L.length-
   T('背包・裝備',640,84,FS(30),[255,236,200],3,[60,20,10],'mm');T(`金幣 ${SAVE.gold.toLocaleString('en-US')}　刻印碎片 ${SAVE.shards}　${L.length}/80`,1190,84,FN(16),[255,226,120],2,[0,0,0],'rm');
   // equip slots
   SLOTS.forEach(([sl,nm],i)=>{const x=96+(i%2)*154,y=116+Math.floor(i/2)*74;rrect(x,y,x+60,y+60,8,'rgba(40,30,24,0.9)','rgb(150,120,70)',2);const it=eqItem(sl);if(it)gearCard(it,x+2,y+2,56,false);else T(nm,x+30,y+30,FN(13),[150,140,120],0,[0,0,0],'mm');
-    T(nm+(sl==='w'&&SAVE.slot.e?'  +'+SAVE.slot.e:''),x+66,y+12,FN(13),sl==='w'&&SAVE.slot.e?[255,220,120]:[214,172,84],2,[0,0,0],'lm');
+    {const se=window.slotE?slotE(sl):(sl==='w'?SAVE.slot.e:0);T(nm+(se?'  +'+se:''),x+66,y+12,FN(13),se?[255,220,120]:[214,172,84],2,[0,0,0],'lm')}
     if(it){const nmx=RAR[it.r].st+itName(it);wrapT(nmx,FN(12),84).slice(0,2).forEach((l,k)=>T(l,x+66,y+32+k*16,FN(12),RAR[it.r].col,2,[0,0,0],'lm'))}else T('—',x+66,y+34,FN(12),[150,145,140],2,[0,0,0],'lm')});
   statRows().forEach(([a,b],i)=>{T(a,100,348+i*19,FN(13),[214,172,84],2,[0,0,0],'lm');T(b,400,348+i*19,FN(13),[255,255,255],2,[0,0,0],'rm')});
   const RA=runeActive();const rn=SLOTS.map(x=>eqItem(x[0])).filter(i=>i&&i.rune&&RA.has(i.id));T('符文：'+(rn.length?rn.map(i=>i.rune.n).join('、'):'—'),100,348+statRows().length*19+4,FN(13),[200,170,255],2,[0,0,0],'lm');

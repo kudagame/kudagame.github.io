@@ -3,7 +3,7 @@
 // ---------- M2.2 角色分開存檔 ----------
 // 存檔最上層＝「目前角色」的資料（原本的程式碼完全不用改）；另一個角色收在 SAVE.chars[角色]。
 // 共用：金幣、刻印碎片、寶石、設定、倉庫 SAVE.wh、物品編號 uid。各自獨立：背包、裝備、強化、關卡進度、難度、等級、變身藥水。
-const HERO={kudas:{n:'苦達斯',job:'大劍士',hp:4125},bard:{n:'尋歡作樂',job:'吟遊詩人',hp:3300}};
+const HERO={kudas:{n:'苦達斯',job:'大劍士',hp:4125},bard:{n:'尋歡作樂',job:'吟遊詩人',hp:3300},archer:{n:'三杯兔子',job:'長弓兵',hp:3000}};
 const PERK=['inv','eq','clear','dsel','sel','slot','pots','pots2','lv','exp'];
 const WH_MAX=96,BAG_MAX=80;
 let HEROK='kudas';
@@ -33,10 +33,10 @@ function m22Switch(k){if(!HERO[k]||!SAVE)return;if(k!==SAVE.hero){if(SAVE.tf)SAV
 window.m2Begin=(o=>(...a)=>{m22ApplyHero();const r=o(...a);if(S0){S0.lv=SAVE.lv|0||1;S0.exp=+SAVE.exp||0;S0.P.hp=HPMAX}return r})(window.m2Begin);
 window.m2Step=(o=>dt=>{o(dt);const s=S0;if(s&&SAVE){SAVE.lv=s.lv;SAVE.exp=s.exp}})(window.m2Step);
 // 變身藥水只給苦達斯：詩人撿到的直接送進苦達斯的背包
-window.m21Pot=(o=>kind=>{if(!isBard())return o(kind);const k=kind==='tfpot2'||kind===2?2:1,key=k===2?'pots2':'pots',c=SAVE.chars.kudas;if(c)c[key]=(c[key]||0)+1;const s=S0;
+window.m21Pot=(o=>kind=>{if(HEROK==='kudas')return o(kind);const k=kind==='tfpot2'||kind===2?2:1,key=k===2?'pots2':'pots',c=SAVE.chars.kudas;if(c)c[key]=(c[key]||0)+1;const s=S0;
   if(s){s.log.push([s.t,'tfpot'+(k===2?'2':''),`獲得 ${TFS[k].pot}（已送到苦達斯的背包）`]);proc('稀有掉落',k===2?[170,40,60]:[150,70,200],'變');sfx('crit',0.4)}m2Save()})(window.m21Pot);
-window.m21Transform=(o=>(k,q)=>{if(isBard()&&k){m21Toast('變身藥水只有苦達斯能用');return}return o(k,q)})(window.m21Transform);
-window.m2Assets=(o=>()=>[...o(),'inn','bardpor','kudash','kudasg'])(window.m2Assets);
+window.m21Transform=(o=>(k,q)=>{if(HEROK!=='kudas'&&k){m21Toast('變身藥水只有苦達斯能用');return}return o(k,q)})(window.m21Transform);
+window.m2Assets=(o=>()=>[...o(),'inn','bardpor','kudash','kudasg','archerpor','archerh','archerg'])(window.m2Assets);
 window.__m22={save:()=>SAVE,sw:k=>m22Switch(k),hero:()=>HEROK,char:k=>m22Char(k)};
 // ==== b_sel.js
 // ---------- 角色選擇（封面 → 選角 → 任務旅店） ----------
@@ -79,9 +79,9 @@ window.m2Frame=(o=>el=>{if(mode==='chsel'){drawChsel();return true}return o(el)}
 // ---------- 任務旅店（取代冒險地圖）：任務板選關、共用倉庫、換角色 ----------
 const INN={spot:0,x:640,tx:640,face:1,t0:0,walk:0,toast:null};
 const SPOTS=[{n:'任務板',d:'選關卡・難度',x:250,ax:152,ay:112,box:[37,125,267,375]},{n:'換角色',d:'回到角色選擇',x:560,ax:590,ay:150,box:[470,170,710,330]},
-  {n:'共用倉庫',d:'兩個角色共用的箱子',x:960,ax:1040,ay:232,box:[955,250,1120,385]}];
+  {n:'共用倉庫',d:'三個角色共用的箱子',x:960,ax:1040,ay:232,box:[955,250,1120,385]}];
 window.m2OpenMap=(o=>(...a)=>{const r=o(...a);if(mode==='map'){INN.t0=performance.now();INN.spot=0;INN.x=INN.tx=SPOTS[0].x+90}return r})(window.m2OpenMap);
-function innHero(t){const mv=Math.abs(INN.tx-INN.x)>3;const k=isBard();if(mv)return(k?'bh_run':'kudas_run')+Math.floor(t/0.1)%4;return k?'bh_play'+Math.floor(t/0.36)%2:'kudas_idle'}
+function innHero(t){const mv=Math.abs(INN.tx-INN.x)>3;const k=isBard();if(HEROK==='archer')return mv?'ar_run'+Math.floor(t/0.075)%8:'ar_idle'+Math.floor(t/0.16)%6;if(mv)return(k?'bh_run':'kudas_run')+Math.floor(t/0.1)%4;return k?'bh_play'+Math.floor(t/0.36)%2:'kudas_idle'}
 window.drawMap=function(){const t=performance.now()/1000,dt=1/60;X.fillStyle='#000';X.fillRect(0,0,W,H);if(IMG.inn&&IMG.inn.width)X.drawImage(IMG.inn,0,0,W,H);
   // 壁爐火光（多層暖色）
   {const f=0.5+0.5*Math.sin(t*7.1)*Math.sin(t*3.3);X.save();X.globalCompositeOperation='lighter';for(const [r,a] of [[150,0.05],[96,0.07],[52,0.09]]){X.globalAlpha=a*(0.7+0.3*f);X.fillStyle='rgb(255,150,60)';X.beginPath();X.ellipse(626,242,r*1.25,r*0.85,0,0,Math.PI*2);X.fill()}X.restore()}
@@ -141,7 +141,7 @@ function whGrid(L,x0,y0,cols,rows,cur,on,inp,side){const z=46,pg=Math.floor(cur/
     if(it)gearCard(it,x+1,y+1,z-2,sel);if(inp&&CLICK&&inBox(CLICK,[x,y,x+z,y+z])&&it){if(UI.side===side&&cur===pg+i)whMove(side,pg+i);else{UI.side=side;if(side)UI.ws=pg+i;else UI.bs=pg+i}}}
   const np=Math.max(1,Math.ceil(L.length/(cols*rows)));T(`第 ${Math.floor(pg/(cols*rows))+1}/${np} 頁`,x0+cols*25,y0+rows*50+14,FN(13),[200,190,170],2,[0,0,0],'mm')}
 function whUI(inp){woodPanel(40,40,1240,680);T('共用倉庫',640,80,FS(32),[255,236,200],3,[60,20,10],'mm');
-  T(`${HERO[HEROK].n}的背包 ${SAVE.inv.length}/${BAG_MAX}`,250,124,FS(19),UI.side===0?[255,236,150]:[210,200,190],2,[0,0,0],'mm');T(`倉庫（兩人共用） ${SAVE.wh.length}/${WH_MAX}`,1030,124,FS(19),UI.side===1?[255,236,150]:[210,200,190],2,[0,0,0],'mm');
+  T(`${HERO[HEROK].n}的背包 ${SAVE.inv.length}/${BAG_MAX}`,250,124,FS(19),UI.side===0?[255,236,150]:[210,200,190],2,[0,0,0],'mm');T(`倉庫（三人共用） ${SAVE.wh.length}/${WH_MAX}`,1030,124,FS(19),UI.side===1?[255,236,150]:[210,200,190],2,[0,0,0],'mm');
   UI.bs=clamp(UI.bs||0,0,Math.max(0,SAVE.inv.length-1));UI.ws=clamp(UI.ws||0,0,Math.max(0,SAVE.wh.length-1));
   whGrid(SAVE.inv,80,150,8,8,UI.bs,UI.side===0,inp,0);whGrid(SAVE.wh,822,150,8,8,UI.ws,UI.side===1,inp,1);
   const it=UI.side?SAVE.wh[UI.ws]:SAVE.inv[UI.bs];rrect(486,150,794,560,10,'rgba(0,0,0,0.4)','rgba(214,172,84,0.5)',1);itemDetail(it||null,500,166,784);
@@ -160,19 +160,26 @@ window.__wh={move:whMove};
 // ---------- 可操作的吟遊詩人「尋歡作樂」 ----------
 // 依 design/bard_research.md：樂想 紅/藍/綠、J×4（第 4 下調音敲擊）、空中 J 音符射擊、K 三連音、L 旋律衝擊（節奏≥3）／旋音射擊、
 // 方向連按＝跪地滑行（絆倒）、↓連按＝跪地彈奏（彩色樂曲）、K+L＝戰鬥交響曲、Shift＝後跳閃避（完美閃避獎勵）、倒地受身、V＝召喚苦達
-const BD={sp:345,spy:170,air:330,jv:1250,dg:1.2,sl:3.5,kn:6,ult:20,lcd:2.2,ideaHold:7,buff:6};
+const BD={sp:345,spy:170,air:330,jv:1250,dg:1.2,sl:3.5,kn:6,ult:8,lcd:2.2,ideaHold:7,buff:6};   // W2：大招冷卻 20→8 秒（改由「樂章」量表控管頻率）
+// W2：大招改用獨立的「樂章」量表（0–100），不再吃節奏 5 → K／L 花節奏不會再擋到大招。量表只存在關卡中（P.ue），不進存檔、不會衰減
+const UE={max:100,rh:4,spend:2,hit:0.4,hitGap:0.1,idea:4,song:4,hurt:3,hurtGap:0.4,pf:5};
+function bUE(n,gap,key){const s=S0,P=s.P,t=s.t;if(!isBard())return;if(!n||P.dead||(P.act&&P.act.type==='bu'))return;if(gap){if(t-(P[key]||-9)<gap)return;P[key]=t}
+  const u0=P.ue||0;P.ue=Math.min(UE.max,u0+n);if(u0<UE.max&&P.ue>=UE.max){P.ueFullT=t;proc('樂章滿・K+L 大招',[200,120,255],'交');sfx('ready',0.4)}}
 const B22={mul:1};
+// W2 技能實用度調整（design/w2_skill_audit_zh.md）：三連音每圈 0.55→0.85、跪地彈奏 ×1.5（原本被 L 旋律衝擊／旋音射擊完全壓過）
+const BAL_W2={bk:0.85,bp:1.5};
 const IDEA={r:{n:'紅色樂想',d:'攻速、移速 +25%',c:[[150,30,40],[230,70,70],[255,170,150]]},b:{n:'藍色樂想',d:'傷害 +10%・範圍變大',c:[[30,50,140],[70,120,235],[170,215,255]]},
   g:{n:'綠色樂想',d:'回復 HP（滿血時移速 +20%）',c:[[30,100,40],[90,200,90],[190,255,170]]}};
 const POOLKEY={n:['n','c'],wind:['wind','windc'],stomp:['stomp','stompc'],chg:['chg','chgc'],slam:['slam','slamc'],air:['air','airc']};
 POOL.kwind=[45050,67550];POOL.kwindc=POOL.windc.map(v=>Math.round(v*0.6));
 function bHit(m,mv,pool,mul,multi){const K=POOLKEY[mv]||POOLKEY.n,sv=[POOL[K[0]],POOL[K[1]]];if(pool){POOL[K[0]]=POOL[pool];POOL[K[1]]=POOL[pool+'c']||POOL[pool]}B22.mul=mul||1;let v=0;
-  try{v=hitMob(m,mv,{multi:!!multi})}finally{POOL[K[0]]=sv[0];POOL[K[1]]=sv[1];B22.mul=1}return v}
+  try{v=hitMob(m,mv,{multi:!!multi})}finally{POOL[K[0]]=sv[0];POOL[K[1]]=sv[1];B22.mul=1}bUE(UE.hit,UE.hitGap,'ueHitT');return v}
 window.m2Dmg=(o=>(v,m,mv,c)=>{let r=o(v,m,mv,c);if(mv==='pet')return r;const s=S0;if(B22.mul!==1)r=Math.round(r*B22.mul);if(isBard()&&s.P.blueU>s.t)r=Math.round(r*1.1);return r})(window.m2Dmg);
 function bBig(m){return m.kind==='boss'?60:m.kind==='pillar'?20:0}
 function bTargets(r0,r1,dy,hmax){const s=S0,P=s.P,L=[];for(const m of s.mobs){if(m.gone||m.dying&&(m.kind==='pillar'||m.kind==='boss'))continue;const big=bBig(m),dx=(m.x-P.x)*P.face;
     if(dx<r0||dx>r1+big||Math.abs(m.y-P.y)>dy+big*0.6||m.h>(hmax||130))continue;L.push(m)}return L}
-function bRh(n){const P=S0.P;const r0=P.rh;P.rh=Math.min(RHMAX,P.rh+n);if(GS.rhy&&P.rh>r0&&P.rh<RHMAX&&rnd()<GS.rhy){P.rh++;proc('節奏加成',[230,80,60],'節')}}
+function bRh(n){const P=S0.P;const r0=P.rh;P.rh=Math.min(RHMAX,P.rh+n);if(GS.rhy&&P.rh>r0&&P.rh<RHMAX&&rnd()<GS.rhy){P.rh++;proc('節奏加成',[230,80,60],'節')}
+  bUE(Math.max(n,P.rh-r0)*UE.rh)}   // W2：節奏滿了也照算樂章（不浪費）
 function bTrip(m,dur){const s=S0,t=s.t;if(m.dying||m.kind==='pillar')return;if(m.kind==='boss'){if(!m21BossInv()){m.dizzy=t+0.45;const b=s.boss;if(b&&!b.atk&&b.nextAtk!=null)b.nextAtk=Math.max(b.nextAtk,t)+0.5}return}
   m.state='down';m.getup=t+(dur||1.2);m.h=0;m.vh=0;m.rot=0;m.wind=0;m.vx=0;m.dizzy=t+(dur||1.2)}
 // --- 樂想 ---
@@ -180,23 +187,23 @@ function bIdeaGain(c){const s=S0,P=s.P,t=s.t;if(P.idea&&P.idea.until>t)return;c=
   s.fx.push({k:'b_idea',x:P.x,y:P.y,t0:t,c});sfx('ready',0.25)}
 function bIdeaUse(){const s=S0,P=s.P,t=s.t,I=P.idea;if(!I||I.until<=t)return null;P.idea=null;const d=BD.buff*(I.x2||1);
   if(I.c==='r')P.redU=t+d;else if(I.c==='b')P.blueU=t+d;else{if(P.hp>=HPMAX)P.grnU=t+d;else{const h=Math.round(HPMAX*0.06);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h});P.regU=t+3*(I.x2||1);P.regN=t+0.5}}
-  s.fx.push({k:'b_iflash',x:P.x,y:P.y,t0:t,c:I.c});proc(IDEA[I.c].n,IDEA[I.c].c[1],'樂');sfx('summon',0.3);return I.c}
+  s.fx.push({k:'b_iflash',x:P.x,y:P.y,t0:t,c:I.c});proc(IDEA[I.c].n,IDEA[I.c].c[1],'樂');sfx('summon',0.3);bUE(UE.idea);return I.c}
 const bRed=()=>S0.P.redU>S0.t,bBlue=()=>S0.P.blueU>S0.t;
 // --- 動作 ---
 function bAct(type,dur,o){const P=S0.P;P.act=Object.assign({type,t:0,dur,hitAt:99,done:false,hitIds:{}},o||{});P.chainBuf=0;return P.act}
 const BCH={b1:{dur:0.24,hit:0.08,pool:'n',mul:0.8,r:[0,120],dy:32,nx:'b2'},b2:{dur:0.26,hit:0.10,pool:'n',mul:0.9,r:[0,130],dy:34,nx:'b3'},
   b3:{dur:0.30,hit:0.12,pool:'n',mul:1.0,r:[-20,140],dy:36,nx:'b4',rh:1},b4:{dur:0.42,hit:0.14,pool:'n',mul:1.5,r:[0,120],dy:32,nx:null}};
 function bNote(o){(S0.notes=S0.notes||[]).push(Object.assign({t0:S0.t,hit:{},life:0.5},o))}
-function bStartK(){const s=S0,P=s.P,t=s.t;const r0=P.rh;P.rh-=2;const c=bIdeaUse();bAct('bk',0.9,{rh0:r0,ideaC:c});s.callout={t0:t,txt:'三連音'};sfx('swing',0.35)}
-function bStartL(){const s=S0,P=s.P,t=s.t;if(P.rh>=3){const r0=P.rh;P.rh-=3;const c=bIdeaUse();bAct('bl',0.8,{rh0:r0,ideaC:c});s.callout={t0:t,txt:'旋律衝擊'};sfx('wind',0.4);return}
+function bStartK(){const s=S0,P=s.P,t=s.t;const r0=P.rh;P.rh-=2;bUE(2*UE.spend);const c=bIdeaUse();bAct('bk',0.9,{rh0:r0,ideaC:c});s.callout={t0:t,txt:'三連音'};sfx('swing',0.35)}
+function bStartL(){const s=S0,P=s.P,t=s.t;if(P.rh>=3){const r0=P.rh;P.rh-=3;bUE(3*UE.spend);const c=bIdeaUse();bAct('bl',0.8,{rh0:r0,ideaC:c});s.callout={t0:t,txt:'旋律衝擊'};sfx('wind',0.4);return}
   if(P.slamCD<=0){P.slamCD=BD.lcd;bAct('bls',0.36,{hitAt:0.12});return}s.denyL=t}
 function bStartSlide(dir){const s=S0,P=s.P,t=s.t;P.face=dir;bIdeaUse();bAct('bs',0.56,{dir});P.chgCD=BD.sl*(1-(GS.mvcd||0));P.chgIF=t+0.36;s.callout={t0:t,txt:'跪地滑行'};sfx('swing',0.4);P.ghost=[];puff(P.x-20*dir,P.y-3,6,[214,170,128],24,0.4,3)}
 function bStartKneel(){const s=S0,P=s.P,t=s.t;const c=bIdeaUse();bAct('bp',0.62,{song:c||'n'});P.stpCD=BD.kn*(1-(GS.mvcd||0));s.callout={t0:t,txt:'跪地彈奏'};sfx('jump',0.3)}
 function bStartDodge(){const s=S0,P=s.P,t=s.t;bAct('bd',0.30);P.dgCD=BD.dg;P.dgI0=t+0.04;P.dgIF=t+0.22;P.vh=520;P.h=Math.max(P.h,0.01);sfx('jump',0.25)}
-function bStartUlt(){const s=S0,P=s.P,t=s.t;P.rh=0;P.ultCD=BD.ult;const I=P.idea&&P.idea.until>t?P.idea:null;if(I){I.x2=2}
+function bStartUlt(){const s=S0,P=s.P,t=s.t;P.ue=0;P.ultCD=BD.ult;const I=P.idea&&P.idea.until>t?P.idea:null;if(I){I.x2=2}
   bAct('bu',3.2,{ticks:0,keep:I?I.c:null});P.ultIF=t+3.25;s.callout={t0:t,txt:'戰鬥交響曲'};sub('尋歡作樂','♪ 來，給你加點勁兒！',1.9);musPlay('lute',0.75,0.25,true);musVol(CURM,DUCKV,0.4);sfx('summon',0.5);
   s.fx.push({k:'b_ultc',x:P.x,y:P.y,t0:t})}
-function bPerfect(){const s=S0,P=s.P,t=s.t;P.dgIF=0;P.invU=t+0.35;P.dgCD=0;P.pfU=t+0.4;bRh(1);P.idea=null;bIdeaGain();
+function bPerfect(){const s=S0,P=s.P,t=s.t;P.dgIF=0;P.invU=t+0.35;P.dgCD=0;P.pfU=t+0.4;bRh(1);bUE(UE.pf);P.idea=null;bIdeaGain();
   s.dmg.push({t,x:P.x,y:P.y-210,v:0,crit:false,label:'哎唷～',zj:false,pet:false,zero:true});proc('完美閃避',[120,200,255],'閃');s.fx.push({k:'b_pf',x:P.x,y:P.y,t0:t});if(GS.aftr)P.aftrU=t+2}
 // 每 frame
 function bStep(dt){const s=S0,P=s.P,t=s.t;if(P.chgCD==null){P.chgCD=0;P.stpCD=0}P.dgCD=(P.dgCD||0)-dt;P.ultCD=(P.ultCD||0)-dt;P.slamCD-=dt;P.chgCD-=dt;P.stpCD-=dt;
@@ -218,8 +225,8 @@ function bStep(dt){const s=S0,P=s.P,t=s.t;if(P.chgCD==null){P.chgCD=0;P.stpCD=0}
   const a=P.act;const cancelOK=!a||(BCH[a.type]&&a.done&&a.t>a.hitAt+0.05)||a.type==='ba'||(a.type==='bls'&&a.done);
   // K+L 大招（K、L 任一個按下時另一個也按著，或 0.12 秒內先後按）
   if(wantStab)P.kT=t;if(wantSkill)P.lT=t;const kl=(wantStab&&t-(P.lT||-9)<0.12)||(wantSkill&&t-(P.kT||-9)<0.12)||wantUlt;
-  const fresh=a&&(a.type==='bk'||a.type==='bl')&&a.t<0.14&&a.rh0>=RHMAX;const rhOK=P.rh>=RHMAX||fresh;
-  if(kl&&rhOK&&P.ultCD<=0&&(!a||cancelOK||fresh)&&P.h<=0){const ic=fresh&&a.ideaC;P.act=null;bStartUlt();if(ic){const k={r:'redU',b:'blueU',g:'grnU'}[ic];if(P[k]>t)P[k]+=BD.buff}}
+  const rhOK=(P.ue||0)>=UE.max,fresh=rhOK&&a&&(a.type==='bk'||a.type==='bl')&&a.t<0.14;   // W2：看樂章量表；K／L 剛按下就接大招＝退回那招花掉的節奏
+  if(kl&&rhOK&&P.ultCD<=0&&(!a||cancelOK||fresh)&&P.h<=0){const ic=fresh&&a.ideaC;if(fresh)P.rh=a.rh0;P.act=null;bStartUlt();if(ic){const k={r:'redU',b:'blueU',g:'grnU'}[ic];if(P[k]>t)P[k]+=BD.buff}}
   else if(kl&&rhOK&&P.ultCD>0)s.denyU=t;
   else if(wantDodge&&P.h<=0&&P.dgCD<=0&&(!a||cancelOK||['b1','b2','b3','b4','bls'].includes(a.type))){bStartDodge()}
   else if(fire&&P.h<=0&&(!a||cancelOK)){if(fire==='d'){if(P.stpCD<=0)bStartKneel();else s.denyStp=t}else{if(P.chgCD<=0)bStartSlide(fire==='r'?1:-1);else s.denyChg=t}}
@@ -252,7 +259,7 @@ function bActStep(A,dt,mx,my){const s=S0,P=s.P,t=s.t,f=P.face;
   switch(A.type){
   case 'ba':P.vh=0;if(!A.done&&A.t>=A.hitAt){A.done=true;const an=35*Math.PI/180;bNote({k:'shot',x:P.x+40*f,y:P.y,h:P.h+60,vx:900*Math.cos(an)*f,vh:-900*Math.sin(an),life:0.4,pool:'air',mul:0.7});sfx('swing',0.3);s.fx.push({k:'b_muz',x:P.x+50*f,y:P.y,h:P.h+60,t0:t,f})}
     if(A.t>=A.dur){P.act=null;P.vh=-200}break;
-  case 'bk':{const T3=[0.12,0.42,0.62];for(let i=0;i<3;i++)if(A.t>=T3[i]&&!(A['r'+i])){A['r'+i]=1;bNote({k:'ring',x:P.x+50*f,y:P.y,dir:f,i,sc:(1+0.15*i)*(bBlue()?1.15:1),life:0.55,pool:'chg',mul:0.55,slow:i===2});sfx('swing',0.3+0.05*i)}
+  case 'bk':{const T3=[0.12,0.42,0.62];for(let i=0;i<3;i++)if(A.t>=T3[i]&&!(A['r'+i])){A['r'+i]=1;bNote({k:'ring',x:P.x+50*f,y:P.y,dir:f,i,sc:(1+0.15*i)*(bBlue()?1.15:1),life:0.55,pool:'chg',mul:BAL_W2.bk,slow:i===2});sfx('swing',0.3+0.05*i)}
     if(A.t>=A.dur)P.act=null;break}
   case 'bl':{const u=A.t;if(u>0.15&&u<0.62){const k=(u-0.15)/0.47;P.x+=f*520*(1-k*0.7)*dt}
     if(!A.done&&u>=0.3){A.done=true;const tg=bTargets(-60,190+(bBlue()?30:0),44);for(const m of tg)bHit(m,'wind',null,0.8,tg.length>=2);if(tg.length){bIdeaGain();shake(8,0.25);s.hitstop=0.05}s.fx.push({k:'b_swirl',x:P.x+60*f,y:P.y,t0:t,f})}
@@ -274,10 +281,11 @@ function bActStep(A,dt,mx,my){const s=S0,P=s.P,t=s.t,f=P.face;
   case 'bu':bUltStep(A,dt);break}}
 function bKneelImpact(A){const s=S0,P=s.P,t=s.t;const rx=bBlue()||A.song==='b'?300:240,ry=70;const tg=[];
   for(const m of s.mobs){if(m.gone||m.dying)continue;const big=m.kind==='boss'?80:0;const dx=(m.x-P.x)/(rx+big),dy=(m.y-P.y)/(ry+big*0.4);if(dx*dx+dy*dy>1||m.h>130)continue;tg.push(m)}
-  const mul=A.song==='r'?1.3:1;for(const m of tg){const inv=m21Boss(m)&&m21BossInv();bHit(m,'stomp',null,mul,tg.length>=2);if(m.dying||m.kind==='pillar'||inv)continue;m.slowU=t+3;m.slowK=0.6;if(m21Boss(m)&&s.boss)s.boss.slowU=t+3}
+  const mul=(A.song==='r'?1.3:1)*BAL_W2.bp;for(const m of tg){const inv=m21Boss(m)&&m21BossInv();bHit(m,'stomp',null,mul,tg.length>=2);if(m.dying||m.kind==='pillar'||inv)continue;m.slowU=t+3;m.slowK=0.6;if(m21Boss(m)&&s.boss)s.boss.slowU=t+3}
   const SONG={r:['勇猛讚歌',1.3],g:['希望之歌',1],b:['反擊序曲',1]};if(A.song==='g'||A.song==='b'){}
   if(A.song==='g'){const h=Math.round(HPMAX*0.06*1.5);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h})}
   if(A.song==='b'){P.ctrU=t+4}
+  if(SONG[A.song])bUE(UE.song);   // W2：唱出讚歌／希望之歌／反擊序曲＝多累積樂章
   if(SONG[A.song])s.callout={t0:t,txt:SONG[A.song][0]};
   s.fx.push({k:'b_kneel',x:P.x,y:P.y,t0:t,rx,song:A.song});shake(8,0.25);s.hitstop=Math.max(s.hitstop,0.04);sfx('hit',0.4);if(tg.length){bRh(1);bIdeaGain()}}
 // 戰鬥交響曲：起手 .15 → 甩頭連段 .45（斬擊）→ 音圈爆開 .1 → 彈奏 1.4（7 拍）→ 躍起 .6（全體倒地爆炸）→ 落地 .5
@@ -305,9 +313,9 @@ function bNotesStep(dt){const s=S0,t=s.t;if(!s.notes)return;
   s.notes=s.notes.filter(b=>!b.dead)}
 // 反擊序曲：受傷時反擊
 // --- 受傷：比較脆（×1.10、3 下倒地／戰意 4 下）、後跳閃避的無敵、完美閃避 ---
-window.m2Hurt=(o=>(v,x)=>{if(!isBard())return o(v,x);const s=S0,P=s.P,t=s.t;if(t<(P.invU||0))return 0;
+window.m2Hurt=(o=>(v,x)=>{if(HEROK==='archer'&&window.aHurt)return aHurt(o,v,x);if(!isBard())return o(v,x);const s=S0,P=s.P,t=s.t;if(t<(P.invU||0))return 0;
   if(P.dgIF>t&&t>=(P.dgI0||0)){bPerfect();return 0}if(P.ultIF>t)return 0;
-  const a=P.act;P.act=a||{type:'_'};let r;try{r=o(v,x)}finally{P.act=a}if(!r)return r;r=Math.round(r*1.10);
+  const a=P.act;P.act=a||{type:'_'};let r;try{r=o(v,x)}finally{P.act=a}if(!r)return r;r=Math.round(r*1.10);bUE(UE.hurt,UE.hurtGap,'ueHurtT');
   const armor=a&&['bk','bl','bu'].includes(a.type);P.flashT=t+0.08;
   if(!armor){const d=(x!=null&&x>P.x)?-1:1;P.x=clamp(P.x+18*d,30,WW-30);P.hurtT=t;
     if(t-(P.lastHurt2||-9)>2.0)P.hc=0;P.hc=(P.hc||0)+1;P.lastHurt2=t;
@@ -316,7 +324,7 @@ window.m2Hurt=(o=>(v,x)=>{if(!isBard())return o(v,x);const s=S0,P=s.P,t=s.t;if(t
   if(P.ctrU>t&&P.hp>0){let n=0;for(const m of s.mobs){if(m.gone||m.dying||m.kind==='pillar'||m.kind==='boss')continue;if(Math.abs(m.x-P.x)<170&&Math.abs(m.y-P.y)<70){m.state='stun';m.stun=t+0.8;m.dizzy=t+0.8;m.vx=Math.sign(m.x-P.x||1)*420;n++}}
     if(n){s.fx.push({k:'ctr',x:P.x,y:P.y,t0:t});proc('反擊序曲',[255,120,60],'反');P.ctrU=0}}
   return r})(window.m2Hurt);
-window.stepPlayer=(o=>dt=>{if(!isBard())return o(dt);bStep(dt)})(window.stepPlayer);
+window.stepPlayer=(o=>dt=>{if(HEROK==='archer'&&window.aStep)return aStep(dt);if(!isBard())return o(dt);bStep(dt)})(window.stepPlayer);
 // 姿勢
 function bPose(P,t){const s=S0,a=P.act;if(P.dead)return 'down';if(m2Down())return P.tech?'tech_roll':'down';
   if(P.pfU>t)return 'fakehit';
@@ -427,7 +435,7 @@ window.spr=(o=>(n,sx,sy,op={})=>{const s=S0;
   if(P.dgIF>t)gl=[170,220,255,200];
   return o(nm,sx,sy,Object.assign({},op,{rot:0,dy:0,glow:gl}))})(window.spr);
 const TMAP={'苦達斯':'尋歡作樂','苦達斯倒下了……':'尋歡作樂倒下了……','肩撞':'滑行','踱地':'跪彈',
-  '方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停':'J 連擊　K 三連音　L 旋律衝擊／旋音射擊　Shift 後跳　K+L 大招　→→ 滑行　↓↓ 跪彈　V 召喚苦達　Esc 暫停'};
+  '方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停':'J 連擊　K 三連音　L 旋律衝擊／旋音射擊　Shift 後跳　K+L 大招（樂章滿）　→→ 滑行　↓↓ 跪彈　V 召喚苦達　Esc 暫停'};
 let TREMAP=false;
 window.T=(o=>function(s,...r){if(TREMAP&&typeof s==='string'&&TMAP[s])s=TMAP[s];return o(s,...r)})(window.T);
 window.skillTile=(o=>(cx,cy,R,g,col,key,cost,...r)=>{if(TREMAP){if(g==='刺'){g='連';col=[200,70,140]}else if(g==='風'){g='衝';col=[200,150,40];cost='節奏3'}else if(g==='掃'){g='射';col=[60,110,200]}else if(g==='攻')g='擊'}return o(cx,cy,R,g,col,key,cost,...r)})(window.skillTile);
@@ -439,7 +447,9 @@ window.drawHUD=(o=>(cx0,shy)=>{const s=S0,P=s&&s.P;if(!isBard()||!P)return o(cx0
   const B=[[810,'後跳','Shift',P.dgCD||0,BD.dg,null]];for(const [x,l,k,cd,mx] of B){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(40,60,90,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(170,220,255)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
     T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm')}
-  skillTile(1070,524,22,'交',[150,60,200],'K+L','節奏5',P.rh<RHMAX||(P.ultCD||0)>0,s.denyU||-9,Math.max(0,(P.ultCD||0)/BD.ult),null);
+  {const ue=Math.min(1,(P.ue||0)/UE.max),cd=Math.max(0,(P.ultCD||0)/BD.ult);   // W2：大招格＝樂章量表（陰影＝還差多少；冷卻中改顯示冷卻）
+   skillTile(1070,524,22,'交',[150,60,200],'K+L',ue>=1?'樂章滿':'樂章'+Math.floor(ue*100)+'%',ue<1||cd>0,s.denyU||-9,cd>0?cd:1-ue,null);
+   if(ue>=1&&cd<=0)arc(1070,524,25,-90,270,Math.floor(t*6)%2?'rgb(233,160,255)':'rgb(190,110,240)',3);else if(ue>0)arc(1070,524,25,-90,-90+360*ue,'rgb(170,100,230)',3)}
   {const x=748,y=604,I=P.idea&&P.idea.until>t?P.idea:null;circ(x,y,24,'rgba(20,14,20,0.9)',I?rgb(IDEA[I.c].c[2]):'rgb(120,100,80)',3);
     if(I){const [c,xx]=pxc(16,16);bdisc(xx,8,8,6,IDEA[I.c].c,1);pdot(xx,6,6,[255,255,255],2);pxOut(c,x,y);arc(x,y,21,-90,-90+360*(I.until-t)/BD.ideaHold,rgb(IDEA[I.c].c[1]),3)}else T('♪',x,y,FS(18),[150,140,130],2,[0,0,0],'mm');
     T('樂想',x,y+30,FN(11),[220,210,190],2,[0,0,0],'mm')}
@@ -455,7 +465,7 @@ window.drawManual=(o=>()=>{if(press(['Tab'])||press(['ArrowRight'])||press(['Arr
   const rows=[['攻擊','J 連按＝4 段，第 4 下「調音敲擊」（鏗！）；空中 J＝音符射擊（紅色樂想時 2 發）'],['三連音','K：節奏 2，連發三個音圈（越來越大），第 3 個緩速 50%'],
     ['旋律衝擊','L：節奏 ≥3，衝刺旋轉＋把敵人打飛；不足＝旋音射擊（會彈到 2 個敵人，冷卻 2.2 秒）'],['跪地滑行','同方向連按兩下：滑過去絆倒敵人 1.2 秒（冷卻 3.5 秒）；強化每 +3 遠 8%、每 +5 多 1 段'],
     ['跪地彈奏','↓ 連按兩下：震地緩速；帶著樂想會變成彩色樂曲（紅 勇猛讚歌／藍 反擊序曲／綠 希望之歌）'],['後跳閃避','Shift：往後跳，有無敵時間；剛好躲過攻擊＝完美閃避（哎唷～）：節奏 +1、送一個樂想、冷卻重置'],
-    ['戰鬥交響曲','K+L 一起按：節奏 5，3.2 秒無敵大招，最後全場倒地'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉'],
+    ['戰鬥交響曲','K+L 一起按：樂章滿（打中、用技能、唱歌、挨打都會累積），3.2 秒無敵大招，最後全場倒地；不吃節奏'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉'],
     ['召喚苦達','V：食物 3/3 時苦達從天而降、臉著地噴出兩道特大斬風，給你「戰意」（6 秒內被打 4 下才倒地）'],['比較脆','HP 3,300、被打 3 下就倒地；倒地瞬間按 Space＝受身翻起'],['其他','E 互動　I 背包　Esc 暫停　M 靜音　F9 錄影（變身藥水只有苦達斯能用）']];
   rows.forEach(([a,b],i)=>{const y=124+i*38;T(a,150,y,FS(17),[255,244,214],2,[0,0,0],'lm');for(const [j,l] of wrapT(b,FN(15),820).entries())T(l,310,y+j*18,FN(15),[235,230,220],2,[0,0,0],'lm')});
   T('Tab／←→：看苦達斯的操作　　Esc / Enter 回標題',640,668,FS(18),[255,255,255],3,[0,0,0],'mm')})(window.drawManual);
@@ -463,5 +473,5 @@ window.drawManual=(o=>()=>{if(press(['Tab'])||press(['ArrowRight'])||press(['Arr
 window.aiThink=(o=>()=>{o();if(!isBard())return;const s=S0,P=s.P,t=s.t;AI.dodge=0;AI.ult=0;AI.sum=s.food>=FOOD_MAX&&!s.ally&&t>(s.allyCD||0)?1:0;
   const ms=s.mobs.filter(m=>!m.dying&&!m.gone&&m.kind!=='pillar'&&Math.abs(m.x-s.cam-640)<640);
   if(ms.some(m=>m.wind>0&&Math.abs(m.x-P.x)<150&&Math.abs(m.y-P.y)<34)&&(P.dgCD||0)<=0&&Math.random()<0.4){AI.dodge=1;AI.atk=0}
-  if(P.rh>=RHMAX&&(P.ultCD||0)<=0&&ms.filter(m=>Math.abs(m.x-P.x)<360).length>=1){AI.ult=1;AI.skill=0;AI.stab=0}
+  if((P.ue||0)>=UE.max&&(P.ultCD||0)<=0&&ms.filter(m=>Math.abs(m.x-P.x)<360).length>=1){AI.ult=1;AI.skill=0;AI.stab=0}
   else if(P.rh>=2&&P.rh<3&&ms.some(m=>Math.abs(m.y-P.y)<24&&(m.x-P.x)*P.face>0&&(m.x-P.x)*P.face<300)&&Math.random()<0.05)AI.stab=1})(window.aiThink);
