@@ -4,7 +4,7 @@
 // ---------- 版本：只改這裡 ----------
 // web：網頁版更新序號；native：手機 APK／電腦版的版本（約每 5 次網頁版更新才重出，並寫上它已包含到哪一版網頁更新）
 // 網頁版版號：大改版 W2、W3…；只修 bug 的維護版 W2.1、W2.2、W2.3…（從上線版另開熱修樹建置，不含開發中的 W3 內容）
-const GAME_VER={web:'W2.1',native:'M2.5e',nativeHas:''};
+const GAME_VER={web:'W2.2',native:'M2.5e',nativeHas:''};
 const isWebBuild=()=>!!window.__cloud||!!window.ERINN_FIREBASE;   // cloud.js 只在網頁版載入
 const gameVerLabel=window.gameVerLabel=function(){return isWebBuild()?'網頁版 '+GAME_VER.web:GAME_VER.native+(GAME_VER.nativeHas?'（含 '+GAME_VER.nativeHas+'）':'')}
 // 位置：右下角「私人非商業同人試作」正上方。觸控版的按鈕（返回／確定…）蓋到右下角時，兩行一起移到按鈕上方；字級依畫面縮放，手機上也看得清楚

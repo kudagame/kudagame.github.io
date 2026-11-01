@@ -529,33 +529,67 @@ if(typeof drawDead==='function'){const oDD=drawDead;let dRT=null;
 // ---- src27/e_enh.js
 // ---------- W2 全身強化：衣服／褲子／鞋子／戒指／項鍊也能強化 ----------
 // 跟武器一樣「強化屬於裝備欄」：換裝也保留。成本、成功率、保底（刻印能量）、失敗不降級＝完全沿用武器的 ENH 表與兩位 NPC。
-// 效果：只放大該欄裝備的「主屬性」，每一級的加成遞減，全身 +15 也不會爆：
-//   +1～+5 每級 +8%、+6～+10 每級 +5%、+11～+15 每級 +3%（＝ +5 ×1.40、+10 ×1.65、+15 ×1.80）
-//   上限照舊：受到傷害最多 −60%、閃避最多 25%。武器才有攻擊／暴傷／賦魔。
-// 存檔：放在每個角色自己的 slot 物件裡（SAVE.slot.a = {b:{e,pity},…}），舊版遊戲看不懂就原樣保留、照樣能玩。
-const AENH_STEP=[0.08,0.05,0.03];
-function aEnhF(e){let f=0;for(let i=1;i<=Math.min(15,e|0);i++)f+=AENH_STEP[i<=5?0:i<=10?1:2];return Math.round(f*100)/100}
+// W2.2 強化平衡（design/w3_enhance_balance_zh.md 定案 L 版）：每一級改成「平加」，不再看裝備主屬性大小；+5／+10／+15 有里程碑
+//   武器：攻擊 每級 +4%（+1～5）／+5%（+6～10）／+6%（+11～15）＝ +15 共 +75%；+5 暴擊率 +2%、+10 對首領傷害 +6%（+11 起暴傷、+13～15 賦魔照舊）
+//   衣服／褲子：受到傷害 每級 −0.5／−0.7／−0.8%（+15 再 −1%，每件最多 −11%）；+5 最大 HP +1.5%、+10 再 +2.5%（每件）；褲子 +10 抗倒地 +10%
+//   鞋子：閃避 每級 +0.3／0.4／0.5%（+15 共 +6%），+10 移動速度 +3%
+//   戒指：暴擊率 每級 +0.3／0.4／0.5%（+15 共 +6%），+15 暴擊傷害 +10%
+//   項鍊：技能傷害 每級 +0.6／0.8／1.0%（+15 共 +12%），+15 再 +3%
+//   上限照舊：受到傷害最多 −60%、閃避最多 25%、抗倒地最多 80%。只有「有穿裝備」的欄位才有效果。
+// 存檔：放在每個角色自己的 slot 物件裡（SAVE.slot.a = {b:{e,pity},…}），強化等級沿用，舊存檔不用轉換（只是效果套新公式）。
+const ENH2={wpn:[0.04,0.05,0.06],arm:[0.5,0.7,0.8],arm15:1.0,hp:[0.015,0.025],dodge:[0.3,0.4,0.5],crit:[0.3,0.4,0.5],skd:[0.6,0.8,1.0]};
+const enhStep=(n,st)=>st[n<=5?0:n<=10?1:2];
+const enhSum=(e,st)=>{let f=0;for(let i=1;i<=Math.min(15,e|0);i++)f+=enhStep(i,st);return Math.round(f*1000)/1000};
+window.enhAtk=e=>enhSum(e,ENH2.wpn);   // 取代 m2.js 的舊曲線（+15 +50% → +75%）
+// 某一欄在強化 +e 時的全部效果（小數：0.06 = 6%）
+function enhFx(sl,e){const o={atk:0,def:0,hp:0,kdr:0,dodge:0,ms:0,crit:0,cdmg:0,skd:0,boss:0};e=clamp(e|0,0,15);
+  if(sl==='w'){o.atk=enhSum(e,ENH2.wpn);if(e>=5)o.crit+=0.02;if(e>=10)o.boss+=0.06}
+  else if(sl==='b'||sl==='p'){o.def=(enhSum(e,ENH2.arm)+(e>=15?ENH2.arm15:0))/100;if(e>=5)o.hp+=ENH2.hp[0];if(e>=10)o.hp+=ENH2.hp[1];if(sl==='p'&&e>=10)o.kdr+=0.10}
+  else if(sl==='s'){o.dodge=enhSum(e,ENH2.dodge)/100;if(e>=10)o.ms+=0.03}
+  else if(sl==='r'){o.crit=enhSum(e,ENH2.crit)/100;if(e>=15)o.cdmg+=0.10}
+  else if(sl==='n'){o.skd=enhSum(e,ENH2.skd)/100+(e>=15?0.03:0)}
+  return o}
+// 里程碑（說明文字）
+const ENH_MS={w:[[5,'暴擊率 +2%'],[10,'對首領傷害 +6%']],b:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%'],[15,'受到傷害再 −1%']],
+  p:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%、抗倒地 +10%'],[15,'受到傷害再 −1%']],s:[[10,'移動速度 +3%']],r:[[15,'暴擊傷害 +10%']],n:[[15,'技能傷害再 +3%']]};
+// 主要強化屬性：[名稱, GS 欄位, 符號]
+const ENH_K={b:['受到傷害','def','−'],p:['受到傷害','def','−'],s:['閃避','dodge','+'],r:['暴擊率','crit','+'],n:['技能傷害','skd','+']};
+const enhFm=v=>{const x=Math.round(Math.abs(v)*1000)/10;return (Number.isInteger(x)?x:x.toFixed(1))+'%'};
+// 里程碑效果的文字（給物品說明用），沒有就回傳空字串
+function enhMsTx(sl,e){const f=enhFx(sl,e),L=[];if(sl==='w'){if(f.crit)L.push('暴擊率 +'+enhFm(f.crit));if(f.boss)L.push('對首領 +'+enhFm(f.boss))}
+  if(f.hp)L.push('最大 HP +'+enhFm(f.hp));if(f.kdr)L.push('抗倒地 +'+enhFm(f.kdr));if(f.ms)L.push('移速 +'+enhFm(f.ms));if(f.cdmg)L.push('暴擊傷害 +'+enhFm(f.cdmg));
+  if(sl==='n'&&e>=15)L.push('技能傷害再 +3%');if((sl==='b'||sl==='p')&&e>=15)L.push('受到傷害再 −1%');return L.join('、')}
 function aSlot(sl){if(!SAVE)return {e:0,pity:{}};const S=SAVE.slot||(SAVE.slot={e:0,pity:{}});if(!S.a||typeof S.a!=='object')S.a={};
   let o=S.a[sl];if(!o||typeof o!=='object')o=S.a[sl]={e:0,pity:{}};if(typeof o.pity!=='object'||!o.pity)o.pity={};o.e=clamp(o.e|0,0,15);return o}
 const aE=sl=>{try{return SAVE&&SAVE.slot&&SAVE.slot.a&&SAVE.slot.a[sl]?clamp(SAVE.slot.a[sl].e|0,0,15):0}catch(e){return 0}};
 window.slotE=sl=>sl==='w'?(SAVE&&SAVE.slot?SAVE.slot.e|0:0):aE(sl);
 // 裝備中的防具/飾品：圖示角落顯示 +N
 window.effE=(o=>it=>{if(it&&it.t!=='w'&&ARMS.includes(it.t)&&SAVE&&SAVE.eq&&SAVE.eq[it.t]===it.id)return aE(it.t);return o(it)})(window.effE);
-// 主屬性欄位 → GS 欄位
-const AENH_K={b:'def',p:'def',s:'dodge',r:'crit',n:'skd'};
-window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{const ad={def:0,dodge:0,crit:0,skd:0};
-    for(const sl of ARMS){const it=eqItem(sl),e=aE(sl);if(!it||!e)continue;ad[AENH_K[sl]]+=(it.v||0)*aEnhF(e)/100}
-    const d0=GS.def,o0=GS.dodge;GS.def=Math.min(0.6,GS.def+ad.def);GS.dodge=Math.min(0.25,GS.dodge+ad.dodge);GS.crit+=ad.crit;GS.skd=(GS.skd||0)+ad.skd;
-    GS.aenh={def:GS.def-d0,dodge:GS.dodge-o0,crit:ad.crit,skd:ad.skd}}catch(e){}return r})(window.calcGS);
-// 物品說明：主屬性顯示強化後的數值
-window.itemLines=(o=>it=>{const out=o(it);try{if(it&&it.t!=='w'&&ARMS.includes(it.t)){const e=effE(it);if(e){const M=GMAIN[it.t]||['數值','+'],f=aEnhF(e);
-    const i=out.findIndex(l=>l[0]===M[0]);const v=Math.round((it.v||0)*(1+f)*10)/10;if(i>=0)out[i]=[M[0],`${M[1]}${v}%（原本 ${it.v}%）`,[255,255,255]];
-    out.push(['強化',`+${e}（${M[0]} +${Math.round(f*100)}%）`,[255,236,120]])}}}catch(e){}return out})(window.itemLines);
-// 角色面板：「強化」欄也列出防具的加成
+// 衣服／褲子的 HP 里程碑：放大最大 HP（等級、覺醒都算完之後）
+let ENH_HP0=0,ENH_HK=null;
+const enhHpF=()=>{try{if(!SAVE||SAVE.hero!==HEROK)return 0;let h=0;for(const sl of ['b','p'])if(eqItem(sl))h+=enhFx(sl,slotE(sl)).hp;return h}catch(e){return 0}};
+window.m22ApplyHero=(o=>function(){const r=o.apply(this,arguments);try{ENH_HP0=HPMAX;ENH_HK=HEROK;HPMAX=Math.round(ENH_HP0*(1+enhHpF()));HEAL_CAP=Math.round(HPMAX*0.08)}catch(e){}return r})(window.m22ApplyHero);
+// 換裝／強化之後同步最大 HP（只會把目前 HP 壓到上限，不會因為穿上裝備就補血）
+function enhHpSync(){if(!ENH_HP0||ENH_HK!==HEROK||!SAVE||SAVE.hero!==HEROK)return;const m=Math.round(ENH_HP0*(1+enhHpF()));if(m===HPMAX||!(m>0))return;
+  HPMAX=m;HEAL_CAP=Math.round(HPMAX*0.08);if(S0&&S0.P&&S0.P.hp>HPMAX)S0.P.hp=HPMAX}
+window.calcGS=(o=>function(){const r=o.apply(this,arguments);try{if(!SAVE)return r;const A={def:0,dodge:0,crit:0,cdmg:0,skd:0,boss:0,ms:0,kdr:0,hp:0};
+    for(const [sl] of SLOTS){if(!eqItem(sl))continue;const f=enhFx(sl,slotE(sl));for(const k in A)A[k]+=f[k]}
+    const d0=GS.def,o0=GS.dodge,k0=GS.kdr||0;GS.def=Math.min(0.6,GS.def+A.def);GS.dodge=Math.min(0.25,GS.dodge+A.dodge);GS.crit+=A.crit;GS.cdmg=(GS.cdmg||0)+A.cdmg;
+    GS.skd=(GS.skd||0)+A.skd;GS.boss=(GS.boss||0)+A.boss;GS.ms=(GS.ms||0)+A.ms;GS.kdr=Math.min(0.8,k0+A.kdr);
+    GS.aenh={def:GS.def-d0,dodge:GS.dodge-o0,crit:A.crit,cdmg:A.cdmg,skd:A.skd,boss:A.boss,ms:A.ms,kdr:GS.kdr-k0,hp:A.hp};enhHpSync()}catch(e){}return r})(window.calcGS);
+// 物品說明：主屬性就是裝備本身的數值；強化效果另外列一行，里程碑再一行
+window.itemLines=(o=>it=>{const out=o(it);try{if(it&&ARMS.includes(it.t)){const e=effE(it);if(e){const K=ENH_K[it.t],f=enhFx(it.t,e);
+      out.push(['強化',`+${e}（${K[0]} ${K[2]}${enhFm(f[K[1]])}）`,[255,236,120]])}}
+    if(it&&(it.t==='w'||ARMS.includes(it.t))){const e=effE(it);const tx=e?enhMsTx(it.t,e):'';if(tx){const i=out.findIndex(l=>l[0]==='強化');out.splice(i>=0?i+1:out.length,0,['強化里程碑',tx,[255,210,120]])}}}catch(e){}return out})(window.itemLines);
+// 角色面板：「強化」欄列出全身強化的加成
 if(typeof m25Rows==='function')window.m25Rows=(o=>()=>{const R=o();try{const A=GS.aenh;if(A){for(const row of R){const c=row[2];
-    if(row[0]==='暴擊率'&&A.crit){c[2]=pct(GS.g0?GS.g0.crit:GS.crit-A.crit);c[3]=pct(A.crit)}
-    if(row[0]==='受到傷害'&&A.def){c[2]=pct(-((GS.g0?GS.g0.def:GS.def)-A.def));c[3]=pct(-A.def)}
-    if(row[0]==='閃避'&&A.dodge){c[2]=pct(GS.dodge-A.dodge);c[3]=pct(A.dodge)}}}}catch(e){}return R})(window.m25Rows);
+    if(row[0]==='體力 HP'&&A.hp)c[3]=pct(A.hp);
+    if(row[0]==='暴擊率'&&A.crit)c[3]=pct(A.crit);
+    if(row[0]==='暴擊傷害'&&A.cdmg){const ec=enhCdmg(SAVE.slot&&SAVE.slot.e|0);c[3]=pct(ec+A.cdmg)}
+    if(row[0]==='受到傷害'&&A.def)c[3]=pct(-A.def);
+    if(row[0]==='閃避'&&A.dodge){c[2]=pct(GS.dodge-A.dodge);c[3]=pct(A.dodge)}
+    if(row[0]==='抗倒地'&&A.kdr)c[3]=pct(A.kdr,0);
+    if(row[0]==='移動速度'&&A.ms)c[3]=pct(A.ms)}}}catch(e){}return R})(window.m25Rows);
 // ---------- 強化 UI：左下角選部位（滑鼠／觸控點選，或 ↑↓） ----------
 function aForgeTry(sl,npc){const it=eqItem(sl);if(!it)return;const SL=aSlot(sl);const n=SL.e+1;if(n>15)return;const c=enhCost(n,npc);
   if(SAVE.gold<c.gold){UI.msg=['金幣不夠',performance.now()];return}if(SAVE.shards<c.sh){UI.msg=['刻印碎片不夠（分解裝備可以得到）',performance.now()];return}
@@ -568,19 +602,22 @@ function aForgeSel(inp){const fs=UI.fsl||'w';T('強化部位',252,494,FS(18),[25
     T(nm,x+10,y+18,FS(16),on?[255,244,214]:has?[214,200,170]:[130,120,110],2,[0,0,0],'lm');if(e)T('+'+e,x+98,y+18,FN(14),[255,220,120],2,[0,0,0],'rm');
     if(inp&&CLICK&&inBox(CLICK,[x,y,x+106,y+36])&&!(UI.res&&performance.now()-UI.res.t0<1100)){UI.fsl=sl;UI.msg=null}});
   if(inp&&!(UI.res&&performance.now()-UI.res.t0<1100)){const k=SLOTS.findIndex(x=>x[0]===fs);if(press(['ArrowDown','KeyS']))UI.fsl=SLOTS[(k+1)%6][0];else if(press(['ArrowUp','KeyW']))UI.fsl=SLOTS[(k+5)%6][0]}}
+// 強化畫面：列出這一欄的里程碑（已達成＝金色✔、這次強化就會達成＝藍色）
+function enhMsRows(sl,SE,x,y,al){(ENH_MS[sl]||[]).forEach(([lv,tx],i)=>{const got=SE>=lv,nx=!got&&lv===SE+1;
+  T(`${got?'✔':nx?'▶':'・'} +${lv} 里程碑：${tx}`,x,y+i*21,FN(14),got?[255,210,120]:nx?[150,220,255]:[160,150,140],2,[0,0,0],al)})}
 function aForgeBody(inp,npc){const sl=UI.fsl,N=NPCS[npc],it=eqItem(sl),SL=aSlot(sl),SE=SL.e,M=GMAIN[sl]||['數值','+'];
   T(`${SLOTN[sl]}欄強化`,400,150,FS(26),[255,236,200],3,[0,0,0],'lm');T('強化等級屬於裝備欄：換裝也保留',1140,150,FN(15),[220,210,190],2,[0,0,0],'rm');
   if(!it){T(`${SLOTN[sl]}欄沒有裝備`,770,330,FS(28),[220,210,190],3,[0,0,0],'mm');T('先到背包（I）穿上裝備再來強化',770,374,FN(17),[200,190,170],2,[0,0,0],'mm');return}
   gearCard(it,400,176,84,false);T(RAR[it.r].st+itName(it),500,204,FS(24),RAR[it.r].col,2,[0,0,0],'lm');T(`${SLOTN[sl]}欄 +${SE}（目前裝備）`,500,236,FN(15),[255,170,120],2,[0,0,0],'lm');
-  const n=SE+1,v=e=>Math.round((it.v||0)*(1+aEnhF(e))*10)/10;
-  if(n>15){T('已達最高強化 +15',640,380,FS(30),[255,200,90],3,[0,0,0],'mm');return}
+  const n=SE+1,K=ENH_K[sl],F0=enhFx(sl,SE),F1=enhFx(sl,Math.min(15,n)),ST={b:ENH2.arm,p:ENH2.arm,s:ENH2.dodge,r:ENH2.crit,n:ENH2.skd}[sl];
+  if(n>15){T('已達最高強化 +15',640,380,FS(30),[255,200,90],3,[0,0,0],'mm');const B0=sl==='n'?enhSum(15,ENH2.skd)/100:(sl==='b'||sl==='p')?enhSum(15,ENH2.arm)/100:F0[K[1]];T(`強化效果：${K[0]} ${K[2]}${enhFm(F0[K[1]])}${F0[K[1]]>B0+1e-9?'（含里程碑）':''}`,640,422,FN(17),[255,255,255],2,[0,0,0],'mm');enhMsRows(sl,SE,640,458,'mm');return}
   const c=enhCost(n,npc),p=SL.pity[n]||0;
   rrect(400,284,760,560,10,'rgba(0,0,0,0.35)','rgba(214,172,84,0.5)',1);
   T(`+${SE}`,470,320,FS(30),[255,255,255],3,[0,0,0],'mm');T('▶',560,320,FS(26),[255,200,90],2,[0,0,0],'mm');T(`+${n}`,650,320,FS(30),n>=10?[255,170,60]:[120,200,255],3,[0,0,0],'mm');
-  T(M[0],420,372,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${M[1]}${v(SE)}%  ▶  ${M[1]}${v(n)}%`,740,372,FN(17),[255,255,255],2,[0,0,0],'rm');
-  T('主屬性加成',420,404,FN(17),[214,172,84],2,[0,0,0],'lm');T(`+${Math.round(aEnhF(SE)*100)}%  ▶  +${Math.round(aEnhF(n)*100)}%`,740,404,FN(17),[255,255,255],2,[0,0,0],'rm');
-  T(`這一級 +${Math.round(AENH_STEP[n<=5?0:n<=10?1:2]*100)}%（越高越少）`,420,436,FN(14),[190,180,160],2,[0,0,0],'lm');
-  if(sl==='b'||sl==='p')T('受到傷害上限 −60%',420,468,FN(14),[190,180,160],2,[0,0,0],'lm');else if(sl==='s')T('閃避上限 25%',420,468,FN(14),[190,180,160],2,[0,0,0],'lm');
+  T(`強化${K[0]}`,420,372,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${K[2]}${enhFm(F0[K[1]])}  ▶  ${K[2]}${enhFm(F1[K[1]])}`,740,372,FN(17),[255,255,255],2,[0,0,0],'rm');
+  T('裝備本身',420,404,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${M[0]} ${M[1]}${it.v}%（不變）`,740,404,FN(15),[220,210,190],2,[0,0,0],'rm');
+  T(`這一級 ${K[2]}${ST[n<=5?0:n<=10?1:2]}%`+(sl==='b'||sl==='p'?'・受到傷害上限 −60%':sl==='s'?'・閃避上限 25%':''),420,436,FN(14),[190,180,160],2,[0,0,0],'lm');
+  enhMsRows(sl,SE,420,464,'lm');
   T('失敗不會降級・強化等級與保底都存在裝備欄',420,536,FN(13),[190,180,160],2,[0,0,0],'lm');
   rrect(780,170,1140,560,10,'rgba(0,0,0,0.35)','rgba(214,172,84,0.5)',1);T('刻印強化',960,200,FS(24),[255,236,200],3,[0,0,0],'mm');
   T(`強化至+${n} 將消耗裝備刻印。`,960,236,FN(15),[220,210,190],2,[0,0,0],'mm');
@@ -595,7 +632,7 @@ function aForgeBody(inp,npc){const sl=UI.fsl,N=NPCS[npc],it=eqItem(sl),SL=aSlot(
   if(inp&&!busy&&press(['KeyJ','Enter','Space']))aForgeTry(sl,npc)}
 window.forgeUI=(o=>function(inp){const npc=UI.npc||'prank';if(!SLOTS.some(x=>x[0]===UI.fsl))UI.fsl='w';
   if(UI.kind==='draw'||UI.kind==='rr'||UI.kind==='inh'||UI.kind==='up')return o.apply(this,arguments);
-  if(UI.fsl==='w'){const r=o.apply(this,arguments);if(UI.kind!=='draw'&&UI.kind!=='rr'&&UI.kind!=='inh'&&UI.kind!=='up')aForgeSel(inp);return r}
+  if(UI.fsl==='w'){const r=o.apply(this,arguments);if(UI.kind!=='draw'&&UI.kind!=='rr'&&UI.kind!=='inh'&&UI.kind!=='up'){aForgeSel(inp);if(eqItem('w'))enhMsRows('w',slotE('w'),420,494,'lm')}return r}
   // 防具：借原本的畫面畫外框／NPC／分頁（暫時把武器欄清空，原本的函式就會在分頁後停下）
   const w0=SAVE.eq.w;let r;SAVE.eq.w=-1;try{r=o.apply(this,arguments)}finally{SAVE.eq.w=w0}
   if(UI.kind==='draw'||UI.kind==='rr'||UI.kind==='inh'||UI.kind==='up')return r;   // 剛點了別的分頁
@@ -691,4 +728,21 @@ window.stepPlayer=(o=>function(dt){const s=S0,P=s&&s.P;const p0=P?{x:P.x,y:P.y,h
       if(m.h!=null&&!fin(m.h)){m.h=0;m.vh=0}
       if(m.hp!=null&&!fin(m.hp)&&!m.dying){m.hp=1;safeLog('mob hp '+m.kind)}}}catch(e){}
   return r})(window.stepPlayer);
+
+// ---- src27/i_hurt.js
+// ===== W2.2「不會一招死」（design/w3_enhance_balance_zh.md 2.4，三位英雄、所有難度都適用）=====
+//  (1) 單招上限：任何一下最多扣最大 HP 的 65%；0.3 秒內一起打到的多段（毒圈重疊、多把劍同時砍）合併計算，加起來也最多 65%
+//  (2) 轉圜無敵：只有「被上限擋下來」的那一下才給 0.6 秒無敵（角色閃爍），冷卻 6 秒
+//  (3) 破綻：被首領大招（基礎傷害 ≥750）打中後 10 秒內，下一次大招傷害 +50%，最多疊 3 層；10 秒沒再被大招打到就清空
+//      破綻加的傷害一樣受 65% 上限限制 → 滿血一定活得下來，但連吃第二下（還沒補血）就會倒，所以還是要閃
+// 復仇回血、詩人大招集氣、技能數值都沒動。
+const HCAP={cap:0.65,win:0.3,ifr:0.6,ifrCD:6,exP:0.5,exN:3,exT:10,exMin:750};
+window.m2Hurt=(o=>(v,x)=>{let r=o(v,x);if(!(r>0))return r;try{const s=S0,P=s.P,t=s.t,cap=Math.max(1,Math.round(HPMAX*HCAP.cap));
+    if(!(t<=(P.capWT||0))){P.capWD=0;P.capWT=t+HCAP.win}
+    const room=Math.max(1,cap-(P.capWD||0));let capped=false;if(r>room){r=room;capped=true;s.capN=(s.capN||0)+1}P.capWD=(P.capWD||0)+r;
+    if(capped&&t>=(P.capIfT||0)){P.invU=Math.max(P.invU||0,t+HCAP.ifr);P.capIfT=t+HCAP.ifrCD;s.capIf=(s.capIf||0)+1;proc('轉圜',[150,220,255],'閃')}}catch(e){}
+  return r})(window.m2Hurt);
+window.hurtP=(o=>function(v,x,y){const s=S0,P=s&&s.P;if(!P||P.dead||!s.boss||!(v>=HCAP.exMin))return o.apply(this,arguments);
+  const t=s.t;if(t>(P.exT||0))P.exN=0;const n=P.exN||0,hp0=P.hp;const r=o.call(this,Math.round(v*(1+HCAP.exP*n)),x,y);
+  if(P.hp<hp0){P.exN=Math.min(HCAP.exN,n+1);P.exT=t+HCAP.exT;if(n>0)s.exHit=(s.exHit||0)+1;if(P.exN>n)proc(`破綻 ×${P.exN}`,[255,140,90],'綻')}return r})(window.hurtP);
 
