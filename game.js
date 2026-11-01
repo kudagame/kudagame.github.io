@@ -6,7 +6,7 @@ const cv=document.getElementById('c'),X=cv.getContext('2d');X.imageSmoothingEnab
 const Q=new URLSearchParams(location.search);const AUTO=Q.get('auto')==='1'&&(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||location.protocol==='file:');   // W2：自動遊玩只在本機測試開放（網頁正式版不吃 ?auto=1）
 // W2：公開網頁版移除主控台除錯指令（無敵、給物品、跳關…）；localhost／file 測試時照常保留
 const LOCALDEV=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||location.protocol==='file:';
-if(!LOCALDEV)for(const k of['__inv','__key','__state','__stage','__frozenAI','__m2','__m22','__m23','__m27','__sp','__mon','__AI','__rec','__slide','__wh','__chirp','__meow','__chirpN','__autoAll','__cnt'])try{Object.defineProperty(window,k,{get(){return undefined},set(v){},configurable:false})}catch(e){}
+if(!LOCALDEV)for(const k of['__inv','__key','__state','__stage','__frozenAI','__m2','__m22','__m23','__m27','__sp','__mon','__AI','__rec','__slide','__wh','__chirp','__meow','__chirpN','__autoAll','__cnt','__pk23'])try{Object.defineProperty(window,k,{get(){return undefined},set(v){},configurable:false})}catch(e){}
 window.__err=[];window.addEventListener('error',e=>{window.__err.push(String(e.message)+' @'+e.lineno)});
 function fit(){const k=Math.min(innerWidth/W,innerHeight/H);const kk=k>=1?Math.floor(k*100)/100:k;cv.style.width=(W*kk)+'px';cv.style.height=(H*kk)+'px'}
 addEventListener('resize',fit);fit();

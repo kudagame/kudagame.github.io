@@ -529,6 +529,7 @@ if(typeof drawDead==='function'){const oDD=drawDead;let dRT=null;
 // ---- src27/e_enh.js
 // ---------- W2 全身強化：衣服／褲子／鞋子／戒指／項鍊也能強化 ----------
 // 跟武器一樣「強化屬於裝備欄」：換裝也保留。成本、成功率、保底（刻印能量）、失敗不降級＝完全沿用武器的 ENH 表與兩位 NPC。
+// W2.3：+15 里程碑加強（武器 對首領再 +10%；衣服／褲子 受到傷害再 −2%（原 −1%）＋最大 HP 再 +3%）；+1～10、成功率、成本不變
 // W2.2 強化平衡（design/w3_enhance_balance_zh.md 定案 L 版）：每一級改成「平加」，不再看裝備主屬性大小；+5／+10／+15 有里程碑
 //   武器：攻擊 每級 +4%（+1～5）／+5%（+6～10）／+6%（+11～15）＝ +15 共 +75%；+5 暴擊率 +2%、+10 對首領傷害 +6%（+11 起暴傷、+13～15 賦魔照舊）
 //   衣服／褲子：受到傷害 每級 −0.5／−0.7／−0.8%（+15 再 −1%，每件最多 −11%）；+5 最大 HP +1.5%、+10 再 +2.5%（每件）；褲子 +10 抗倒地 +10%
@@ -537,28 +538,28 @@ if(typeof drawDead==='function'){const oDD=drawDead;let dRT=null;
 //   項鍊：技能傷害 每級 +0.6／0.8／1.0%（+15 共 +12%），+15 再 +3%
 //   上限照舊：受到傷害最多 −60%、閃避最多 25%、抗倒地最多 80%。只有「有穿裝備」的欄位才有效果。
 // 存檔：放在每個角色自己的 slot 物件裡（SAVE.slot.a = {b:{e,pity},…}），強化等級沿用，舊存檔不用轉換（只是效果套新公式）。
-const ENH2={wpn:[0.04,0.05,0.06],arm:[0.5,0.7,0.8],arm15:1.0,hp:[0.015,0.025],dodge:[0.3,0.4,0.5],crit:[0.3,0.4,0.5],skd:[0.6,0.8,1.0]};
+const ENH2={wpn:[0.04,0.05,0.06],arm:[0.5,0.7,0.8],arm15:2.0,hp:[0.015,0.025],hp15:0.03,wboss15:0.10,dodge:[0.3,0.4,0.5],crit:[0.3,0.4,0.5],skd:[0.6,0.8,1.0]};
 const enhStep=(n,st)=>st[n<=5?0:n<=10?1:2];
 const enhSum=(e,st)=>{let f=0;for(let i=1;i<=Math.min(15,e|0);i++)f+=enhStep(i,st);return Math.round(f*1000)/1000};
 window.enhAtk=e=>enhSum(e,ENH2.wpn);   // 取代 m2.js 的舊曲線（+15 +50% → +75%）
 // 某一欄在強化 +e 時的全部效果（小數：0.06 = 6%）
 function enhFx(sl,e){const o={atk:0,def:0,hp:0,kdr:0,dodge:0,ms:0,crit:0,cdmg:0,skd:0,boss:0};e=clamp(e|0,0,15);
-  if(sl==='w'){o.atk=enhSum(e,ENH2.wpn);if(e>=5)o.crit+=0.02;if(e>=10)o.boss+=0.06}
-  else if(sl==='b'||sl==='p'){o.def=(enhSum(e,ENH2.arm)+(e>=15?ENH2.arm15:0))/100;if(e>=5)o.hp+=ENH2.hp[0];if(e>=10)o.hp+=ENH2.hp[1];if(sl==='p'&&e>=10)o.kdr+=0.10}
+  if(sl==='w'){o.atk=enhSum(e,ENH2.wpn);if(e>=5)o.crit+=0.02;if(e>=10)o.boss+=0.06;if(e>=15)o.boss+=ENH2.wboss15}
+  else if(sl==='b'||sl==='p'){o.def=(enhSum(e,ENH2.arm)+(e>=15?ENH2.arm15:0))/100;if(e>=5)o.hp+=ENH2.hp[0];if(e>=10)o.hp+=ENH2.hp[1];if(e>=15)o.hp+=ENH2.hp15;if(sl==='p'&&e>=10)o.kdr+=0.10}
   else if(sl==='s'){o.dodge=enhSum(e,ENH2.dodge)/100;if(e>=10)o.ms+=0.03}
   else if(sl==='r'){o.crit=enhSum(e,ENH2.crit)/100;if(e>=15)o.cdmg+=0.10}
   else if(sl==='n'){o.skd=enhSum(e,ENH2.skd)/100+(e>=15?0.03:0)}
   return o}
 // 里程碑（說明文字）
-const ENH_MS={w:[[5,'暴擊率 +2%'],[10,'對首領傷害 +6%']],b:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%'],[15,'受到傷害再 −1%']],
-  p:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%、抗倒地 +10%'],[15,'受到傷害再 −1%']],s:[[10,'移動速度 +3%']],r:[[15,'暴擊傷害 +10%']],n:[[15,'技能傷害再 +3%']]};
+const ENH_MS={w:[[5,'暴擊率 +2%'],[10,'對首領傷害 +6%'],[15,'對首領傷害再 +10%']],b:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%'],[15,'受到傷害再 −2%、最大 HP 再 +3%']],
+  p:[[5,'最大 HP +1.5%'],[10,'最大 HP 再 +2.5%、抗倒地 +10%'],[15,'受到傷害再 −2%、最大 HP 再 +3%']],s:[[10,'移動速度 +3%']],r:[[15,'暴擊傷害 +10%']],n:[[15,'技能傷害再 +3%']]};
 // 主要強化屬性：[名稱, GS 欄位, 符號]
 const ENH_K={b:['受到傷害','def','−'],p:['受到傷害','def','−'],s:['閃避','dodge','+'],r:['暴擊率','crit','+'],n:['技能傷害','skd','+']};
 const enhFm=v=>{const x=Math.round(Math.abs(v)*1000)/10;return (Number.isInteger(x)?x:x.toFixed(1))+'%'};
 // 里程碑效果的文字（給物品說明用），沒有就回傳空字串
 function enhMsTx(sl,e){const f=enhFx(sl,e),L=[];if(sl==='w'){if(f.crit)L.push('暴擊率 +'+enhFm(f.crit));if(f.boss)L.push('對首領 +'+enhFm(f.boss))}
   if(f.hp)L.push('最大 HP +'+enhFm(f.hp));if(f.kdr)L.push('抗倒地 +'+enhFm(f.kdr));if(f.ms)L.push('移速 +'+enhFm(f.ms));if(f.cdmg)L.push('暴擊傷害 +'+enhFm(f.cdmg));
-  if(sl==='n'&&e>=15)L.push('技能傷害再 +3%');if((sl==='b'||sl==='p')&&e>=15)L.push('受到傷害再 −1%');return L.join('、')}
+  if(sl==='n'&&e>=15)L.push('技能傷害再 +3%');if((sl==='b'||sl==='p')&&e>=15)L.push('受到傷害再 −2%');return L.join('、')}
 function aSlot(sl){if(!SAVE)return {e:0,pity:{}};const S=SAVE.slot||(SAVE.slot={e:0,pity:{}});if(!S.a||typeof S.a!=='object')S.a={};
   let o=S.a[sl];if(!o||typeof o!=='object')o=S.a[sl]={e:0,pity:{}};if(typeof o.pity!=='object'||!o.pity)o.pity={};o.e=clamp(o.e|0,0,15);return o}
 const aE=sl=>{try{return SAVE&&SAVE.slot&&SAVE.slot.a&&SAVE.slot.a[sl]?clamp(SAVE.slot.a[sl].e|0,0,15):0}catch(e){return 0}};
@@ -745,4 +746,199 @@ window.m2Hurt=(o=>(v,x)=>{let r=o(v,x);if(!(r>0))return r;try{const s=S0,P=s.P,t
 window.hurtP=(o=>function(v,x,y){const s=S0,P=s&&s.P;if(!P||P.dead||!s.boss||!(v>=HCAP.exMin))return o.apply(this,arguments);
   const t=s.t;if(t>(P.exT||0))P.exN=0;const n=P.exN||0,hp0=P.hp;const r=o.call(this,Math.round(v*(1+HCAP.exP*n)),x,y);
   if(P.hp<hp0){P.exN=Math.min(HCAP.exN,n+1);P.exT=t+HCAP.exT;if(n>0)s.exHit=(s.exHit||0)+1;if(P.exN>n)proc(`破綻 ×${P.exN}`,[255,140,90],'綻')}return r})(window.hurtP);
+
+// ---- src27/j_w23.js
+// ===== W2.3 熱修：一鍵清除白裝／援助角色 自動・手動／老手加成（Lv55 以上）／捕捉搗蛋鬼 =====
+// （詩人大招改回舊版、放完大招 0.5 秒無敵 → web/m22.js；強化 +15 加成 → src27/e_enh.js）
+
+// ---------- 1) 一鍵清除白裝：只賣 白色（r===0）、沒裝備、沒上鎖／收藏 的裝備 ----------
+const W23_BTN=[430,582,622,616];
+const w23Keep=it=>!it||isEq(it)||!!(it.lk||it.lock||it.locked||it.fav||it.star);
+function w23WhiteList(){return ((SAVE&&SAVE.inv)||[]).filter(i=>i&&i.r===0&&!w23Keep(i))}
+function w23WhiteAsk(){const L=w23WhiteList();if(!L.length){UI.msg=['沒有可以清除的白色裝備',performance.now()];sfx('clank',0.2);return}
+  UI.w23c={n:L.length,g:L.reduce((a,i)=>a+sellPrice(i),0),ids:L.map(i=>i.id),sel:0}}
+function w23WhiteDo(){const c=UI.w23c;UI.w23c=null;if(!c)return 0;const L=w23WhiteList().filter(i=>c.ids.includes(i.id));if(!L.length)return 0;
+  let g=0;for(const it of L)g+=sellPrice(it);SAVE.inv=SAVE.inv.filter(i=>!L.includes(i));SAVE.gold+=g;if(S0)S0.gold=SAVE.gold;
+  UI.msg=[`清除 ${L.length} 件白色裝備　+${g.toLocaleString('en-US')} 金幣`,performance.now()];sfx('coin',0.5);m2Save();return L.length}
+window.m21BagBtns=(o=>function(it,inp){const r=o.apply(this,arguments);if(UI.w23c)return r;const n=w23WhiteList().length,b=W23_BTN;
+  if(btn(b[0],b[1],b[2],b[3],`一鍵清除白裝（${n}）`,n>0,[235,235,225])&&inp){w23WhiteAsk();return null}return r})(window.m21BagBtns);
+window.m21BagKeys=(o=>function(inp){if(UI.w23c)return;const r=o.apply(this,arguments);if(inp&&press(['KeyH']))w23WhiteAsk();return r})(window.m21BagKeys);
+window.m21Bag=(o=>function(inp){const c=UI.w23c;if(!c)return o.apply(this,arguments);o.call(this,false);
+  X.save();X.fillStyle='rgba(0,0,0,0.6)';X.fillRect(0,0,W,H);X.restore();panelBG(400,240,880,470);
+  T('一鍵清除白裝',640,278,FS(26),[255,236,200],3,[0,0,0],'mm');
+  T(`要賣掉 ${c.n} 件白色（一般）裝備嗎？`,640,322,FS(20),[255,255,255],2,[0,0,0],'mm');
+  T(`可以得到 ${c.g.toLocaleString('en-US')} 金幣`,640,356,FN(18),[255,226,120],2,[0,0,0],'mm');
+  T('裝備中、上鎖、收藏、綠色以上都不會動',640,384,FN(14),[200,230,200],2,[0,0,0],'mm');
+  const ok=btn(460,412,630,454,'賣掉（J）',true,[255,120,90]),no=btn(650,412,820,454,'取消（Esc）',true);
+  if(!inp)return;if(ok||press(['KeyJ','Enter']))w23WhiteDo();else if(no||press(['Escape','KeyI','KeyH']))UI.w23c=null})(window.m21Bag);
+window.m2CloseUI=(o=>function(){UI.w23c=null;UI.pkSel=0;return o.apply(this,arguments)})(window.m2CloseUI);
+
+// ---------- 2) 援助角色：自動／手動（存在 SAVE.opt.astAuto，預設 手動） ----------
+const w23AstAuto=()=>!!(SAVE&&SAVE.opt&&SAVE.opt.astAuto);
+function w23AstSet(v){if(!SAVE)return;SAVE.opt=SAVE.opt||{};SAVE.opt.astAuto=!!v;m2Save();if(typeof m21Toast==='function')m21Toast(v?'援助角色：自動（食物滿、附近有敵人時自動呼叫）':'援助角色：手動（按 V 呼叫）')}
+// 自動呼叫的判斷：食物滿、援助冷卻好了、場上沒有援助角色、附近有首領 或 2 隻以上敵人 或 有敵人且自己 HP 低於一半
+function w23AutoWant(){if(!w23AstAuto()||mode!=='play'||paused||UI.kind)return false;const s=S0,P=s&&s.P;if(!P||P.dead||P.hp<=0||s.trans||s.ritual)return false;const t=s.t;
+  if(s.food<FOOD_MAX||s.bard||s.ally||s.arA||t<=(s.allyCD||0))return false;if(s.pkd)return false;
+  const ms=(s.mobs||[]).filter(m=>!m.gone&&!m.dying&&m.kind!=='pillar');
+  if(ms.some(m=>m.kind==='boss'&&Math.abs(m.x-P.x)<700))return true;
+  const near=ms.filter(m=>Math.abs(m.x-P.x)<450&&Math.abs(m.y-P.y)<160).length;
+  return near>=2||(near>=1&&P.hp<HPMAX*0.5)}
+{const o=IN.sum;IN.sum=()=>o()||w23AutoWant()}
+// 戰鬥畫面：援助圖示下面的小開關（點一下切換）
+const W23_CHIP=[496,128,580,150];
+window.drawHUD=(o=>function(cx0,shy){const r=o.apply(this,arguments);try{if(mode==='play'&&S0&&S0.P){const a=w23AstAuto(),b=W23_CHIP;
+  rrect(b[0],b[1],b[2],b[3],8,a?'rgba(30,80,40,0.9)':'rgba(30,26,24,0.85)',a?'rgb(150,255,150)':'rgba(214,172,84,0.8)',2);T(a?'援助：自動':'援助：手動',(b[0]+b[2])/2,(b[1]+b[3])/2+1,FN(12),a?[200,255,200]:[230,220,200],2,[0,0,0],'mm');
+  if(CLICK&&!paused&&!UI.kind&&inBox(CLICK,b)){w23AstSet(!a);CLICK=null}}}catch(e){}return r})(window.drawHUD);
+// 設定畫面：多一列「援助角色」
+window.m21SetUI=(o=>function(inp){const r=o.apply(this,arguments);const a=w23AstAuto();
+  if(btn(490,450,790,492,`援助角色：${a?'自動':'手動（V）'}`,true,a?[150,255,150]:[255,236,200])&&inp)w23AstSet(!a);
+  T(a?'自動：食物滿、冷卻好、附近有敵人或首領時自動呼叫（V 仍可手動）':'手動：食物滿時按 V（手機按「援助」）呼叫',640,512,FN(13),[220,210,190],2,[0,0,0],'mm');return r})(window.m21SetUI);
+
+// ---------- 3) 老手加成：Lv55 以上每級 攻擊 +0.5%／HP +0.3%（上限 +10%／+6%，Lv75 滿）；等級上限低於 75 時按比例放大，最高等級剛好拿滿 ----------
+const VET23={ref:55,full:75,atk:0.10,hp:0.06};
+function vet23(L){L=L|0;const mx=Math.max(VET23.ref+1,Math.min(VET23.full,LV25.max)),n=clamp(L-VET23.ref,0,mx-VET23.ref),k=n/(mx-VET23.ref);
+  return{atk:Math.round(VET23.atk*k*10000)/10000,hp:Math.round(VET23.hp*k*10000)/10000,perA:VET23.atk/(mx-VET23.ref),perH:VET23.hp/(mx-VET23.ref)}}
+window.grow25=(o=>function(){const g=o.apply(this,arguments);const v=vet23(g.L);g.vet=v;g.lvHp+=v.hp;g.lvAtk+=v.atk;return g})(window.grow25);
+window.m25Rows=(o=>function(){const R=o.apply(this,arguments);try{const v=vet23(SAVE.lv|0);if(v.atk>0){for(const r of R){if(r[0]==='體力 HP'&&r[2])r[2][5]=(r[2][5]&&r[2][5]!=='—'?r[2][5]+'　':'')+'老手 +'+(v.hp*100).toFixed(1)+'%';
+  if(r[0]==='攻擊力'&&r[2])r[2][5]=(r[2][5]&&r[2][5]!=='—'?r[2][5]+'　':'')+'老手 +'+(v.atk*100).toFixed(1)+'%'}}}catch(e){}return R})(window.m25Rows);
+window.charUI=(o=>function(inp){const r=o.apply(this,arguments);try{const v=vet23(SAVE.lv|0);if(v.atk>0&&(UI.tab|0)===0)T(`老手加成 +${(v.atk*100).toFixed(0)}%`,90,146,FN(12),[255,210,140],2,[0,0,0],'lm')}catch(e){}return r})(window.charUI);
+
+// ---------- 4) 捕捉搗蛋鬼 ----------
+// SAVE.pk23={n:遇到次數, cap:0/1 關在旅店籠子, alert:0/1 逃脫提示還沒看, esc:逃脫次數, win:捕捉次數}；舊存檔沒有 → 自動補
+const PK23={need:10,esc:0.05,hp:3000000,spd:150,cd:[1.7,2.5],cd2:[1.15,1.8],blink:[3.4,4.8],hammer:0.13,spark:0.17,hr:72,
+  cage:{x:800,y:592},spot:{n:'搗蛋鬼籠子',d:'搗蛋鬼：武器・防具強化',x:620,ax:800,ay:378,box:[720,392,880,598]}};
+function pk23(){if(!SAVE)return{n:0,cap:0,alert:0,esc:0,win:0};let o=SAVE.pk23;if(!o||typeof o!=='object')o=SAVE.pk23={};
+  o.n=Math.max(0,o.n|0);o.cap=o.cap?1:0;o.alert=o.alert?1:0;o.esc=o.esc|0;o.win=o.win|0;return o}
+// 籠子在旅店的互動點
+function pk23Spots(){const i=SPOTS.indexOf(PK23.spot),want=pk23().cap===1;if(want&&i<0)SPOTS.push(PK23.spot);else if(!want&&i>=0){SPOTS.splice(i,1);if(INN.spot>=SPOTS.length)INN.spot=0}}
+function pk23CageIdx(){return SPOTS.indexOf(PK23.spot)}
+// 逃脫：每次 進入／離開 旅店 各擲一次 5%
+function pk23Roll(why,r){const p=pk23();if(!p.cap)return false;r=r==null?Math.random():r;if(r>=PK23.esc)return false;
+  p.cap=0;p.n=0;p.alert=1;p.esc++;p.escAt=why;m2Save();pk23Spots();return true}
+window.m2OpenMap=(o=>function(){const r=o.apply(this,arguments);try{if(mode==='map'){pk23Roll('in');pk23Spots();if(pk23().alert)PK23.alertT=performance.now()}}catch(e){}return r})(window.m2OpenMap);
+window.m2Begin=(o=>function(st,d,bonus){try{pk23Roll('out')}catch(e){}return o.apply(this,arguments)})(window.m2Begin);
+window.innGo=(o=>function(i){const c=pk23CageIdx();if(c>=0&&i===c){sfx('coin',0.35);m2UI('forge','prank');return}return o.apply(this,arguments)})(window.innGo);
+window.mapInput=(o=>function(){const p=pk23();if(p.alert&&!UI.kind){if((performance.now()-(PK23.alertT||0))/1000>1.2&&(IN.start()||IN.esc()||press(['KeyJ','Space','Enter'])||GPP.jump)){p.alert=0;m2Save()}return}const c=pk23CageIdx();if(c>=0&&!UI.kind){
+    if(INN.spot===1&&(press(['ArrowRight','KeyD'])||GPP.r)){INN.spot=c;return}
+    if(INN.spot===2&&(press(['ArrowLeft','KeyA'])||GPP.l)){INN.spot=c;return}
+    if(INN.spot===c){if(press(['ArrowRight','KeyD'])||GPP.r){INN.spot=2;return}if(press(['ArrowLeft','KeyA'])||GPP.l){INN.spot=1;return}
+      if(IN.start()||press(['KeyJ','Space'])||GPP.jump){innGo(c);return}}}
+  return o.apply(this,arguments)})(window.mapInput);
+// 籠子（粗線條＋明暗色塊）
+function pk23Cage(x,y,broken,t){const W0=150,H0=176,x0=x-W0/2,x1=x+W0/2,top=y-H0;X.save();X.lineJoin='round';X.lineCap='round';
+  X.fillStyle='rgba(30,14,6,0.45)';X.beginPath();X.ellipse(x,y+4,W0*0.62,13,0,0,Math.PI*2);X.fill();
+  // 底座：深木＋亮面
+  X.fillStyle='rgb(74,44,24)';X.fillRect(x0-8,y-26,W0+16,26);X.fillStyle='rgb(112,70,38)';X.fillRect(x0-8,y-26,W0+16,9);X.fillStyle='rgb(46,26,14)';X.fillRect(x0-8,y-6,W0+16,6);
+  X.strokeStyle='rgb(28,14,6)';X.lineWidth=5;X.strokeRect(x0-8,y-26,W0+16,26);
+  if(!broken){const fr=typeof npcFrame==='function'&&npcFrame('prank','idle',t);if(fr)spr(fr,x,y-24,{flip:Math.floor(t/2.4)%2===1})}
+  // 圓頂
+  X.fillStyle='rgba(60,40,24,0.18)';X.beginPath();X.moveTo(x0,y-26);X.lineTo(x0,top+40);X.quadraticCurveTo(x,top-38,x1,top+40);X.lineTo(x1,y-26);X.closePath();X.fill();
+  const bars=7;for(let i=0;i<bars;i++){const bx=x0+i*(W0/(bars-1));let by=top+40-Math.sin(Math.PI*i/(bars-1))*32;let ex=bx,ey=y-26;
+    if(broken&&(i===2||i===3)){ey=y-26;by=y-26-(i===2?70:52);ex=bx+(i===2?-26:30)}
+    if(broken&&(i===2||i===3)){X.strokeStyle='rgb(30,22,18)';X.lineWidth=9;X.beginPath();X.moveTo(bx,y-26);X.lineTo(ex,by);X.stroke();X.strokeStyle='rgb(120,110,104)';X.lineWidth=4;X.beginPath();X.moveTo(bx-1,y-28);X.lineTo(ex-1,by+2);X.stroke();continue}
+    X.strokeStyle='rgb(30,22,18)';X.lineWidth=9;X.beginPath();X.moveTo(bx,by);X.lineTo(ex,ey);X.stroke();
+    X.strokeStyle='rgb(112,100,92)';X.lineWidth=4;X.beginPath();X.moveTo(bx-1,by+2);X.lineTo(ex-1,ey-2);X.stroke();
+    X.strokeStyle='rgb(176,166,150)';X.lineWidth=1.5;X.beginPath();X.moveTo(bx-2,by+6);X.lineTo(ex-2,ey-8);X.stroke()}
+  // 頂環＋橫箍
+  X.strokeStyle='rgb(30,22,18)';X.lineWidth=10;X.beginPath();X.moveTo(x0,top+40);X.quadraticCurveTo(x,top-38,x1,top+40);X.stroke();
+  X.strokeStyle='rgb(150,120,70)';X.lineWidth=4;X.beginPath();X.moveTo(x0+2,top+38);X.quadraticCurveTo(x,top-34,x1-2,top+38);X.stroke();
+  for(const yy of [top+70,y-70]){if(broken&&yy>top+70){X.strokeStyle='rgb(30,22,18)';X.lineWidth=9;X.beginPath();X.moveTo(x0,yy);X.lineTo(x0+40,yy+6);X.moveTo(x1,yy);X.lineTo(x1-50,yy-4);X.stroke();continue}
+    X.strokeStyle='rgb(30,22,18)';X.lineWidth=9;X.beginPath();X.moveTo(x0,yy);X.lineTo(x1,yy);X.stroke();X.strokeStyle='rgb(150,120,70)';X.lineWidth=3;X.beginPath();X.moveTo(x0+2,yy-1);X.lineTo(x1-2,yy-1);X.stroke()}
+  X.strokeStyle='rgb(30,22,18)';X.lineWidth=7;X.beginPath();X.arc(x,top-8,11,Math.PI,0);X.stroke();X.strokeStyle='rgb(176,150,90)';X.lineWidth=3;X.beginPath();X.arc(x,top-8,11,Math.PI,0);X.stroke();
+  // 鎖頭
+  if(!broken){X.fillStyle='rgb(200,160,60)';X.strokeStyle='rgb(40,24,8)';X.lineWidth=4;X.fillRect(x+40,y-82,22,20);X.strokeRect(x+40,y-82,22,20);X.fillStyle='rgb(255,226,130)';X.fillRect(x+43,y-79,16,5)}
+  else{X.fillStyle='rgb(200,160,60)';X.strokeStyle='rgb(40,24,8)';X.lineWidth=4;X.save();X.translate(x+64,y-10);X.rotate(0.9);X.fillRect(-11,-10,22,20);X.strokeRect(-11,-10,22,20);X.restore()}
+  X.restore()}
+window.drawMap=(o=>function(){const r=o.apply(this,arguments);try{if(mode!=='map')return r;const p=pk23(),t=performance.now()/1000,C=PK23.cage;
+  if(p.cap||p.alert){pk23Cage(C.x,C.y,!p.cap,t);
+    if(Math.abs(INN.x-C.x)<130)spr(innHero(t),INN.x,628,{flip:INN.face<0});
+    if(p.cap){const c=pk23CageIdx(),sel=c>=0&&INN.spot===c&&!UI.kind;if(!sel)T('搗蛋鬼（被關住了）',C.x,C.y+18,FN(13),[230,210,255],2,[0,0,0],'mm')}}
+  if(p.alert&&!UI.kind){const a=(performance.now()-(PK23.alertT||0))/1000;const k=0.75+0.25*Math.sin(t*6);
+    rrect(340,300,940,380,12,'rgba(70,10,14,0.92)','rgb(255,120,110)',4);T('搗蛋鬼逃脫了！',640,328,FS(32),[255,236,200],4,[60,0,0],'mm',k);
+    T('籠子被撬開了……牠回到野外了。再遇到 10 次就能再挑戰捕捉（點一下或按 Enter 關閉）',640,362,FN(14),[255,220,210],2,[0,0,0],'mm');
+    if(a>1.2&&CLICK){p.alert=0;m2Save();CLICK=null}}}catch(e){}return r})(window.drawMap);
+// 野外：被關住時不會出現；遇到次數＋1（第一次走到牠旁邊才算）
+window.m2OnStage=(o=>function(n){const r=o.apply(this,arguments);try{const s=S0;if(s&&s.npc&&s.npc.k==='prank'&&pk23().cap)s.npc=null}catch(e){}return r})(window.m2OnStage);
+window.m2Step=(o=>function(dt){const r=o.apply(this,arguments);try{const s=S0,n=s&&s.npc;if(n&&n.k==='prank'&&n.near&&!n.c23&&!s.pkd){n.c23=1;const p=pk23();p.n++;m2Save()}if(s&&s.pkd)pkStep(dt)}catch(e){console.log('pk23',e)}return r})(window.m2Step);
+// 遇到 10 次以上：按 E 先問要不要挑戰（每次相遇問一次）
+window.m2UI=(o=>function(kind,npc){const s=S0;if(kind==='forge'&&npc==='prank'&&mode==='play'&&s&&s.npc&&s.npc.k==='prank'&&!s.npc.asked&&pk23().n>=PK23.need&&!pk23().cap){s.npc.asked=1;
+    const r=o.call(this,'forge','prank');UI.kind='pkask';UI.pkSel=0;return r}return o.apply(this,arguments)})(window.m2UI);
+window.forgeUI=(o=>function(inp){if(UI.kind!=='pkask')return o.apply(this,arguments);
+  X.save();X.fillStyle='rgba(0,0,0,0.55)';X.fillRect(0,0,W,H);X.restore();panelBG(380,190,900,500);
+  if(typeof npcPortrait==='function')npcPortrait('prank',470,330);
+  T('要挑戰搗蛋鬼嗎？',680,236,FS(30),[255,236,200],3,[60,20,10],'mm');
+  T(`你已經遇到牠 ${pk23().n} 次了。`,560,286,FN(16),[255,244,214],2,[0,0,0],'lm');
+  T('打贏就能把牠關進旅店的籠子，',560,316,FN(16),[255,244,214],2,[0,0,0],'lm');T('之後在旅店就能直接強化。',560,342,FN(16),[255,244,214],2,[0,0,0],'lm');
+  T('打輸不會失去任何東西。',560,372,FN(15),[170,255,170],2,[0,0,0],'lm');
+  const sel=UI.pkSel|0;const a=btn(440,420,630,470,(sel===0?'▶ ':'')+'挑戰（J）',true,[255,140,90]),b=btn(650,420,840,470,(sel===1?'▶ ':'')+'下次再說',true,[200,220,255]);
+  if(!inp)return;if(press(['ArrowLeft','KeyA']))UI.pkSel=0;if(press(['ArrowRight','KeyD']))UI.pkSel=1;press(['Tab']);
+  let go=a?0:b?1:press(['KeyJ','Enter','Space'])?(UI.pkSel|0):-1;
+  if(go===0){m2CloseUI();pkStart()}else if(go===1){UI.kind='forge';UI.fresh=true}})(window.forgeUI);
+// ----- 決鬥：搗蛋鬼（瞬移＋丟小鎚子＋火花橫掃，全部有預警；中等難度） -----
+function pkStart(){const s=S0,t=s.t,P=s.P,n=s.npc;if(!n||s.pkd)return;
+  for(const m of s.mobs)if(m.kind!=='boss'&&!m.gone){m.gone=true;puff(m.x,m.y-60,8,[220,210,200],40,0.4,3)}
+  const m=mob('boss',clamp(n.x,s.cam+120,s.cam+W-120),clamp(n.y,YMIN+8,YMAX-8));m.hp=m.hpmax=PK23.hp;m.face=P.x<m.x?-1:1;m.enter=false;m.pk=1;s.mobs.push(m);
+  s.pkd={t0:t,npc:n,hp0:P.hp,lock:s.lock,hits:0,hitW:t,blinkT:t+U(...PK23.blink),lose:false,end:null,res:null};s.npc=null;
+  s.boss={pk:true,name:'搗蛋鬼（捕捉挑戰）',m,kneelUntil:-9,nextAtk:t+1.6,atk:null,enterT:t,hitT:-9,jh:0};s.lock=[s.cam,s.cam];s.bossT0=t;
+  card('捕捉挑戰','把搗蛋鬼打到投降！',2.0);sub('搗蛋鬼','嘿嘿，想抓我咧？先追得上再說咧！',2.6);sfx('start',0.4)}
+function pkPos(){const s=S0;return[s.cam+90,s.cam+W-90]}
+function pkTele(x,y,r,dmg,dl,o={}){const s=S0,t=s.t;s.tele.push(Object.assign({x,y,r,t0:t,t1:t+dl,dmg,pk:1},o))}
+function pkHurt(frac){const P=S0.P;return Math.round(HPMAX*frac/Math.max(0.5,DIF().dmg))}
+function pkAttack(k){const s=S0,b=s.boss,m=b.m,t=s.t,P=s.P,ph2=m.hp<m.hpmax*0.5;
+  if(k==='blink'){const [lo,hi]=pkPos();let side=Math.random()<0.5?-1:1;let tx=P.x+side*U(220,300);if(tx<lo||tx>hi){side=-side;tx=P.x+side*U(220,300)}tx=clamp(tx,lo,hi);const ty=clamp(P.y+U(-30,30),YMIN+6,YMAX-6);
+    b.atk={k,t0:t,end:t+0.62,to:[tx,ty],from:[m.x,m.y]};sfx('ready',0.25)}
+  else if(k==='hammer'){const n=ph2?3:2;b.atk={k,t0:t,end:t+0.55+0.22*n+0.4,n,thrown:0}}
+  else{const f=P.x>=m.x?1:-1;m.face=f;b.atk={k,t0:t,end:t+1.3,y:m.y,x0:m.x,f,fired:false}}}
+function pkStep(dt){const s=S0,b=s.boss,P=s.P,t=s.t,D=s.pkd;if(!D)return;
+  if(D.end!=null){if(t>=D.end)pkFinish();return}
+  if(!b||!b.pk||!b.m)return;const m=b.m;
+  if(D.lose||P.dead){pkLose();return}
+  if(m.dying)return;
+  // 預警圈結算（只算 pk 的；跳起來可以躲）
+  for(const c of s.tele){if(!c.pk||c.done||t<c.t1)continue;c.done=true;puff(c.x,c.y,10,[255,200,120],c.r,0.4,3);s.fx.push({k:'ring',x:c.x,y:c.y,t0:t,col:[255,190,90]});
+    if(!P.dead&&Math.hypot(P.x-c.x,(P.y-c.y)*2.2)<c.r&&P.h<60){hurtP(c.dmg,P.x,P.y-70);P.hurtT=t}}
+  s.tele=s.tele.filter(c=>!c.pk||t<c.t1+0.4);
+  if(t-b.enterT<0.8||t<(m.frz||0)||t<b.kneelUntil){m.moving=false;return}
+  const ph2=m.hp<m.hpmax*0.5;
+  if(b.atk){const a=b.atk;m.moving=false;
+    if(a.k==='blink'){if(!a.done&&t-a.t0>=0.45){a.done=1;puff(m.x,m.y-60,14,[200,150,255],60,0.5,3);m.x=a.to[0];m.y=a.to[1];puff(m.x,m.y-60,14,[200,150,255],60,0.5,3);m.face=P.x>=m.x?1:-1;sfx('jump',0.4)}}
+    else if(a.k==='hammer'){while(a.thrown<a.n&&t-a.t0>=0.55+a.thrown*0.22){const i=a.thrown++;const lead=i===0?0:(i===1?1:-1)*U(70,120);
+        pkTele(clamp(P.x+lead,s.cam+40,s.cam+W-40),clamp(P.y+U(-20,20)*(i?1:0),YMIN,YMAX),PK23.hr,pkHurt(PK23.hammer),0.78,{ham:1,sx:m.x,sy:m.y-90});sfx('swing',0.3)}}
+    else if(a.k==='spark'){if(!a.fired&&t-a.t0>=0.7){a.fired=true;a.ft=t;sfx('crit',0.35);shake(6,0.2);
+        const inX=(P.x-a.x0)*a.f>-30&&(P.x-a.x0)*a.f<620;if(inX&&Math.abs(P.y-a.y)<30&&P.h<60&&!P.dead){hurtP(pkHurt(PK23.spark),P.x,P.y-70);P.hurtT=t}}}
+    if(t>=a.end){b.atk=null;const cd=ph2?PK23.cd2:PK23.cd;b.nextAtk=t+U(cd[0],cd[1])}return}
+  // 走位：跟玩家保持 ~230 的距離，左右飄
+  const want=P.x>=m.x?1:-1;m.face=want;const gx=P.x-want*230,ddx=gx-m.x,ddy=P.y-m.y,d=Math.hypot(ddx,ddy*1.6);m.moving=d>20;
+  if(m.moving){const sp=PK23.spd*(ph2?1.2:1);m.x+=ddx/d*sp*dt;m.y+=ddy/d*sp*0.5*dt}const [lo,hi]=pkPos();m.x=clamp(m.x,lo,hi);m.y=clamp(m.y,YMIN+6,YMAX-6);
+  // 被連打 5 下（2 秒內）或時間到 → 瞬移
+  if(t-D.hitW>2){D.hitW=t;D.hits=0}
+  if((D.hits>=5||t>=D.blinkT)&&!P.dead){D.hits=0;D.blinkT=t+U(...PK23.blink)*(ph2?0.8:1);pkAttack('blink');return}
+  if(t>=b.nextAtk&&!P.dead){const near=Math.abs(P.x-m.x)<300&&Math.abs(P.y-m.y)<50;pkAttack(near?CH(['spark','hammer','spark']):CH(['hammer','hammer','spark']))}}
+window.m2OnHit=(o=>function(m,mv,v,crit,hy){const r=o.apply(this,arguments);try{if(m&&m.pk&&S0.pkd){S0.pkd.hits++;S0.boss.hitT=S0.t}}catch(e){}return r})(window.m2OnHit);
+// 打輸：最後一下不會倒，HP 回到開打前，搗蛋鬼跑掉（次數保留，下次再問）
+window.m2Hurt=(o=>function(v,x){const r=o.apply(this,arguments);try{const s=S0,P=s&&s.P,D=s&&s.pkd;if(D&&D.end==null&&r>0&&r>=P.hp){D.lose=true;return Math.max(0,P.hp-1)}}catch(e){}return r})(window.m2Hurt);
+function pkEnd(win){const s=S0,t=s.t,D=s.pkd,b=s.boss;D.res=win?'win':'lose';D.end=t+(win?2.0:1.6);s.tele=s.tele.filter(c=>!c.pk);if(b)b.atk=null}
+function pkLose(){const s=S0,P=s.P,D=s.pkd,m=s.boss&&s.boss.m;pkEnd(false);P.hp=Math.max(P.hp,D.hp0);P.invU=Math.max(P.invU||0,s.t+2);
+  if(m){m.dying=true;m.dieT=s.t+0.6;puff(m.x,m.y-60,18,[200,150,255],70,0.6,3)}card('挑戰失敗','搗蛋鬼溜走了……下次再挑戰',2.2);sub('搗蛋鬼','嘻嘻，抓不到咧～下次再來咧！',2.4)}
+window.bossDie=(o=>function(m){const s=S0;if(s&&s.boss&&s.boss.pk){if(s.pkd&&s.pkd.res)return;const p=pk23();p.cap=1;p.alert=0;p.win++;p.n=0;m2Save();pkEnd(true);m.dieT=s.t+1.6;shake(12,0.5);sfx('ready',0.6);
+    card('捕捉成功！','搗蛋鬼被關進旅店的籠子了',2.6);sub('搗蛋鬼','咧咧咧！我投降咧！強化還是可以找我咧……',2.8);return}return o.apply(this,arguments)})(window.bossDie);
+function pkFinish(){const s=S0,D=s.pkd;if(!D)return;const m=s.boss&&s.boss.m;if(m){m.gone=true;m.dying=true}s.boss=null;s.lock=D.lock||null;s.tele=s.tele.filter(c=>!c.pk);
+  if(D.res==='lose'&&!pk23().cap){const n=D.npc;n.asked=1;n.near=false;s.npc=n}else s.npc=null;s.pkd=null;s.respawnT=s.t+U(6,10)}
+window.stepWaves=(o=>function(dt){if(S0&&S0.pkd)return;return o.apply(this,arguments)})(window.stepWaves);
+window.stepBoss=(o=>function(dt){const s=S0;if(s&&s.boss&&s.boss.pk)return;return o.apply(this,arguments)})(window.stepBoss);
+window.drawBoss=(o=>function(m,sx,sy){const s=S0,b=s&&s.boss;if(!(b&&b.pk))return o.apply(this,arguments);const t=s.t,a=b.atk;
+  let al=1;if(m.dying){al=Math.max(0,1-(t-(m.dieT-1.6))/1.6)}if(a&&a.k==='blink'&&!a.done)al*=Math.floor(t*30)%2?0.35:1;
+  const fr=npcFrame('prank',m.moving?'walk':'idle',t);shadowE(sx,sy,34);if(fr)spr(fr,sx,sy,{flip:m.face<0,flash:t<m.flash||t-b.hitT<0.08,alpha:al});
+  // 預警
+  if(a&&a.k==='blink'&&!a.done){const tx=a.to[0]-s.cam,u=(t-a.t0)/0.45;circ(tx,a.to[1],26+20*u,null,rgb([210,160,255],0.9),4);T('★',tx,a.to[1]-60,FS(26),[230,190,255],2,[40,0,60],'mm')}
+  if(a&&a.k==='hammer'&&t-a.t0<0.55)T('！',sx,sy-170,FS(34),[255,220,80],4,[80,30,0],'mm');
+  if(a&&a.k==='spark'){const x0=a.x0-s.cam,x1=x0+a.f*620,yy=a.y;if(!a.fired){const u=(t-a.t0)/0.7;X.save();X.globalAlpha=0.25+0.35*u;X.fillStyle='rgb(255,150,60)';X.fillRect(Math.min(x0,x1),yy-30,620,60);X.restore();
+      X.save();X.strokeStyle='rgb(255,220,120)';X.lineWidth=4;X.strokeRect(Math.min(x0,x1),yy-30,620,60);X.restore();T('！',sx,sy-170,FS(34),[255,160,60],4,[80,30,0],'mm')}
+    else if(t-a.ft<0.3){const u=(t-a.ft)/0.3;for(let i=0;i<14;i++){const xx=x0+a.f*620*((i/14+u)%1);circ(xx,yy+Math.sin(i*2.1+t*30)*12,5,'rgb(255,240,160)','rgb(255,140,40)',2)}}}
+  if(m.dying&&s.pkd&&s.pkd.res==='win')T('投降！',sx,sy-170,FS(28),[255,236,160],3,[60,20,0],'mm')})(window.drawBoss);
+// 丟出去的小鎚子（飛行中）
+window.drawTele=(o=>function(cx0,shy){const r=o.apply(this,arguments);try{const s=S0,t=s.t;for(const c of s.tele){if(!c.ham||c.done)continue;const u=clamp((t-c.t0)/(c.t1-c.t0),0,1);
+  const x=c.sx+(c.x-c.sx)*u-cx0,y=c.sy+(c.y-c.sy)*u-Math.sin(Math.PI*u)*160+shy;X.save();X.translate(x,y);X.rotate(t*14);X.fillStyle='rgb(120,80,50)';X.strokeStyle='rgb(30,16,8)';X.lineWidth=3;
+  X.fillRect(-3,-2,6,22);X.strokeRect(-3,-2,6,22);X.fillStyle='rgb(170,170,180)';X.fillRect(-12,-12,24,12);X.strokeRect(-12,-12,24,12);X.restore()}}catch(e){}return r})(window.drawTele);
+window.__pk23={pk23,pk23Roll,pk23Spots,vet23,w23WhiteList,w23WhiteAsk,w23WhiteDo,w23AutoWant,w23AstSet,pkStart,PK23};
 

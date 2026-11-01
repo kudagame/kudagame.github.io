@@ -121,7 +121,7 @@ const BT={
  rec:{t:'錄影',s:'F9',k:['F9'],sys:1},mute:{t:'靜音',s:'M',k:['KeyM'],sys:1},
  ok:{t:'確定',s:'Enter',k:['Enter'],big:1},j:{t:'J',s:'選擇',k:['KeyJ']},back:{t:'返回',s:'Esc',k:['Escape']},tab:{t:'切換',s:'Tab',k:['Tab']},
  toMap:{t:'回地圖',s:'Q',k:['KeyQ'],hot:1},musD:{t:'音樂－',s:'[',k:['BracketLeft']},musU:{t:'音樂＋',s:']',k:['BracketRight']},sfxD:{t:'音效－',s:';',k:['Semicolon']},sfxU:{t:'音效＋',s:"'",k:['Quote']},
- sell:{t:'賣掉',s:'X',k:['KeyX']},dis:{t:'分解',s:'C',k:['KeyC']},sellG:{t:'賣綠色',s:'G',k:['KeyG']},tfU:{t:'搗蛋鬼',s:'U',k:['KeyU']},tfY:{t:'惡魔貓',s:'Y',k:['KeyY']},bagC:{t:'關閉',s:'I',k:['KeyI']},
+ sell:{t:'賣掉',s:'X',k:['KeyX']},dis:{t:'分解',s:'C',k:['KeyC']},sellG:{t:'賣綠色',s:'G',k:['KeyG']},sellW:{t:'清白裝',s:'H',k:['KeyH']},tfU:{t:'搗蛋鬼',s:'U',k:['KeyU']},tfY:{t:'惡魔貓',s:'Y',k:['KeyY']},bagC:{t:'關閉',s:'I',k:['KeyI']},
  clr:{t:'清除',s:'X',k:['KeyX']},uiSz:{t:'按鍵大小',s:'中',fn:()=>uiSet('sz')},uiOp:{t:'按鍵濃淡',s:'中',fn:()=>uiSet('op')},juke:{t:'換曲',s:'B',k:['KeyB']},mapBag:{t:'背包',s:'I',k:['KeyI']},mapChar:{t:'角色',s:'C',k:['KeyC']},
 };
 const EL={};
@@ -216,7 +216,7 @@ function bState(id){const s=G('S0'),P=s&&s.P;const o={cd:0,ring:-1,ok:true,ready
     else if(id==='stabK'){const c=G('STAB_COST')||2;o.ring=Math.min(1,P.rh/c);o.ok=P.rh>=c}
     else if(id==='triB'){o.ring=Math.min(1,P.rh/2);o.ok=P.rh>=2}
     else if(id==='swordK'||id==='melB'){o.ring=Math.min(1,P.rh/3);if(id==='swordK'&&P.rh<3)o.cd=Math.max(0,P.slamCD||0)/2.2}
-    else if(id==='ultB'){const UM=(G('UE')||{max:100}).max,UC=(G('BD')||{ult:8}).ult;o.ring=Math.min(1,(P.ue||0)/UM);o.cd=Math.max(0,Math.min(1,(P.ultCD||0)/UC));o.ok=(P.ue||0)>=UM&&!(P.ultCD>0);o.ready=o.ok}   // W2：樂章量表
+    else if(id==='ultB'){const UC=(G('BD')||{ult:20}).ult;o.ring=Math.min(1,P.rh/RH);o.cd=Math.max(0,Math.min(1,(P.ultCD||0)/UC));o.ok=P.rh>=RH&&!(P.ultCD>0);o.ready=o.ok}   // W2.3：改回節奏 5
     else if(id==='wingA'||id==='fireA'||id==='rainA'||id==='flipA'||id==='rollA'){const A=G('__ar').AR,M={wingA:['wgCD',A.wing.cd*mv],fireA:['fiCD',A.fire.cd*mv],rainA:['rnCD',A.rain.cd*mv],flipA:['flCD',A.flip.cd*mv],rollA:['rlCD',A.roll.cd]}[id];o.cd=Math.min(1,Math.max(0,(P[M[0]]||0)/M[1]));o.ok=o.cd<=0}
     else if(id==='snipeA'){const A=G('__ar').AR;o.ring=Math.min(1,P.rh/A.snipe.cost);o.cd=Math.min(1,Math.max(0,(P.snCD||0)/(A.snipe.cd*mv)));o.ok=P.rh>=A.snipe.cost&&o.cd<=0;o.ready=o.ok}
     else if(id==='ultA'){const D=G('__ar').DRG;o.ring=Math.min(1,(P.dragon||0)/D.max);o.ok=o.ring>=1;o.ready=o.ok}
@@ -316,14 +316,14 @@ addEventListener('pointerdown',e=>{if(e.isTrusted&&(e.pointerType==='touch'||e.p
 addEventListener('contextmenu',ev=>ev.preventDefault(),opt);
 // 觸控版提示列：不顯示鍵盤按鍵
 {const KH='方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停';
- const TK='左半邊拖曳移動　連斬　刺擊／大劍　連點兩下方向＝肩撞／踱地　召喚詩人（食物 3/3）　上方暫停鈕',TB='左半邊拖曳移動　連擊　三連音／旋律　後跳　大招（樂章滿）　滑行／跪彈　召喚苦達　演奏',TA='左半邊拖曳移動　射擊（按住蓄力）　翼矛／烈焰箭　箭雨／扇射　翻滾　狙擊（集中 5）　絕招（龍矢滿）　援助';
+ const TK='左半邊拖曳移動　連斬　刺擊／大劍　連點兩下方向＝肩撞／踱地　召喚詩人（食物 3/3）　上方暫停鈕',TB='左半邊拖曳移動　連擊　三連音／旋律　後跳　大招（節奏滿）　滑行／跪彈　召喚苦達　演奏',TA='左半邊拖曳移動　射擊（按住蓄力）　翼矛／烈焰箭　箭雨／扇射　翻滾　狙擊（集中 5）　絕招（龍矢滿）　援助';
  const oT=window.T;window.T=function(s,...r){if(s===KH&&IM==='touch')s=hero()==='bard'?TB:hero()==='archer'?TA:TK;return oT.call(this,s,...r)}}
 
 // ---------- 版面 ----------
 const SETS={
  play:{kudas:['atkK','jump','stabK','swordK','chgK','stpK','sumK'],bard:['atkB','jump','triB','melB','dodgeB','ultB','slideB','kneelB','sumB','emoteB'],archer:['atkA','jump','wingA','fireA','rainA','flipA','rollA','snipeA','ultA','sumA'],sys:['pause','bagO','charO','use','untf','rec','mute']},
  pause:{a:['ok','back','j','tab'],x:['toMap','musD','musU','sfxD','sfxU','mute','uiSz','uiOp'],sys:['rec']},
- bag:{a:['ok','bagC','j','tab'],x:['sell','dis','sellG','tfU','tfY'],sys:['rec','mute']},
+ bag:{a:['ok','bagC','j','tab'],x:['sell','dis','sellG','sellW','tfU','tfY'],sys:['rec','mute']},
  char:{a:['ok','back','j','tab'],x:[],sys:['rec','mute']},
  smith:{a:['ok','back','j','tab'],x:['clr'],sys:['rec','mute']},
  ui:{a:['ok','back','j','tab'],x:[],sys:['rec','mute']},

@@ -160,10 +160,10 @@ window.__wh={move:whMove};
 // ---------- 可操作的吟遊詩人「尋歡作樂」 ----------
 // 依 design/bard_research.md：樂想 紅/藍/綠、J×4（第 4 下調音敲擊）、空中 J 音符射擊、K 三連音、L 旋律衝擊（節奏≥3）／旋音射擊、
 // 方向連按＝跪地滑行（絆倒）、↓連按＝跪地彈奏（彩色樂曲）、K+L＝戰鬥交響曲、Shift＝後跳閃避（完美閃避獎勵）、倒地受身、V＝召喚苦達
-const BD={sp:345,spy:170,air:330,jv:1250,dg:1.2,sl:3.5,kn:6,ult:8,lcd:2.2,ideaHold:7,buff:6};   // W2：大招冷卻 20→8 秒（改由「樂章」量表控管頻率）
-// W2：大招改用獨立的「樂章」量表（0–100），不再吃節奏 5 → K／L 花節奏不會再擋到大招。量表只存在關卡中（P.ue），不進存檔、不會衰減
+const BD={postIF:0.5,sp:345,spy:170,air:330,jv:1250,dg:1.2,sl:3.5,kn:6,ult:20,lcd:2.2,ideaHold:7,buff:6};   // W2.3：大招改回舊版（節奏 5＋冷卻 20 秒），樂章量表停用
+// （W2.3 已停用，bUE 不再累積；大招改回節奏 5）W2：大招改用獨立的「樂章」量表（0–100），不再吃節奏 5 → K／L 花節奏不會再擋到大招。量表只存在關卡中（P.ue），不進存檔、不會衰減
 const UE={max:100,rh:4,spend:2,hit:0.4,hitGap:0.1,idea:4,song:4,hurt:3,hurtGap:0.4,pf:5};
-function bUE(n,gap,key){const s=S0,P=s.P,t=s.t;if(!isBard())return;if(!n||P.dead||(P.act&&P.act.type==='bu'))return;if(gap){if(t-(P[key]||-9)<gap)return;P[key]=t}
+function bUE(n,gap,key){return;const s=S0,P=s.P,t=s.t;if(!isBard())return;if(!n||P.dead||(P.act&&P.act.type==='bu'))return;if(gap){if(t-(P[key]||-9)<gap)return;P[key]=t}
   const u0=P.ue||0;P.ue=Math.min(UE.max,u0+n);if(u0<UE.max&&P.ue>=UE.max){P.ueFullT=t;proc('樂章滿・K+L 大招',[200,120,255],'交');sfx('ready',0.4)}}
 const B22={mul:1};
 // W2 技能實用度調整（design/w2_skill_audit_zh.md）：三連音每圈 0.55→0.85、跪地彈奏 ×1.5（原本被 L 旋律衝擊／旋音射擊完全壓過）
@@ -179,7 +179,7 @@ function bBig(m){return m.kind==='boss'?60:m.kind==='pillar'?20:0}
 function bTargets(r0,r1,dy,hmax){const s=S0,P=s.P,L=[];for(const m of s.mobs){if(m.gone||m.dying&&(m.kind==='pillar'||m.kind==='boss'))continue;const big=bBig(m),dx=(m.x-P.x)*P.face;
     if(dx<r0||dx>r1+big||Math.abs(m.y-P.y)>dy+big*0.6||m.h>(hmax||130))continue;L.push(m)}return L}
 function bRh(n){const P=S0.P;const r0=P.rh;P.rh=Math.min(RHMAX,P.rh+n);if(GS.rhy&&P.rh>r0&&P.rh<RHMAX&&rnd()<GS.rhy){P.rh++;proc('節奏加成',[230,80,60],'節')}
-  bUE(Math.max(n,P.rh-r0)*UE.rh)}   // W2：節奏滿了也照算樂章（不浪費）
+}
 function bTrip(m,dur){const s=S0,t=s.t;if(m.dying||m.kind==='pillar')return;if(m.kind==='boss'){if(!m21BossInv()){m.dizzy=t+0.45;const b=s.boss;if(b&&!b.atk&&b.nextAtk!=null)b.nextAtk=Math.max(b.nextAtk,t)+0.5}return}
   m.state='down';m.getup=t+(dur||1.2);m.h=0;m.vh=0;m.rot=0;m.wind=0;m.vx=0;m.dizzy=t+(dur||1.2)}
 // --- 樂想 ---
@@ -200,7 +200,7 @@ function bStartL(){const s=S0,P=s.P,t=s.t;if(P.rh>=3){const r0=P.rh;P.rh-=3;bUE(
 function bStartSlide(dir){const s=S0,P=s.P,t=s.t;P.face=dir;bIdeaUse();bAct('bs',0.56,{dir});P.chgCD=BD.sl*(1-(GS.mvcd||0));P.chgIF=t+0.36;s.callout={t0:t,txt:'跪地滑行'};sfx('swing',0.4);P.ghost=[];puff(P.x-20*dir,P.y-3,6,[214,170,128],24,0.4,3)}
 function bStartKneel(){const s=S0,P=s.P,t=s.t;const c=bIdeaUse();bAct('bp',0.62,{song:c||'n'});P.stpCD=BD.kn*(1-(GS.mvcd||0));s.callout={t0:t,txt:'跪地彈奏'};sfx('jump',0.3)}
 function bStartDodge(){const s=S0,P=s.P,t=s.t;bAct('bd',0.30);P.dgCD=BD.dg;P.dgI0=t+0.04;P.dgIF=t+0.22;P.vh=520;P.h=Math.max(P.h,0.01);sfx('jump',0.25)}
-function bStartUlt(){const s=S0,P=s.P,t=s.t;P.ue=0;P.ultCD=BD.ult;const I=P.idea&&P.idea.until>t?P.idea:null;if(I){I.x2=2}
+function bStartUlt(){const s=S0,P=s.P,t=s.t;P.rh=0;P.ultCD=BD.ult;const I=P.idea&&P.idea.until>t?P.idea:null;if(I){I.x2=2}
   bAct('bu',3.2,{ticks:0,keep:I?I.c:null});P.ultIF=t+3.25;s.callout={t0:t,txt:'戰鬥交響曲'};sub('尋歡作樂','♪ 來，給你加點勁兒！',1.9);musPlay('lute',0.75,0.25,true);musVol(CURM,DUCKV,0.4);sfx('summon',0.5);
   s.fx.push({k:'b_ultc',x:P.x,y:P.y,t0:t})}
 function bPerfect(){const s=S0,P=s.P,t=s.t;P.dgIF=0;P.invU=t+0.35;P.dgCD=0;P.pfU=t+0.4;bRh(1);bUE(UE.pf);P.idea=null;bIdeaGain();
@@ -225,8 +225,8 @@ function bStep(dt){const s=S0,P=s.P,t=s.t;if(P.chgCD==null){P.chgCD=0;P.stpCD=0}
   const a=P.act;const cancelOK=!a||(BCH[a.type]&&a.done&&a.t>a.hitAt+0.05)||a.type==='ba'||(a.type==='bls'&&a.done);
   // K+L 大招（K、L 任一個按下時另一個也按著，或 0.12 秒內先後按）
   if(wantStab)P.kT=t;if(wantSkill)P.lT=t;const kl=(wantStab&&t-(P.lT||-9)<0.12)||(wantSkill&&t-(P.kT||-9)<0.12)||wantUlt;
-  const rhOK=(P.ue||0)>=UE.max,fresh=rhOK&&a&&(a.type==='bk'||a.type==='bl')&&a.t<0.14;   // W2：看樂章量表；K／L 剛按下就接大招＝退回那招花掉的節奏
-  if(kl&&rhOK&&P.ultCD<=0&&(!a||cancelOK||fresh)&&P.h<=0){const ic=fresh&&a.ideaC;if(fresh)P.rh=a.rh0;P.act=null;bStartUlt();if(ic){const k={r:'redU',b:'blueU',g:'grnU'}[ic];if(P[k]>t)P[k]+=BD.buff}}
+  const fresh=a&&(a.type==='bk'||a.type==='bl')&&a.t<0.14&&a.rh0>=RHMAX;const rhOK=P.rh>=RHMAX||fresh;   // W2.3：改回舊版（看節奏 5）
+  if(kl&&rhOK&&P.ultCD<=0&&(!a||cancelOK||fresh)&&P.h<=0){const ic=fresh&&a.ideaC;P.act=null;bStartUlt();if(ic){const k={r:'redU',b:'blueU',g:'grnU'}[ic];if(P[k]>t)P[k]+=BD.buff}}
   else if(kl&&rhOK&&P.ultCD>0)s.denyU=t;
   else if(wantDodge&&P.h<=0&&P.dgCD<=0&&(!a||cancelOK||['b1','b2','b3','b4','bls'].includes(a.type))){bStartDodge()}
   else if(fire&&P.h<=0&&(!a||cancelOK)){if(fire==='d'){if(P.stpCD<=0)bStartKneel();else s.denyStp=t}else{if(P.chgCD<=0)bStartSlide(fire==='r'?1:-1);else s.denyChg=t}}
@@ -298,7 +298,7 @@ function bUltStep(A,dt){const s=S0,P=s.P,t=s.t,f=P.face,[ph,k]=bUltPh(A.t);
   if(ph==='play'){const n=Math.min(7,Math.floor(k*7.0001)+1);while(A.ticks<n){A.ticks++;all(0.45,'n','chg',360);s.fx.push({k:'b_utick',x:P.x,y:P.y,t0:t,i:A.ticks});sfx('hit',0.25)}}
   if(ph==='leap'){A.air=1;P.h=Math.sin(Math.PI*Math.min(1,k))*150;if(k>=0.85&&!A.s3){A.s3=1;all(1.0,'wind',null,520,m=>bTrip(m,1.6));s.fx.push({k:'b_uboom',x:P.x,y:P.y,t0:t});shake(14,0.4);s.hitstop=0.08;sfx('crit',0.55);sfx('clank',0.4)}}
   if(ph==='land'){A.air=0;P.h=0;P.vh=0;if(!A.s4){A.s4=1;puff(P.x,P.y-3,10,[200,150,255],60,0.5,3)}}
-  if(A.t>=A.dur){P.act=null;P.h=0;if(!A.keep)bIdeaGain();musStop('lute',0.8);musVol(CURM,BGMV,0.8)}}
+  if(A.t>=A.dur){P.act=null;P.h=0;P.invU=Math.max(P.invU||0,t+BD.postIF);P.postIFU=t+BD.postIF;if(!A.keep)bIdeaGain();musStop('lute',0.8);musVol(CURM,BGMV,0.8)}}   // W2.3：放完大招 0.5 秒無敵
 // --- 飛行物：音符子彈、三連音音圈 ---
 function bNotesStep(dt){const s=S0,t=s.t;if(!s.notes)return;
   for(const b of s.notes){const age=t-b.t0;if(age>b.life){b.dead=1;continue}
@@ -435,7 +435,7 @@ window.spr=(o=>(n,sx,sy,op={})=>{const s=S0;
   if(P.dgIF>t)gl=[170,220,255,200];
   return o(nm,sx,sy,Object.assign({},op,{rot:0,dy:0,glow:gl}))})(window.spr);
 const TMAP={'苦達斯':'尋歡作樂','苦達斯倒下了……':'尋歡作樂倒下了……','肩撞':'滑行','踱地':'跪彈',
-  '方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停':'J 連擊　K 三連音　L 旋律衝擊／旋音射擊　Shift 後跳　K+L 大招（樂章滿）　→→ 滑行　↓↓ 跪彈　V 召喚苦達　Esc 暫停'};
+  '方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停':'J 連擊　K 三連音　L 旋律衝擊／旋音射擊　Shift 後跳　K+L 大招　→→ 滑行　↓↓ 跪彈　V 召喚苦達　Esc 暫停'};
 let TREMAP=false;
 window.T=(o=>function(s,...r){if(TREMAP&&typeof s==='string'&&TMAP[s])s=TMAP[s];return o(s,...r)})(window.T);
 window.skillTile=(o=>(cx,cy,R,g,col,key,cost,...r)=>{if(TREMAP){if(g==='刺'){g='連';col=[200,70,140]}else if(g==='風'){g='衝';col=[200,150,40];cost='節奏3'}else if(g==='掃'){g='射';col=[60,110,200]}else if(g==='攻')g='擊'}return o(cx,cy,R,g,col,key,cost,...r)})(window.skillTile);
@@ -447,9 +447,7 @@ window.drawHUD=(o=>(cx0,shy)=>{const s=S0,P=s&&s.P;if(!isBard()||!P)return o(cx0
   const B=[[810,'後跳','Shift',P.dgCD||0,BD.dg,null]];for(const [x,l,k,cd,mx] of B){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(40,60,90,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(170,220,255)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
     T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm')}
-  {const ue=Math.min(1,(P.ue||0)/UE.max),cd=Math.max(0,(P.ultCD||0)/BD.ult);   // W2：大招格＝樂章量表（陰影＝還差多少；冷卻中改顯示冷卻）
-   skillTile(1070,524,22,'交',[150,60,200],'K+L',ue>=1?'樂章滿':'樂章'+Math.floor(ue*100)+'%',ue<1||cd>0,s.denyU||-9,cd>0?cd:1-ue,null);
-   if(ue>=1&&cd<=0)arc(1070,524,25,-90,270,Math.floor(t*6)%2?'rgb(233,160,255)':'rgb(190,110,240)',3);else if(ue>0)arc(1070,524,25,-90,-90+360*ue,'rgb(170,100,230)',3)}
+  skillTile(1070,524,22,'交',[150,60,200],'K+L','節奏5',P.rh<RHMAX||(P.ultCD||0)>0,s.denyU||-9,Math.max(0,(P.ultCD||0)/BD.ult),null);   // W2.3：改回舊版
   {const x=748,y=604,I=P.idea&&P.idea.until>t?P.idea:null;circ(x,y,24,'rgba(20,14,20,0.9)',I?rgb(IDEA[I.c].c[2]):'rgb(120,100,80)',3);
     if(I){const [c,xx]=pxc(16,16);bdisc(xx,8,8,6,IDEA[I.c].c,1);pdot(xx,6,6,[255,255,255],2);pxOut(c,x,y);arc(x,y,21,-90,-90+360*(I.until-t)/BD.ideaHold,rgb(IDEA[I.c].c[1]),3)}else T('♪',x,y,FS(18),[150,140,130],2,[0,0,0],'mm');
     T('樂想',x,y+30,FN(11),[220,210,190],2,[0,0,0],'mm')}
@@ -465,7 +463,7 @@ window.drawManual=(o=>()=>{if(press(['Tab'])||press(['ArrowRight'])||press(['Arr
   const rows=[['攻擊','J 連按＝4 段，第 4 下「調音敲擊」（鏗！）；空中 J＝音符射擊（紅色樂想時 2 發）'],['三連音','K：節奏 2，連發三個音圈（越來越大），第 3 個緩速 50%'],
     ['旋律衝擊','L：節奏 ≥3，衝刺旋轉＋把敵人打飛；不足＝旋音射擊（會彈到 2 個敵人，冷卻 2.2 秒）'],['跪地滑行','同方向連按兩下：滑過去絆倒敵人 1.2 秒（冷卻 3.5 秒）；強化每 +3 遠 8%、每 +5 多 1 段'],
     ['跪地彈奏','↓ 連按兩下：震地緩速；帶著樂想會變成彩色樂曲（紅 勇猛讚歌／藍 反擊序曲／綠 希望之歌）'],['後跳閃避','Shift：往後跳，有無敵時間；剛好躲過攻擊＝完美閃避（哎唷～）：節奏 +1、送一個樂想、冷卻重置'],
-    ['戰鬥交響曲','K+L 一起按：樂章滿（打中、用技能、唱歌、挨打都會累積），3.2 秒無敵大招，最後全場倒地；不吃節奏'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉'],
+    ['戰鬥交響曲','K+L 一起按：節奏 5，3.2 秒無敵大招，最後全場倒地；放完再無敵 0.5 秒'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉'],
     ['召喚苦達','V：食物 3/3 時苦達從天而降、臉著地噴出兩道特大斬風，給你「戰意」（6 秒內被打 4 下才倒地）'],['比較脆','HP 3,300、被打 3 下就倒地；倒地瞬間按 Space＝受身翻起'],['其他','E 互動　I 背包　Esc 暫停　M 靜音　F9 錄影（變身藥水只有苦達斯能用）']];
   rows.forEach(([a,b],i)=>{const y=124+i*38;T(a,150,y,FS(17),[255,244,214],2,[0,0,0],'lm');for(const [j,l] of wrapT(b,FN(15),820).entries())T(l,310,y+j*18,FN(15),[235,230,220],2,[0,0,0],'lm')});
   T('Tab／←→：看苦達斯的操作　　Esc / Enter 回標題',640,668,FS(18),[255,255,255],3,[0,0,0],'mm')})(window.drawManual);
@@ -473,5 +471,5 @@ window.drawManual=(o=>()=>{if(press(['Tab'])||press(['ArrowRight'])||press(['Arr
 window.aiThink=(o=>()=>{o();if(!isBard())return;const s=S0,P=s.P,t=s.t;AI.dodge=0;AI.ult=0;AI.sum=s.food>=FOOD_MAX&&!s.ally&&t>(s.allyCD||0)?1:0;
   const ms=s.mobs.filter(m=>!m.dying&&!m.gone&&m.kind!=='pillar'&&Math.abs(m.x-s.cam-640)<640);
   if(ms.some(m=>m.wind>0&&Math.abs(m.x-P.x)<150&&Math.abs(m.y-P.y)<34)&&(P.dgCD||0)<=0&&Math.random()<0.4){AI.dodge=1;AI.atk=0}
-  if((P.ue||0)>=UE.max&&(P.ultCD||0)<=0&&ms.filter(m=>Math.abs(m.x-P.x)<360).length>=1){AI.ult=1;AI.skill=0;AI.stab=0}
+  if(P.rh>=RHMAX&&(P.ultCD||0)<=0&&ms.filter(m=>Math.abs(m.x-P.x)<360).length>=1){AI.ult=1;AI.skill=0;AI.stab=0}
   else if(P.rh>=2&&P.rh<3&&ms.some(m=>Math.abs(m.y-P.y)<24&&(m.x-P.x)*P.face>0&&(m.x-P.x)*P.face<300)&&Math.random()<0.05)AI.stab=1})(window.aiThink);
