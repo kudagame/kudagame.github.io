@@ -976,3 +976,39 @@ window.drawTele=(o=>function(cx0,shy){const r=o.apply(this,arguments);try{const 
   X.fillRect(-3,-2,6,22);X.strokeRect(-3,-2,6,22);X.fillStyle='rgb(170,170,180)';X.fillRect(-12,-12,24,12);X.strokeRect(-12,-12,24,12);X.restore()}}catch(e){}return r})(window.drawTele);
 window.__pk23={PK24TIP,pk24Tip,pk23,pk23Roll,pk23Spots,vet23,w23WhiteList,w23WhiteAsk,w23WhiteDo,w23AutoWant,w23AstSet,pkStart,PK23};
 
+// ---- src27/k_w25.js
+// W2.5：賦魔繼承（符文覆蓋／替換）畫面只顯示符文的變化：A 目前符文、B 要移過去的符文、成功後「舊 → 新」＋增減（綠升紅降）
+// 其他素質預設收起（「顯示全部素質」切換）；只換掉這個畫面的卡片內容，不動繼承邏輯
+{const runeOf=it=>{if(!it||!it.rune)return null;const L=itemLines(it).find(x=>/符文$/.test(x[0]));const Rn=RUNES[it.rune.n];
+    return {n:it.rune.n,g:it.rune.g,lab:L?L[0]:'符文',txt:L?L[1]:it.rune.n,col:L?L[2]:[230,220,200],v:Rn&&Array.isArray(Rn[2])?Rn[2][it.rune.g]:null,j:!!(Rn&&Rn[3]==='j')}};
+  const desc=r=>r.txt.indexOf('：')>=0?r.txt.slice(r.txt.indexOf('：')+1):r.txt;
+  const UP=[110,235,120],DN=[255,120,110],DIM=[160,150,140];
+  const block=(r,x,y,w,head,hc,maxL)=>{T(head,x,y,FN(15),hc,2,[0,0,0],'lm');y+=22;
+    if(!r){T('（沒有符文）',x,y,FS(17),DIM,2,[0,0,0],'lm');return y+24}
+    T(r.lab+'　'+r.n,x,y,FS(20),r.col,2,[0,0,0],'lm');y+=26;
+    for(const l of wrapT(desc(r),FN(16),w-8).slice(0,maxL||3)){T(l,x,y,FN(16),[235,228,215],2,[0,0,0],'lm');y+=21}return y+4};
+  const card=(it,x,y,w0,title,mode,old)=>{const w=w0,wt=mode==='C'?w0:Math.min(w0,198);if(title)T(title,x,y-16,FN(14),[214,172,84],2,[0,0,0],'lm');rrect(x-6,y-4,x+w,y+214,8,'rgba(20,14,10,0.6)','rgba(150,120,70,0.7)',1);
+    if(!it){T('（點下面的裝備選擇）',x+w/2-3,y+100,FN(14),[150,145,140],2,[0,0,0],'mm');return}
+    gearCard(it,x,y+2,40,false);const nm=wrapT(RAR[it.r].st+itName(it),FS(15),w-52);nm.slice(0,2).forEach((l,i)=>T(l,x+48,y+12+i*18,FS(15),RAR[it.r].col,2,[0,0,0],'lm'));
+    let yy=y+62;const r=runeOf(it);
+    if(mode==='A')block(r,x,yy,wt,r?'目前符文（會被取代）':'目前符文',r?DN:[214,172,84]);
+    else if(mode==='B')block(r,x,yy,wt,'要移過去的符文',UP);
+    else{const o=old;if(o&&r&&o.n===r.n&&o.g===r.g){block(r,x,yy,w,'符文不變',DIM);return}
+      if(o){T('舊：'+o.n,x,yy,FS(15),DIM,2,[0,0,0],'lm');const tw0=tw('舊：'+o.n,FS(15));X.fillStyle='rgb(255,120,110)';X.fillRect(x,yy,Math.min(tw0,w-8),2);yy+=22}
+      yy=block(r,x,yy,w,'▼ 新符文',UP,o?2:3);
+      // 增減：同名符文比數值；不同符文＝失去舊效果、得到新效果
+      if(o&&r&&o.n===r.n&&o.v!=null&&r.v!=null){const d=Math.round((r.v-o.v)*10)/10;T(d>=0?`▲ +${d}%`:`▼ ${d}%`,x,Math.min(yy+4,y+202),FS(20),d>=0?UP:DN,2,[0,0,0],'lm')}
+      else if(o&&yy<=y+186){T('− '+desc(o).slice(0,13),x,yy,FN(14),DN,2,[0,0,0],'lm');T('＋ '+desc(r).slice(0,13),x,yy+19,FN(14),UP,2,[0,0,0],'lm')}}};
+  window.m21Inh=(o=>function(inp,A,B){if(UI.inhAll)return o.apply(this,arguments);const S=window.m21Sum;const oldR=runeOf(A);
+    window.m21Sum=(it,x,y,w,title)=>card(it,x,y,w,title,title==='A 目前'?'A':title&&title.startsWith('B ')?'B':'C',oldR);
+    try{return o.apply(this,arguments)}finally{window.m21Sum=S}})(window.m21Inh);
+  window.m21SmithUI=(o=>function(inp){const r=o.apply(this,arguments);if(UI.kind==='inh'){const on=!!UI.inhAll;if(btn(400,540,600,570,(on?'▼ ':'▶ ')+'顯示全部素質',true,on?[255,236,150]:[200,190,170])&&inp){UI.inhAll=!on;sfx('coin',0.2)}}return r})(window.m21SmithUI);
+  window.__w25={runeOf}}
+
+// W2.5：符文「輕快步伐」（GS.mvcd，三個角色都有效）依目前角色寫出實際受影響的招式和按法；數值不變（總上限 −50%）
+window.W25MV=v=>{const k=typeof HEROK!=='undefined'?HEROK:'kudas';
+  if(k==='bard')return `跪地滑行（→→）和跪地彈奏（↓↓）冷卻 −${v}%`;
+  if(k==='archer')return `翼矛、箭雨、烈焰箭、後翻扇射、狙擊模式 冷卻 −${v}%`;
+  return `肩撞（→→）和踱地（↓↓）冷卻 −${v}%`};
+if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
+

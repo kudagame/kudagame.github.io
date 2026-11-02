@@ -365,11 +365,17 @@ function stepLoot(dt){const s=S0,P=s.P,t=s.t;
 // ---------- waves / respawn / stages ----------
 function stepWaves(dt){const s=S0,P=s.P,t=s.t;const alive=s.mobs.filter(m=>!m.gone&&m.kind!=='boss'&&m.kind!=='pillar').length;
   if(s.wave<WAVES.length){const w=WAVES[s.wave];
-    if(s.waveState==='pre'&&P.x>=w.trig&&!s.trans){s.waveState='fight';s.lock=w.lock.map(v=>v<0?CAMMAX:v);s.toSpawn=w.spawn.slice();s.spawnT=t+0.6;s.extra=w.extra+(DIF().xm||0);s.extraT=t+U(6,10);card('戰鬥開始','BATTLE START',1.4);sfx('start',0.4)}
+    if(s.waveState==='pre'&&P.x>=w.trig&&!s.trans){s.waveState='fight';s.lock=w.lock.map(v=>v<0?CAMMAX:v);s.toSpawn=w.spawn.slice();s.sq=[];s.spawnT=t+0.6;s.extra=w.extra+(DIF().xm||0);s.extraT=t+U(6,10);card('戰鬥開始','BATTLE START',1.4);sfx('start',0.4)}
     if(s.waveState==='fight'){
-      if(s.toSpawn.length&&t>=s.spawnT&&alive<4+(DIF().xm||0)){const [k,side]=s.toSpawn.shift();spawnMob(k,side);s.spawnT=t+U(0.6,1.4)}
-      if(s.extra>0&&t>=s.extraT&&alive<4+(DIF().xm||0)){s.extra--;spawnMob(CH(['sword','sword','bow']),CH([1,-1]));s.extraT=t+U(6,11);sub('','增援出現了！',1.2)}
-      if(!s.toSpawn.length&&s.extra<=0&&alive===0){s.wave++;s.waveState='pre';s.lock=null;s.respawnT=t+U(8,14);
+      // W2.5：成群出怪（2～4 隻一組、組內 0.18～0.4 秒錯開），總數不變、同時在場上限 4+xm 不變；場上清空時剩下的增援不再空等 6～11 秒
+      const sq=s.sq||(s.sq=[]);let nAlive=alive;while(sq.length&&t>=sq[0].at){const q=sq.shift();spawnMob(q.k,q.side);nAlive++}
+      const cap=4+(DIF().xm||0),room=cap-nAlive-sq.length,gN=()=>Math.min(4,2+((DIF().xm||0)>=2?1:0)+(Math.random()<0.5?1:0));
+      const grp=(list)=>{let at=t;list.forEach(([k,side],i)=>{if(i===0)spawnMob(k,side);else{at+=U(0.18,0.4);sq.push({k,side,at})}});sq.sort((a,b)=>a.at-b.at);return at-t};
+      if(s.toSpawn.length&&t>=s.spawnT&&room>=Math.min(2,s.toSpawn.length)){const n=Math.min(room,s.toSpawn.length,gN());const L=s.toSpawn.splice(0,n);while(L.length<Math.min(room,gN())&&s.extra>0&&!s.toSpawn.length&&L.length<2){s.extra--;L.push([CH(['sword','sword','bow']),CH([1,-1])])}const d=grp(L);s.spawnT=t+d+U(0.8,1.4)}
+      if(s.extra>0&&!s.toSpawn.length&&!sq.length&&nAlive===0)s.extraT=Math.min(s.extraT,t+0.8);
+      const room2=cap-nAlive-sq.length;
+      if(s.extra>0&&t>=s.extraT&&room2>=Math.min(2,s.extra)){const n=Math.min(room2,s.extra,gN());s.extra-=n;const L=[];for(let i=0;i<n;i++)L.push([CH(['sword','sword','bow']),CH([1,-1])]);grp(L);s.extraT=t+U(6,11);sub('','增援出現了！',1.2)}
+      if(!s.toSpawn.length&&s.extra<=0&&!sq.length&&!s.mobs.some(m=>!m.gone&&m.kind!=='boss'&&m.kind!=='pillar')){s.wave++;s.waveState='pre';s.lock=null;s.respawnT=t+U(8,14);
         if(s.wave>=WAVES.length){card('勝利','VICTORY',2.0);sfx('ready',0.5);s.goT=t;
           if(s.stage==='canyon'){s.caveOn=true;setTimeout0(2.2,()=>sub('','峽谷盡頭的礦坑入口……走到坑口按 E（或 ↑）進入。',3.8))}
           else if(ENDT[s.stage]){s.mineDone=true;setTimeout0(2.2,()=>sub('','坑道深處透出微光……往右走 →',3.0))}}
@@ -386,7 +392,7 @@ const nearCave=()=>{const P=S0.P;return P.x>=CAVE.x0&&P.x<=CAVE.x1&&P.y<YMIN+40}
 const nearStatue=()=>{const P=S0.P;return Math.abs(P.x-STATUE.x)<140&&Math.abs(P.y-STATUE.y-20)<70};
 function startTrans(to){const s=S0;s.trans={t0:s.t,to,done:false};if(to==='mine')sfx('start',0.3)}
 function stepTrans(){const s=S0,tr=s.trans;if(!tr)return;const age=s.t-tr.t0;if(age>=0.55&&!tr.done){tr.done=true;m2Goto(tr.to)}if(age>=1.15)s.trans=null}
-function setStage(n,opt={}){const s=S0;s.stage=n;WW=STAGES[n].ww;CAMMAX=WW-W;WAVES=WAVESET[n];s.wave=0;s.waveState='pre';s.lock=null;
+function setStage(n,opt={}){const s=S0;s.stage=n;WW=STAGES[n].ww;CAMMAX=WW-W;WAVES=WAVESET[n];s.wave=0;s.waveState='pre';s.lock=null;s.sq=[];
   s.mobs=[];s.loot=[];s.arrows=[];s.fire=[];s.blades=[];s.tele=[];s.boss=null;s.cam=0;s.goT=null;s.respawnT=s.t+U(8,14);s.mineDone=false;
   const P=s.P;P.x=opt.x||200;P.y=552;P.face=1;P.act=null;P.h=0;P.vh=0;s.pet.x=P.x-118;s.pet.y=576;if(s.bard){s.bard.x=P.x-150;s.bard.y=P.y-18}
   s.statueOn=(n==='shrine');s.caveOn=false;
@@ -825,7 +831,7 @@ function aiThink(){const s=S0,P=s.P;Object.assign(AI,{mx:0,my:0,atk:0,jump:0,ski
 let last=0,acc=0;const DT=1/60;window.__state=()=>{const s=S0;return s?{mode,t:s.t,hp:s.P.hp,x:s.P.x,y:s.P.y,wave:s.wave,ws:s.waveState,mobs:s.mobs.length,kills:s.kills,food:s.food,bard:!!s.bard,rh:s.P.rh,gold:s.gold,combo:s.combo,maxCombo:s.maxCombo,statue:s.statueOn,ritual:!!s.ritual,cam:s.cam,stage:s.stage,cave:s.caveOn,mineDone:!!s.mineDone,trans:!!s.trans,boss:s.boss?{hp:s.boss.m.hp,sh:bossShielded(),regrown:s.boss.regrown}:null,petEn:s.pet.en,shield:!!s.shield,win:s.winT!=null,errs:window.__err,m2:m2State()}:{mode,errs:window.__err,m2:m2State()}};
 window.__inv=()=>{S0.godmode=true};
 // dev staging for the v6.1 side-by-side comparison (real engine, staged positions)
-window.__stage=()=>{const s=S0;s.waveState='fight';s.lock=[0,0];s.toSpawn=[];s.extra=0;s.cam=0;s.mobs=[];s.P.x=470;s.P.y=552;s.P.face=1;s.pet.x=350;s.pet.y=576;s.hintUntil=0;
+window.__stage=()=>{const s=S0;s.waveState='fight';s.lock=[0,0];s.toSpawn=[];s.sq=[];s.extra=0;s.cam=0;s.mobs=[];s.P.x=470;s.P.y=552;s.P.face=1;s.pet.x=350;s.pet.y=576;s.hintUntil=0;
   for(const [k,x,y] of [['bow',575,556],['sword',700,528],['sword',775,588],['bow',935,540]]){const m=mob(k,x,y);m.enter=false;m.cd=9;m.frz=s.t+99;s.mobs.push(m)}
   s.food=3;s.combo=23;s.lastHit=s.t;s.P.rh=2;summonBard();s.loot.push({k:'coin',x:725,y:400,gy:400,vx:0,vy:0,t0:s.t-1,state:'rest',amt:50},{k:'coin',x:1040,y:410,gy:410,vx:0,vy:0,t0:s.t-1,state:'rest',amt:50});
   s.log.push([s.t,'food','獲得 烤麵包'],[s.t,'coin','獲得 金幣 x67'],[s.t,'exp','經驗值 +1,344'],[s.t,'coin','獲得 金幣 x88'],[s.t,'coin','獲得 金幣 x40']);window.__frozenAI=true};
