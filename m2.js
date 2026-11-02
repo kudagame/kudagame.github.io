@@ -479,7 +479,7 @@ function forgeUI(inp){const npc=UI.npc||'prank',N=NPCS[npc];woodPanel(110,70,117
     T('失敗不會降級・強化等級與保底都存在武器欄',420,536,FN(13),[190,180,160],2,[0,0,0],'lm');
     // right
     rrect(780,170,1140,560,10,'rgba(0,0,0,0.35)','rgba(214,172,84,0.5)',1);T('刻印強化',960,200,FS(24),[255,236,200],3,[0,0,0],'mm');
-    T(`強化至+${n} 將消耗裝備刻印。`,960,236,FN(15),[220,210,190],2,[0,0,0],'mm');
+    T(`強化至 +${n}：成功或失敗都會扣下面的${c.sh?'碎片和':''}金幣`,960,236,FN(15),[220,210,190],2,[0,0,0],'mm');
     T('成功機率',800,284,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${c.rate}%`+(N.rate&&ENH[n][0]<100?`（${ENH[n][0]}% +${N.rate}）`:''),1120,284,FN(20),c.rate>=50?[150,255,150]:[255,200,120],2,[0,0,0],'rm');
     T('刻印能量',800,326,FN(17),[214,172,84],2,[0,0,0],'lm');const f=c.pity?clamp(p/c.pity,0,1):0;rrect(900,316,1120,338,6,'rgba(0,0,0,0.6)','rgb(120,100,70)',1);if(f>0)rrect(902,318,902+216*f,336,5,f>=1?'rgb(255,190,60)':'rgb(110,180,255)');
     T(c.pity?`${p}/${c.pity}`:'—',1010,327,FN(13),[255,255,255],2,[0,0,0],'mm');if(c.pity&&p>=c.pity)T('能量已滿：下次必定成功！',960,360,FN(15),[255,210,90],2,[0,0,0],'mm');
@@ -487,7 +487,7 @@ function forgeUI(inp){const npc=UI.npc||'prank',N=NPCS[npc];woodPanel(110,70,117
     T('金幣',800,430,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${c.gold.toLocaleString('en-US')}（持有 ${SAVE.gold.toLocaleString('en-US')}）`,1120,430,FN(17),SAVE.gold>=c.gold?[255,226,120]:[255,120,110],2,[0,0,0],'rm');
     if(npc==='cat')T('貓商人：金幣 7 折、成功率 +2%',960,462,FN(14),[255,170,60],2,[0,0,0],'mm');
     const busy=UI.res&&performance.now()-UI.res.t0<1100;const can=!busy&&SAVE.gold>=c.gold&&SAVE.shards>=c.sh;
-    if(btn(840,492,1080,540,`強化（${c.gold.toLocaleString('en-US')} 金幣）`,can,[255,200,90])&&inp)forgeTry(it,npc);
+    if(btn(840,492,1080,540,c.sh?`強化（碎片 ${c.sh}＋金幣）`:`強化（${c.gold.toLocaleString('en-US')} 金幣）`,can,[255,200,90])&&inp)forgeTry(it,npc);
     if(inp&&!busy&&press(['KeyJ','Enter','Space']))forgeTry(it,npc)}
   if(UI.msg&&performance.now()-UI.msg[1]<1600)T(UI.msg[0],960,586,FS(18),[255,160,120],2,[0,0,0],'mm');
   T('J/Enter 強化　Tab 切換分頁　Esc 離開',640,636,FN(14),[200,190,170],2,[0,0,0],'mm');

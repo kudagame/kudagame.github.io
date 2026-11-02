@@ -307,8 +307,8 @@ function m21RR(inp,A){m21Sum(A,400,318,330,'目前');if(!A){T('先從上面選�
     sfx('crit',0.4);calcGS();m2Save()}}
 // 賦魔繼承：B 的符文 → A（同部位）。B 一定消耗；成功率 70%
 function m21Inh(inp,A,B){m21Sum(A,400,318,230,'A 目前');m21Sum(B,610,318,230,'B 材料（會消耗）');let P=null;if(A&&B&&B.rune){P=m21Clone(A);P.rune=m21Clone(B.rune)}m21Sum(P,880,318,260,'成功後的 A');
-  T('→',860,420,FS(28),[255,236,150],3,[0,0,0],'mm');T(`成功率 ${INH.rate}%　失敗：B 一樣會消耗、A 不變`,640,560,FN(14),[255,190,140],2,[0,0,0],'lm');
-  if(A&&A.rune)T('※ A 原本的符文會被取代',880,560,FN(13),[255,160,140],2,[0,0,0],'lm');
+  T('→',860,420,FS(28),[255,236,150],3,[0,0,0],'mm');T(`成功率 ${INH.rate}%　失敗：B 一樣會消耗、A 不變`,640,552,FN(14),[255,190,140],2,[0,0,0],'lm');
+  if(A&&A.rune)T('※ A 原本的符文會被取代',640,575,FN(13),[255,160,140],2,[0,0,0],'lm');
   const ok=A&&B&&B.rune&&A.t===B.t;if((btn(640,592,1140,636,`繼承（碎片 ${INH.sh}＋${INH.g.toLocaleString('en-US')} 金幣）`,!!ok,[200,150,255])&&inp)||(ok&&inp&&press(['Space']))){if(isEq(B)){UI.msg=['裝備中的不能當材料',performance.now()];return}if(!m21Pay(INH.sh,INH.g))return;
     const win=Math.random()*100<INH.rate;SAVE.inv=SAVE.inv.filter(i=>i!==B);UI.B=null;if(win){A.rune=m21Clone(B.rune);UI.msg=[`繼承成功！${A.rune.n} 移到 ${itName(A)}`,performance.now()];sfx('crit',0.5)}else{UI.msg=['繼承失敗……材料消失了',performance.now(),[255,160,140]];sfx('clank',0.5)}
     UI.res2={ok:win,t0:performance.now(),it:A,txt:win?'繼承成功':'繼承失敗'};calcGS();m2Save()}}
@@ -319,7 +319,7 @@ function m21UpPreview(A){const U=UPG[A.r];if(!U)return null;const P=m21Clone(A);
 function m21Up(inp,A,B){m21Sum(A,400,318,230,'A 目前');m21Sum(B,610,318,230,'B 祭品（會消耗）');const P=A&&m21UpPreview(A);m21Sum(P,880,318,260,'成功後的 A');T('→',860,420,FS(28),[255,236,150],3,[0,0,0],'mm');
   if(!A){return}const U=UPG[A.r];if(!U){T('只有 綠／藍 色裝備可以提升',640,560,FN(14),[255,190,140],2,[0,0,0],'lm');return}
   const p=(A.upP||0);const sure=p>=U.pity;T(`成功率 ${U.rate}%　保底 ${p}/${U.pity}${sure?'（下次必成功）':''}　失敗：A 不會壞、祭品消耗、保底 +1`,640,556,FN(14),sure?[255,210,90]:[255,190,140],2,[0,0,0],'lm');
-  if(P&&RAR[U.to].ln>A.lines.length)T('成功時另外加 1 條隨機詞條',880,538,FN(13),[150,230,255],2,[0,0,0],'lm');
+  if(P&&RAR[U.to].ln>A.lines.length)T('成功時另外加 1 條隨機詞條',400,556,FN(13),[150,230,255],2,[0,0,0],'lm');
   const ok=A&&B&&B.t===A.t&&colOf(B.r)===colOf(U.to);if((btn(640,592,1140,636,`提升（碎片 ${U.sh}＋${U.g.toLocaleString('en-US')} 金幣）`,!!ok,[255,170,60])&&inp)||(ok&&inp&&press(['Space']))){if(isEq(B)){UI.msg=['裝備中的不能當祭品',performance.now()];return}if(!m21Pay(U.sh,U.g))return;
     SAVE.inv=SAVE.inv.filter(i=>i!==B);UI.B=null;const win=sure||Math.random()*100<U.rate;
     if(win){const Pv=m21UpPreview(A);Object.assign(A,Pv);A.upP=0;if(RAR[A.r].ln>A.lines.length){const pool=LINES.filter(l=>!(A.t==='r'&&l[0]==='crit')&&!A.lines.some(x=>x[0]===l[0]));if(pool.length){const L=RCH(pool);A.lines.push([L[0],Math.max(0.1,Math.round(RR(L[2],L[3])*(A.t==='w'?1:LSC)*10)/10)])}}

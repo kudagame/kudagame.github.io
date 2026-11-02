@@ -640,7 +640,7 @@ function aForgeBody(inp,npc){const sl=UI.fsl,N=NPCS[npc],it=eqItem(sl),SL=aSlot(
   enhMsRows(sl,SE,420,464,'lm')}
   T('失敗不會降級・強化等級與保底都存在裝備欄',420,536,FN(13),[190,180,160],2,[0,0,0],'lm');
   rrect(780,170,1140,560,10,'rgba(0,0,0,0.35)','rgba(214,172,84,0.5)',1);T('刻印強化',960,200,FS(24),[255,236,200],3,[0,0,0],'mm');
-  T(`強化至+${n} 將消耗裝備刻印。`,960,236,FN(15),[220,210,190],2,[0,0,0],'mm');
+  T(`強化至 +${n}：成功或失敗都會扣下面的${c.sh?'碎片和':''}金幣`,960,236,FN(15),[220,210,190],2,[0,0,0],'mm');
   T('成功機率',800,284,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${c.rate}%`+(N.rate&&ENH[n][0]<100?`（${ENH[n][0]}% +${N.rate}）`:''),1120,284,FN(20),c.rate>=50?[150,255,150]:[255,200,120],2,[0,0,0],'rm');
   T('刻印能量',800,326,FN(17),[214,172,84],2,[0,0,0],'lm');const f=c.pity?clamp(p/c.pity,0,1):0;rrect(900,316,1120,338,6,'rgba(0,0,0,0.6)','rgb(120,100,70)',1);if(f>0)rrect(902,318,902+216*f,336,5,f>=1?'rgb(255,190,60)':'rgb(110,180,255)');
   T(c.pity?`${p}/${c.pity}`:'—',1010,327,FN(13),[255,255,255],2,[0,0,0],'mm');if(c.pity&&p>=c.pity)T('能量已滿：下次必定成功！',960,360,FN(15),[255,210,90],2,[0,0,0],'mm');
@@ -648,11 +648,11 @@ function aForgeBody(inp,npc){const sl=UI.fsl,N=NPCS[npc],it=eqItem(sl),SL=aSlot(
   T('金幣',800,430,FN(17),[214,172,84],2,[0,0,0],'lm');T(`${c.gold.toLocaleString('en-US')}（持有 ${SAVE.gold.toLocaleString('en-US')}）`,1120,430,FN(17),SAVE.gold>=c.gold?[255,226,120]:[255,120,110],2,[0,0,0],'rm');
   if(npc==='cat')T('貓商人：金幣 7 折、成功率 +2%',960,462,FN(14),[255,170,60],2,[0,0,0],'mm');
   const busy=UI.res&&performance.now()-UI.res.t0<1100;const can=!busy&&SAVE.gold>=c.gold&&SAVE.shards>=c.sh;
-  if(btn(840,492,1080,540,`強化（${c.gold.toLocaleString('en-US')} 金幣）`,can,[255,200,90])&&inp)aForgeTry(sl,npc);
+  if(btn(840,492,1080,540,c.sh?`強化（碎片 ${c.sh}＋金幣）`:`強化（${c.gold.toLocaleString('en-US')} 金幣）`,can,[255,200,90])&&inp)aForgeTry(sl,npc);
   if(inp&&!busy&&press(['KeyJ','Enter','Space']))aForgeTry(sl,npc)}
 window.forgeUI=(o=>function(inp){const npc=UI.npc||'prank';if(!SLOTS.some(x=>x[0]===UI.fsl))UI.fsl='w';
   if(UI.kind==='draw'||UI.kind==='rr'||UI.kind==='inh'||UI.kind==='up')return o.apply(this,arguments);
-  if(UI.fsl==='w'){const r=o.apply(this,arguments);if(UI.kind!=='draw'&&UI.kind!=='rr'&&UI.kind!=='inh'&&UI.kind!=='up'){aForgeSel(inp);if(eqItem('w'))enhMsRows('w',slotE('w'),420,494,'lm')}return r}
+  if(UI.fsl==='w'){const r=o.apply(this,arguments);if(UI.kind!=='draw'&&UI.kind!=='rr'&&UI.kind!=='inh'&&UI.kind!=='up'){aForgeSel(inp);if(eqItem('w'))enhMsRows('w',slotE('w'),420,455,'lm')}return r}
   // 防具：借原本的畫面畫外框／NPC／分頁（暫時把武器欄清空，原本的函式就會在分頁後停下）
   const w0=SAVE.eq.w;let r;SAVE.eq.w=-1;try{r=o.apply(this,arguments)}finally{SAVE.eq.w=w0}
   if(UI.kind==='draw'||UI.kind==='rr'||UI.kind==='inh'||UI.kind==='up')return r;   // 剛點了別的分頁
@@ -998,7 +998,7 @@ window.__pk23={PK24TIP,pk24Tip,pk23,pk23Roll,pk23Spots,vet23,w23WhiteList,w23Whi
       yy=block(r,x,yy,w,'▼ 新符文',UP,o?2:3);
       // 增減：同名符文比數值；不同符文＝失去舊效果、得到新效果
       if(o&&r&&o.n===r.n&&o.v!=null&&r.v!=null){const d=Math.round((r.v-o.v)*10)/10;T(d>=0?`▲ +${d}%`:`▼ ${d}%`,x,Math.min(yy+4,y+202),FS(20),d>=0?UP:DN,2,[0,0,0],'lm')}
-      else if(o&&yy<=y+186){T('− '+desc(o).slice(0,13),x,yy,FN(14),DN,2,[0,0,0],'lm');T('＋ '+desc(r).slice(0,13),x,yy+19,FN(14),UP,2,[0,0,0],'lm')}}};
+      else if(o&&yy<=y+186){const L=[];for(const [s,c] of [['− '+desc(o),DN],['＋ '+desc(r),UP]])for(const l of wrapT(s,FN(13),w-8))L.push([l,c]);const lh=Math.min(17,Math.floor((y+208-yy)/Math.max(1,L.length)));L.forEach(([l,c],i)=>T(l,x,yy+i*lh,FN(13),c,2,[0,0,0],'lm'))}}};
   window.m21Inh=(o=>function(inp,A,B){if(UI.inhAll)return o.apply(this,arguments);const S=window.m21Sum;const oldR=runeOf(A);
     window.m21Sum=(it,x,y,w,title)=>card(it,x,y,w,title,title==='A 目前'?'A':title&&title.startsWith('B ')?'B':'C',oldR);
     try{return o.apply(this,arguments)}finally{window.m21Sum=S}})(window.m21Inh);
@@ -1011,4 +1011,84 @@ window.W25MV=v=>{const k=typeof HEROK!=='undefined'?HEROK:'kudas';
   if(k==='archer')return `翼矛、箭雨、烈焰箭、後翻扇射、狙擊模式 冷卻 −${v}%`;
   return `肩撞（→→）和踱地（↓↓）冷卻 −${v}%`};
 if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
+
+// ---- src27/l_w26.js
+// W2.6：品階提升預覽顯示「成功時會抽的詞條」；裝備摘要卡內容多時自動縮行距，不再被切掉
+(function(){
+  const PH=[150,230,255];
+  // 預覽用：it.__ph = 成功時會新增的隨機詞條數（只掛在預覽複本上，不會存進裝備）
+  window.itemLines=(o=>it=>{const out=o(it);try{const n=it&&it.__ph|0;if(n>0){
+      const names=new Set((it.lines||[]).map(([id])=>{const L=LINES.find(l=>l[0]===id);return L&&L[1]}));
+      let at=-1;out.forEach((r,i)=>{if(names.has(r[0])&&r[2]&&r[2][0]===PH[0])at=i});
+      if(at<0){at=out.findIndex(r=>r[0]==='魔法屬性'||/符文$/.test(r[0]));if(at<0)at=out.length;else at--}
+      const add=[];for(let i=0;i<n;i++)add.push(['？ 隨機詞條','（成功時抽）',[120,200,255],'ph']);out.splice(at+1,0,...add)}
+      if(it&&it.__phel){let at=out.findIndex(r=>/符文$/.test(r[0]));if(at<0)at=out.length;out.splice(at,0,['？ 魔法屬性','（成功時抽）',[120,200,255],'ph'])}
+      if(it&&it.__ru){const [g0,g1]=it.__ru;const i=out.findIndex(r=>r[0]===`${RUNEG[g1]}色符文`);if(i>=0)out[i]=[`符文升級 ${RUNEG[g0]}→${RUNEG[g1]}`,out[i][1],out[i][2]]}}catch(e){}return out})(window.itemLines);
+  window.m21Sum=function(it,x,y,w,title){if(title)T(title,x,y-16,FN(14),[214,172,84],2,[0,0,0],'lm');rrect(x-6,y-4,x+w,y+214,8,'rgba(20,14,10,0.6)','rgba(150,120,70,0.7)',1);
+    if(!it){T('（點下面的裝備選擇）',x+w/2-3,y+100,FN(14),[150,145,140],2,[0,0,0],'mm');return}
+    gearCard(it,x,y+2,48,false);const nm=wrapT(RAR[it.r].st+itName(it),FS(16),w-64);nm.slice(0,2).forEach((l,i)=>T(l,x+56,y+14+i*20,FS(16),RAR[it.r].col,2,[0,0,0],'lm'));
+    T(`${RAR[it.r].n}・${SLOTN[it.t]}`,x+56,y+56,FN(12),[200,190,170],2,[0,0,0],'lm');
+    const ent=itemLines(it).filter(([a])=>a!=='強化'&&a!=='賦魔');
+    const rows=f=>{const R=[];for(const [a,b,c,k] of ent)for(const l of wrapT(a+'　'+b,f,w-6).slice(0,2))R.push([l,c,k]);return R};
+    let f=FN(13),R=rows(f),y0=y+80,lh=18;
+    if(R.length>8){f=FN(12);R=rows(f);y0=y+74;lh=Math.max(12,Math.floor((y+207-y0)/Math.max(1,R.length-1)))}
+    let yy=y0;for(let i=0;i<R.length;i++){const [l,c,k]=R[i];if(yy>y+207){break}
+      if(k==='ph'){X.fillStyle='rgba(120,200,255,0.12)';X.fillRect(x-2,yy-lh/2+1,w-4,lh-2)}
+      T(l,x,yy,f,c,2,[0,0,0],'lm');yy+=lh}}
+
+  // ---------- 每個鐵匠分頁：「？說明」按鈕＋完整說明面板（H 開關） ----------
+  const fmt=v=>v.toLocaleString('en-US');const rn=r=>RAR[r].n+(RAR[r].st?' '+RAR[r].st:'');
+  function helpOf(kind,npc){const cat=npc==='cat';
+    if(kind==='forge'){const rows=[];let s=1;for(let n=1;n<=15;n++){const E=ENH[n],nx=ENH[n+1];if(n<15&&nx&&nx[0]===E[0]&&nx[1]===E[1])continue;rows.push(`${s===n?'+'+n:'+'+s+'～+'+n} ${E[0]}%${E[1]?`（保底 ${E[1]} 次）`:''}`);s=n+1}
+      return ['強化：讓裝備欄變強',[
+        ['這頁做什麼','把左邊選的「部位」（武器、衣服、褲子、鞋子、戒指、項鍊）強化到 +1～+15。強化等級記在部位上，不是記在那件裝備上：換一件新裝備，+等級照樣保留。每個角色各自一份。'],
+        ['花費','每次按強化都會扣金幣；+7 起還要刻印碎片（分解裝備可以拿到）。不管成功或失敗都會扣。'],
+        ['成功率（搗蛋鬼原價）',rows.join('、')+'。'+(cat?'貓商人：金幣打 7 折、成功率再 +2%（畫面上顯示的就是加完的）。':'貓商人那邊金幣打 7 折、成功率 +2%。')],
+        ['成功','等級 +1，效果馬上生效。+5／+10／+15 有額外的里程碑效果（列在左下）。'],
+        ['失敗','錢和碎片照扣，但等級不會掉、裝備不會壞，「刻印能量」+1。'],
+        ['保底（刻印能量）','+7 以上每一級各有一條能量。失敗累積到保底次數（能量條滿）時，下一次一定成功；那一級成功後能量歸零。+1～+6 一定成功，沒有保底。']]]}
+    if(kind==='draw'){const o=DRAW_ODDS.map(([k,w])=>`${rn(k)} ${w}%`).join('、');
+      return ['抽裝備：花金幣隨機拿一件',[
+        ['這頁做什麼',`每抽一次花 ${fmt(DRAW_COST)} 金幣，隨機拿到一件裝備，直接放進背包。每次遇到貓商人最多抽 ${DRAW_MAX} 次。`],
+        ['會抽到什麼',`獎池 ${WPN.length+ARMS.reduce((s,t)=>s+GEAR[t].length,0)} 種裝備，每一種機率一樣（武器 ${WPN.length} 種、${ARMS.map(t=>SLOTN[t]+' '+GEAR[t].length+' 種').join('、')}）；武器一定是目前角色能用的種類。品階機率：${o}。抽到${rn(4)} 的武器時有 ${Math.round(SPSUB*100)}% 會是特殊武器。`],
+        ['注意','沒有保底，每一抽都是獨立的。背包滿了（80 件）不能抽，先去賣掉或分解。']]]}
+    if(kind==='rr'){const L=fmt(RR_LINE.g),R=fmt(RR_RUNE.g);
+      return ['重洗刻印：換掉一條詞條或符文',[
+        ['這頁做什麼','先在上面選一件裝備，再在右邊選要重洗的「一條詞條」或「符文」。只會換掉你選的那一項，其他詞條、品階、強化等級都不動。'],
+        ['詞條','隨機換成右邊清單裡的一種（不會跟這件其他詞條重複，有可能抽回同一種），數值重新隨機；高品階裝備的詞條倍率照樣套用。'],
+        ['符文',`隨機換成這個部位能用的符文，符文顏色（紫／藍／綠）維持不變，有 ${Math.round(JOKE_P*100)}% 會變成搞笑符文。沒有符文的裝備會加一顆（紫約 15%、藍約 35%、綠約 50%）；傳說裝備固定紫色。`],
+        ['花費',`詞條：碎片 ${RR_LINE.sh}＋${L} 金幣；符文：碎片 ${RR_RUNE.sh}＋${R} 金幣；夢幻：詞條 碎片 ${RRP[5][0].sh}＋${fmt(RRP[5][0].g)}、符文 碎片 ${RRP[5][1].sh}＋${fmt(RRP[5][1].g)}；傳說：詞條 碎片 ${RRP[6][0].sh}＋${fmt(RRP[6][0].g)}、符文 碎片 ${RRP[6][1].sh}＋${fmt(RRP[6][1].g)}。`],
+        ['成功／失敗','一定成功、沒有失敗，也沒有保底：每次都是重新隨機，洗到不喜歡的結果不能復原。']]]}
+    if(kind==='inh')return ['賦魔繼承：把 B 的符文搬到 A',[
+        ['A 和 B','A＝你要留下來用的裝備（拿到新符文）。B＝提供符文的材料，必須跟 A 同部位、身上有符文，而且不能是穿在身上的。'],
+        ['成功（'+INH.rate+'%）','A 的符文變成 B 的符文，名稱、顏色、數值完全一樣；A 原本的符文消失。A 的品階、詞條、強化等級都不變。'],
+        ['失敗','A 完全不變，但 B 一樣會消失。'],
+        ['花費',`碎片 ${INH.sh}＋${fmt(INH.g)} 金幣；A 或 B 是夢幻以上：碎片 12＋20,000 金幣。成功或失敗都扣，B 都會被用掉。沒有保底。`],
+        ['看哪裡','中間「成功後的 A」只顯示符文的變化；想看全部數值，按左下「顯示全部素質」。']]];
+    if(kind==='up'){const rows=Object.keys(UPG).map(Number).sort((a,b)=>a-b).map(r=>{const U=UPG[r];return `${rn(r)} → ${rn(U.to)}：成功率 ${U.rate}%、保底 ${U.pity} 次、碎片 ${U.sh}＋${fmt(U.g)} 金幣`});
+      return ['品階提升：把 A 升一個品階',[
+        ['A 和 B','A＝要升級的裝備。B＝祭品：跟 A 同部位、而且是「升級後那個顏色」的裝備（例如升到英雄就要紫色的）。特殊武器不能升級也不能當祭品；穿在身上的不能當祭品。'],
+        ['各品階',rows.join('；')+'；夢幻 → 傳說 不開放。'],
+        ['成功','主屬性照新品階放大、原本的詞條數值一起變高；詞條補到新品階的條數（新加的那幾條是隨機抽的，「成功後的 A」用「？ 隨機詞條」標出來）；還沒有魔法屬性的武器會抽一個；符文顏色升一級（綠→藍→紫，搞笑符文不變）。強化等級記在部位上，不受影響。'],
+        ['失敗','A 不會壞、也不會變；祭品 B 會消失；這件 A 的保底 +1。'],
+        ['保底','記在 A 這件裝備上。失敗次數累積到保底次數時，下一次一定成功；成功後歸零。']]]}
+    return null}
+  const HELPK=['forge','draw','rr','inh','up'];
+  function helpPanel(H){X.save();X.fillStyle='rgba(0,0,0,0.55)';X.fillRect(0,0,W,H0());X.restore();
+    rrect(392,126,1156,652,12,'rgba(22,15,9,0.97)','rgb(214,172,84)',2);T(H[0],420,156,FS(24),[255,236,200],3,[0,0,0],'lm');
+    let f=FN(15),lh=21,hf=FN(15);const lay=()=>{const out=[];for(const [h,b] of H[1]){out.push([h,1]);for(const l of wrapT(b,f,700))out.push([l,0]);out.push(['',2])}return out};
+    let L=lay();if(L.length*lh>440){f=FN(14);lh=19;L=lay()}if(L.length*lh>440){f=FN(13);lh=17;L=lay()}
+    let y=194;for(const [l,k] of L){if(k===2){y+=Math.round(lh*0.35);continue}T(l,k?420:432,y,k?FN(15):f,k?[255,206,110]:[232,224,210],2,[0,0,0],'lm');y+=lh}
+    return btn(1000,138,1140,172,'關閉（H）',true,[255,236,150])}
+  const H0=()=>typeof H!=='undefined'?H:720;
+  window.m2UI=(o=>function(){UI.help=false;return o.apply(this,arguments)})(window.m2UI);
+  window.m2Overlay=(o=>function(){const k=UI.kind,ok=UI.npc&&HELPK.includes(k);
+    if(ok&&UI.help){const H=helpOf(k,UI.npc);if(H){UI.fresh=true;const r=o.apply(this,arguments);const inp=true;
+        const cl=helpPanel(H);if(cl||press(['KeyH','Escape'])){UI.help=false}CLICK=null;for(const q of ['KeyH','Escape','Tab','KeyJ','Enter','Space'])delete KP[q];return r}}
+    const inp=!UI.fresh;const r=o.apply(this,arguments);
+    if(ok&&UI.kind===k&&helpOf(k,UI.npc)){if((btn(1080,88,1150,118,'？說明',true,[150,230,255])&&inp)||(inp&&press(['KeyH']))){UI.help=true;CLICK=null}}
+    if(ok&&UI.kind==='rr'&&k==='rr')T('選一件裝備 → 選一條詞條或符文 → 隨機換成新的（只換選的那一項，其他不動）',400,281,FN(13),[220,210,190],2,[0,0,0],'lm');
+    return r})(window.m2Overlay);
+  window.__w26help={helpOf};
+})();
 

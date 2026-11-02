@@ -55,12 +55,12 @@ window.m21UpPreview=function(A){const U=UPG[A.r];if(!U||A.sp)return null;const P
   if(P.t==='w'){P.lo=Math.round(A.lo*k*lb);P.hi=Math.round(A.hi*k)}else{P.v=Math.round(A.v*k*10)/10;if(A.v2!=null)P.v2=Math.round(A.v2*k*10)/10}
   const lk=U.to===5?1.1:1.25;P.lines=A.lines.map(([id,v])=>[id,Math.round(v*lk*10)/10]);P.lm=Math.round((A.lm||1)*lk*1e4)/1e4;
   if(P.rune&&RUNES[P.rune.n]&&RUNES[P.rune.n][3]!=='j')P.rune.g=Math.max(0,P.rune.g-1);return P};
-window.m21Up=function(inp,A,B){m21Sum(A,400,318,230,'A 目前');m21Sum(B,610,318,230,'B 祭品（會消耗）');const P=A&&m21UpPreview(A);m21Sum(P,880,318,260,'成功後的 A');T('→',860,420,FS(28),[255,236,150],3,[0,0,0],'mm');
+window.m21Up=function(inp,A,B){m21Sum(A,400,318,230,'A 目前');m21Sum(B,610,318,230,'B 祭品（會消耗）');const P=A&&m21UpPreview(A);const NPH=P?Math.max(0,RAR[P.r].ln-P.lines.length):0;if(P){P.__ph=NPH;if(P.t==='w'&&!P.el)P.__phel=1;if(A.rune&&P.rune&&P.rune.g!==A.rune.g)P.__ru=[A.rune.g,P.rune.g]}m21Sum(P,880,318,260,'成功後的 A');T('→',860,420,FS(28),[255,236,150],3,[0,0,0],'mm');
   if(!A)return;if(A.sp){T('特殊武器不能提升品階（能力固定，避免手滑餵掉）',640,560,FN(14),[255,190,140],2,[0,0,0],'lm');return}
   const U=UPG[A.r];if(!U){T(A.r>=5?'夢幻 → 傳說 不開放：傳說只能打出來':'只有 綠／青／藍／紫 色裝備可以提升',640,560,FN(14),[255,190,140],2,[0,0,0],'lm');return}
   const p=(A.upP||0);const sure=p>=U.pity;T(`成功率 ${U.rate}%　保底 ${p}/${U.pity}${sure?'（下次必成功）':''}　失敗：A 不會壞、祭品消耗、保底 +1`,640,556,FN(14),sure?[255,210,90]:[255,190,140],2,[0,0,0],'lm');
   T(`祭品：同部位的${FAMN[colOf2(U.to)]}裝備（特殊武器不行）`,640,576,FN(12),[220,210,190],2,[0,0,0],'lm');
-  if(P&&RAR[U.to].ln>A.lines.length)T('成功時另外加 1 條隨機詞條',880,538,FN(13),[150,230,255],2,[0,0,0],'lm');
+  if(NPH>0)T(`成功時另外抽 ${NPH} 條隨機詞條`,1140,302,FN(13),[150,230,255],2,[0,0,0],'rm');
   const ok=A&&B&&B.t===A.t&&!B.sp&&colOf2(B.r)===colOf2(U.to);if((btn(640,592,1140,636,`提升（碎片 ${U.sh}＋${U.g.toLocaleString('en-US')} 金幣）`,!!ok,[255,170,60])&&inp)||(ok&&inp&&press(['Space']))){if(isEq(B)){UI.msg=['裝備中的不能當祭品',performance.now()];return}if(!m21Pay(U.sh,U.g))return;
     SAVE.inv=SAVE.inv.filter(i=>i!==B);UI.B=null;const win=sure||Math.random()*100<U.rate;
     if(win){const Pv=m21UpPreview(A);Object.assign(A,Pv);A.upP=0;while(RAR[A.r].ln>A.lines.length){const pool=LINES.filter(l=>!(A.t==='r'&&l[0]==='crit')&&!A.lines.some(x=>x[0]===l[0]));if(!pool.length)break;const L=RCH(pool);A.lines.push([L[0],Math.max(0.1,Math.round(RR(L[2],L[3])*(A.t==='w'?1:LSC)*lmOf(A)*10)/10)])}
@@ -75,7 +75,7 @@ window.m21RR=function(inp,A){m21Sum(A,400,318,330,'目前');if(!A){T('先從上�
   T('選擇要重洗的項目：',760,314,FN(14),[214,172,84],2,[0,0,0],'lm');
   rows.forEach((r,i)=>{const y=330+i*40;const on=i===UI.rsel;let txt;if(r[0]==='line'){const [id,v]=A.lines[r[1]];const L=LINES.find(l=>l[0]===id);txt=`詞條：${L[1]} +${v}%`}else txt=A.rune?`符文：${A.rune.n}`:'符文：（無）→ 加一顆';
     if(btn(760,y,1140,y+34,(on?'▶ ':'')+txt,true,on?[255,236,150]:null)&&inp)UI.rsel=i});
-  const r=rows[UI.rsel];const cost=rrCost(A,r[0]==='line');const lm=lmOf(A);const pool=r[0]==='line'?LINES.filter(l=>!((A.t==='r')&&l[0]==='crit')&&!A.lines.some((x,j)=>x[0]===l[0]&&j!==r[1])).map(l=>l[1]):Object.keys(RUNES).filter(n=>RUNES[n][0].includes(A.t)&&RUNES[n][3]!=='j');
+  const r=rows[UI.rsel];const cost=rrCost(A,r[0]==='line');const lm=lmOf(A);const pool=r[0]==='line'?LINES.filter(l=>!((A.t==='r')&&l[0]==='crit')&&!A.lines.some((x,j)=>x[0]===l[0]&&j!==r[1])).map(l=>l[1]):Object.keys(RUNES).filter(n=>RUNES[n][0].includes(A.t)&&RUNES[n][3]!=='j'&&!(RUNES[n][4]&&RUNES[n][4].bard&&heroCls()!=='b'));
   const y2=330+rows.length*40+6;T(`之後：從這些隨機抽一個（數值也隨機${r[0]==='line'&&lm>1?`，套用倍率 ×${lm.toFixed(2)}`:''}${r[0]==='rune'&&A.r===6?'，傳說固定紫符文':''}）`,760,y2,FN(13),[200,190,170],2,[0,0,0],'lm');
   wrapT(pool.join('、')+(r[0]==='rune'?'（另有 6% 是搞笑符文）':''),FN(13),380).slice(0,4).forEach((l,i)=>T(l,760,y2+20+i*18,FN(13),[150,230,255],2,[0,0,0],'lm'));
   if(A.sp)T('※ 特殊能力不在重洗清單裡，不會被洗掉',760,y2+96,FN(12),[255,190,140],2,[0,0,0],'lm');
