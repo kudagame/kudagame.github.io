@@ -308,7 +308,7 @@ function bNotesStep(dt){const s=S0,t=s.t;if(!s.notes)return;
     for(const m of s.mobs){if(m.gone||m.dying||b.hit[m.id])continue;const big=bBig(m);if(Math.abs(m.x-b.x)>40+big||Math.abs(m.y-b.y)>30+big*0.4||b.h>m.h+170+big*2)continue;
       b.hit[m.id]=1;bHit(m,'n',b.pool,b.mul,false);s.fx.push({k:'b_pop',x:b.x,y:b.y,h:b.h,t0:t});
       if(b.bounce>0){b.bounce--;const nx=s.mobs.filter(o=>!o.gone&&!o.dying&&!b.hit[o.id]&&Math.hypot(o.x-b.x,o.y-b.y)<420).sort((p,q)=>Math.hypot(p.x-b.x,p.y-b.y)-Math.hypot(q.x-b.x,q.y-b.y))[0];
-        if(nx){const d=Math.hypot(nx.x-b.x,nx.y-b.y)||1;b.vx=(nx.x-b.x)/d*1100;b.vy=(nx.y-b.y)/d*1100;b.t0=t;b.life=0.5;continue}}b.dead=1;break}
+        if(nx){const d=Math.hypot(nx.x-b.x,nx.y-b.y)||1;b.vx=(nx.x-b.x)/d*1100;b.vy=(nx.y-b.y)/d*1100;b.t0=t;b.life=0.5;continue}}if(b.pool==='air'){b.dead=1;continue}b.dead=1;break}   // W2.7：空中攻擊打到的那一格，判定範圍內的敵人都算（每隻一次），之後消失
     if(b.vy)b.y+=b.vy*dt}
   s.notes=s.notes.filter(b=>!b.dead)}
 // 反擊序曲：受傷時反擊

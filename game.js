@@ -203,6 +203,14 @@ function registerHit(v){const s=S0,t=s.t;s.combo=(t-s.lastHit<=COMBO_GAP)?s.comb
   {const cb=comboBonus(s.combo);if(cb!==s.comboTier){if(cb>s.comboTier)s.tierT=t;s.comboTier=cb}}
   if(s.combo===1)s.comboTier=0;
   if(t<=s.rev_until&&s.P.hp<HPMAX&&!s.P.dead){const hv=Math.min(HEAL_CAP,Math.floor(v/2));s.P.hp=Math.min(HPMAX,s.P.hp+hv);s.heals.push({t,v:hv})}}
+// W2.7 紅圈＝圓錐：離圓心越近，危險高度越高（TELE_H×(1−距離/半徑)）。圓心附近跳不過，只有外圈約兩成跳得過
+const TELE_H=700,TELE_LAND=0.4;
+function teleIn(c,P){const d=Math.hypot(P.x-c.x,(P.y-c.y)*2.2);return d<c.r&&P.h<TELE_H*(1-d/c.r)}
+// 紅圈打中：在空中被打到／被打倒 → 落地／起身時給 0.4 秒保護（苦達斯不套用，維持原本手感）；只取較晚的那個，不會疊加
+function teleHurtP(c,P){const s=S0,hp0=P.hp,air=P.h>0;hurtP(c.dmg,P.x,P.y-70);if(P.hp<hp0&&!P.dead&&HEROK!=='kudas'){const dn=s.t<(P.downU||0);if(dn||air)P.tlArm={k:dn?'down':'air',t:s.t}}}
+function teleLandStep(P,h0){const s=S0,t=s.t,A=P.tlArm;if(!A)return;if(P.dead||t-A.t>4){P.tlArm=null;return}
+  if(A.k==='air'&&s.t<(P.downU||0))A.k='down';
+  if((A.k==='air'&&h0>0&&P.h<=0)||(A.k==='down'&&t>=(P.downU||0))){P.invU=Math.max(P.invU||0,t+TELE_LAND);P.tlLandT=t;P.tlArm=null}}
 function hurtP(v,x,y){const s=S0,P=s.P;if(P.dead)return;v=m2Hurt(v,x);if(v<=0)return;P.hp-=v;s.rev_until=s.t+REV_WIN;
   s.dmg.push({t:s.t,x:P.x-20,y:P.y-170,v,crit:false,label:'',zj:false,pet:false,hurt:true});s.fx.push({k:'clank',x,y,t0:s.t});sfx('clank',0.5);
   for(let i=0;i<9;i++){const a=U(-Math.PI*0.9,-Math.PI*0.1),v2=U(260,520);s.parts.push({x,y,vx:Math.cos(a)*v2*(i%2?1:-1),vy:Math.sin(a)*v2,g:1300,life:0.2,t0:s.t,c:CH([[255,255,255],[220,225,235],[170,175,190]]),sz:1,drag:3})}
@@ -410,7 +418,7 @@ function stepBoss(dt){const s=S0,b=s.boss,t=s.t,P=s.P;if(!b)return;const m=b.m;
   for(const pl of s.mobs)if(pl.kind==='pillar'&&pl.dying&&t>=pl.dieT)pl.gone=true;
   for(const c of s.tele){if(!c.done&&t>=c.t1){c.done=true;shake(c.big?12:6,0.3);puff(c.x,c.y,c.big?22:9,[150,110,90],c.r,0.6,3);s.fx.push({k:'ring',x:c.x,y:c.y,t0:t,col:[255,120,80],big:true});
       if(c.big)s.fx.push({k:'crack',x:c.x,y:c.y,t0:t});
-      if(!P.dead&&Math.hypot(P.x-c.x,(P.y-c.y)*2.2)<c.r&&P.h<80&&!(c.g&&s.tg[c.g])){if(c.g)s.tg[c.g]=1;hurtP(c.dmg,P.x,P.y-70)}}}
+      if(!P.dead&&teleIn(c,P)&&!(c.g&&s.tg[c.g])){if(c.g)s.tg[c.g]=1;teleHurtP(c,P)}}}
   s.tele=s.tele.filter(c=>t<c.t1+0.5);
   if(m.gone||m.dying)return;
   if(b.b4){stepB4(dt);return}if(b.sp){stepSP(dt);return}if(b.ms){stepMS(dt);return}
@@ -569,6 +577,7 @@ function drawWorld(){const s=S0,t=s.t,P=s.P;const [shx,shy]=shakeOff(t);const cx
 // ---- mine / boss drawing helpers ----
 function drawTele(cx0,shy){const s=S0,t=s.t;for(const c of s.tele){if(t<c.t0||c.done)continue;const u=clamp((t-c.t0)/(c.t1-c.t0),0,1),x=c.x-cx0,y=c.y+shy;
   X.save();X.beginPath();X.ellipse(x,y,c.r,c.r/2.2,0,0,Math.PI*2);X.fillStyle=c.poison?`rgba(90,200,60,${0.14+0.18*u})`:`rgba(255,40,30,${0.12+0.16*u})`;X.fill();X.lineWidth=3;X.strokeStyle=c.poison?'rgba(170,255,120,0.9)':`rgba(255,${Math.floor(60+120*(Math.floor(t*10)%2))},60,0.9)`;X.stroke();
+  X.beginPath();X.ellipse(x,y,c.r*0.8,c.r*0.8/2.2,0,0,Math.PI*2);X.fillStyle=c.poison?'rgba(60,150,40,0.16)':'rgba(170,20,15,0.16)';X.fill();   // W2.7 內圈（跳不過）較深，外圈一圈才跳得過
   X.beginPath();X.ellipse(x,y,c.r*u,c.r*u/2.2,0,0,Math.PI*2);X.fillStyle='rgba(255,70,40,0.28)';X.fill();X.restore()}}
 function drawRocks(cx0,shy){const s=S0,t=s.t;for(const c of s.tele){if(!c.rock||c.done)continue;const f=(t-(c.t1-0.4))/0.4;if(f<0||f>1)continue;const x=c.x-cx0,y=c.y+shy-640*(1-f)-30;
   nat(14,12,q=>{poly(q,[[2,4],[5,1],[10,1],[13,5],[12,10],[6,11],[1,9]]);q.fillStyle='rgb(120,82,64)';q.fill();poly(q,[[4,3],[9,2],[11,5],[6,6]]);q.fillStyle='rgb(170,122,92)';q.fill();q.fillStyle='rgb(60,38,30)';q.fillRect(6,9,5,1)},x,y)}}

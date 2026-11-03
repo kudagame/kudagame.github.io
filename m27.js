@@ -58,7 +58,7 @@ function arArrowsStep(dt){const s=S0,t=s.t;if(!s.arw)return;
     for(const m of s.mobs){if(!arLive(m)||b.hit[m.id])continue;const big=arBig(m);const w=b.k==='dr'||b.k==='as'?60:b.k==='c3'?44:34;
       if(Math.abs(m.x-b.x)>w+big||Math.abs(m.y-b.y)>(b.k==='dr'||b.k==='as'?52:30)+big*0.4||b.h>m.h+190+big*2||b.h<m.h-30)continue;
       if(b.k==='fi'){b.dead=1;arFireBoom(m.x,m.y,AR.fire.mul*(b.mk||1),AR.fire.chain,{});break}
-      arArrowHit(b,m);if(!b.pierce){b.dead=1;break}}
+      arArrowHit(b,m);if(!b.pierce){b.dead=1;if(b.pool==='air')continue;break}}   // W2.7：空中射擊打到的那一格，判定範圍內的敵人都算（每隻一次），之後消失
     if(!b.dead&&(b.k==='dr'||b.k==='as')&&Math.floor(age/0.03)!==Math.floor((age-dt)/0.03))s.parts.push({x:b.x-b.vx*0.02,y:b.y,vx:0,vy:-U(10,40),g:0,life:0.35,t0:t,c:CH([[150,220,255],[230,250,255],[120,170,255]]),sz:2,faint:true,hh:b.h})}
   s.arw=s.arw.filter(b=>!b.dead)}
 // ---------- 地面區域：翼矛符文、箭雨、霧氣 ----------
@@ -928,9 +928,9 @@ function pkStep(dt){const s=S0,b=s.boss,P=s.P,t=s.t,D=s.pkd;if(!D)return;
   if(!b||!b.pk||!b.m)return;const m=b.m;
   if(D.lose||P.dead){pkLose();return}
   if(m.dying)return;
-  // 預警圈結算（只算 pk 的；跳起來可以躲）
+  // 預警圈結算（只算 pk 的；W2.7：圓錐判定，只有外圈跳得過）
   for(const c of s.tele){if(!c.pk||c.done||t<c.t1)continue;c.done=true;puff(c.x,c.y,10,[255,200,120],c.r,0.4,3);s.fx.push({k:'ring',x:c.x,y:c.y,t0:t,col:[255,190,90]});
-    if(!P.dead&&Math.hypot(P.x-c.x,(P.y-c.y)*2.2)<c.r&&P.h<60){hurtP(c.dmg,P.x,P.y-70);P.hurtT=t}}
+    if(!P.dead&&teleIn(c,P)){teleHurtP(c,P);P.hurtT=t}}
   s.tele=s.tele.filter(c=>!c.pk||t<c.t1+0.4);
   if(t-b.enterT<0.8||t<(m.frz||0)||t<b.kneelUntil){m.moving=false;return}
   const ph2=m.hp<m.hpmax*0.5;
@@ -1038,40 +1038,41 @@ if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
 
   // ---------- 每個鐵匠分頁：「？說明」按鈕＋完整說明面板（H 開關） ----------
   const fmt=v=>v.toLocaleString('en-US');const rn=r=>RAR[r].n+(RAR[r].st?' '+RAR[r].st:'');
-  function helpOf(kind,npc){const cat=npc==='cat';
-    if(kind==='forge'){const rows=[];let s=1;for(let n=1;n<=15;n++){const E=ENH[n],nx=ENH[n+1];if(n<15&&nx&&nx[0]===E[0]&&nx[1]===E[1])continue;rows.push(`${s===n?'+'+n:'+'+s+'～+'+n} ${E[0]}%${E[1]?`（保底 ${E[1]} 次）`:''}`);s=n+1}
-      return ['強化：讓裝備欄變強',[
-        ['這頁做什麼','把左邊選的「部位」（武器、衣服、褲子、鞋子、戒指、項鍊）強化到 +1～+15。強化等級記在部位上，不是記在那件裝備上：換一件新裝備，+等級照樣保留。每個角色各自一份。'],
-        ['花費','每次按強化都會扣金幣；+7 起還要刻印碎片（分解裝備可以拿到）。不管成功或失敗都會扣。'],
-        ['成功率（搗蛋鬼原價）',rows.join('、')+'。'+(cat?'貓商人：金幣打 7 折、成功率再 +2%（畫面上顯示的就是加完的）。':'貓商人那邊金幣打 7 折、成功率 +2%。')],
-        ['成功','等級 +1，效果馬上生效。+5／+10／+15 有額外的里程碑效果（列在左下）。'],
-        ['失敗','錢和碎片照扣，但等級不會掉、裝備不會壞，「刻印能量」+1。'],
-        ['保底（刻印能量）','+7 以上每一級各有一條能量。失敗累積到保底次數（能量條滿）時，下一次一定成功；那一級成功後能量歸零。+1～+6 一定成功，沒有保底。']]]}
+  // W2.7：說明改成櫃台 NPC 的口吻（搗蛋鬼句尾「咧」、貓商人句尾「喵」）；數字一律從表格讀，跟實際規則一樣
+  function helpOf(kind,npc){const cat=npc==='cat',E=cat?'喵':'咧',me=cat?'本喵':'我';
+    if(kind==='forge'){const rows=[];let s=1;for(let n=1;n<=15;n++){const Q=ENH[n],nx=ENH[n+1];if(n<15&&nx&&nx[0]===Q[0]&&nx[1]===Q[1])continue;rows.push(`${s===n?'+'+n:'+'+s+'～+'+n} ${Q[0]}%${Q[1]?`（保底 ${Q[1]} 次）`:''}`);s=n+1}
+      return [cat?'強化：讓裝備欄變強喵':'強化：讓裝備欄變強咧',[
+        ['這頁做什麼',`${cat?'喵～':'嘿嘿，'}${me}幫你把左邊選的「部位」（武器、衣服、褲子、鞋子、戒指、項鍊）強化到 +1～+15${E}！強化等級記在部位上，不是記在那件裝備上${E}：換一件新裝備，+等級照樣保留${E}。每個角色各自一份${E}。`],
+        ['花費',`每按一次強化都要付金幣${E}；+7 起還要刻印碎片（分解裝備就拿得到）${E}。不管成功還是失敗都要付${E}，${cat?'本喵概不退款':'付了就不退'}${E}。`],
+        ['成功率（搗蛋鬼原價）',rows.join('、')+`。`+(cat?`在本喵這裡金幣打 7 折、成功率再 +2%（畫面上顯示的就是加完的）喵。`:`隔壁貓商人那邊金幣打 7 折、成功率 +2%，在我這裡是原價咧。`)],
+        ['成功',`等級 +1，效果馬上生效${E}！+5／+10／+15 還有額外的里程碑效果（列在左下）${E}。`],
+        ['失敗',`錢和碎片照扣${E}，但等級不會掉、裝備也不會壞${E}，「刻印能量」+1${E}。`],
+        ['保底（刻印能量）',`+7 以上每一級各有一條能量${E}。失敗累積到保底次數（能量條滿）時，下一次一定成功${E}；那一級成功後能量歸零${E}。+1～+6 本來就一定成功，所以沒有保底${E}。`]]]}
     if(kind==='draw'){const o=DRAW_ODDS.map(([k,w])=>`${rn(k)} ${w}%`).join('、');
-      return ['抽裝備：花金幣隨機拿一件',[
-        ['這頁做什麼',`每抽一次花 ${fmt(DRAW_COST)} 金幣，隨機拿到一件裝備，直接放進背包。每次遇到貓商人最多抽 ${DRAW_MAX} 次。`],
-        ['會抽到什麼',`獎池 ${WPN.length+ARMS.reduce((s,t)=>s+GEAR[t].length,0)} 種裝備，每一種機率一樣（武器 ${WPN.length} 種、${ARMS.map(t=>SLOTN[t]+' '+GEAR[t].length+' 種').join('、')}）；武器一定是目前角色能用的種類。品階機率：${o}。抽到${rn(4)} 的武器時有 ${Math.round(SPSUB*100)}% 會是特殊武器。`],
-        ['注意','沒有保底，每一抽都是獨立的。背包滿了（80 件）不能抽，先去賣掉或分解。']]]}
+      return ['抽裝備：花金幣隨機拿一件喵',[
+        ['這頁做什麼',`喵～每抽一次 ${fmt(DRAW_COST)} 金幣，本喵就隨機給你一件裝備，直接放進背包喵。每次遇到本喵最多抽 ${DRAW_MAX} 次喵。`],
+        ['會抽到什麼',`獎池有 ${WPN.length+ARMS.reduce((s,t)=>s+GEAR[t].length,0)} 種裝備，每一種機率一樣喵（武器 ${WPN.length} 種、${ARMS.map(t=>SLOTN[t]+' '+GEAR[t].length+' 種').join('、')}）；武器一定是你現在這個角色能用的種類喵。品階機率：${o}喵。抽到${rn(4)} 的武器時，有 ${Math.round(SPSUB*100)}% 會是特殊武器喵。`],
+        ['注意','沒有保底喵，每一抽都是獨立的喵。背包滿了（80 件）就不能抽喵，先去賣掉或分解喵。']]]}
     if(kind==='rr'){const L=fmt(RR_LINE.g),R=fmt(RR_RUNE.g);
-      return ['重洗刻印：換掉一條詞條或符文',[
-        ['這頁做什麼','先在上面選一件裝備，再在右邊選要重洗的「一條詞條」或「符文」。只會換掉你選的那一項，其他詞條、品階、強化等級都不動。'],
-        ['詞條','隨機換成右邊清單裡的一種（不會跟這件其他詞條重複，有可能抽回同一種），數值重新隨機；高品階裝備的詞條倍率照樣套用。'],
-        ['符文',`隨機換成這個部位能用的符文，符文顏色（紫／藍／綠）維持不變，有 ${Math.round(JOKE_P*100)}% 會變成搞笑符文。沒有符文的裝備會加一顆（紫約 15%、藍約 35%、綠約 50%）；傳說裝備固定紫色。`],
-        ['花費',`詞條：碎片 ${RR_LINE.sh}＋${L} 金幣；符文：碎片 ${RR_RUNE.sh}＋${R} 金幣；夢幻：詞條 碎片 ${RRP[5][0].sh}＋${fmt(RRP[5][0].g)}、符文 碎片 ${RRP[5][1].sh}＋${fmt(RRP[5][1].g)}；傳說：詞條 碎片 ${RRP[6][0].sh}＋${fmt(RRP[6][0].g)}、符文 碎片 ${RRP[6][1].sh}＋${fmt(RRP[6][1].g)}。`],
-        ['成功／失敗','一定成功、沒有失敗，也沒有保底：每次都是重新隨機，洗到不喜歡的結果不能復原。']]]}
-    if(kind==='inh')return ['賦魔繼承：把 B 的符文搬到 A',[
-        ['A 和 B','A＝你要留下來用的裝備（拿到新符文）。B＝提供符文的材料，必須跟 A 同部位、身上有符文，而且不能是穿在身上的。'],
-        ['成功（'+INH.rate+'%）','A 的符文變成 B 的符文，名稱、顏色、數值完全一樣；A 原本的符文消失。A 的品階、詞條、強化等級都不變。'],
-        ['失敗','A 完全不變，但 B 一樣會消失。'],
-        ['花費',`碎片 ${INH.sh}＋${fmt(INH.g)} 金幣；A 或 B 是夢幻以上：碎片 12＋20,000 金幣。成功或失敗都扣，B 都會被用掉。沒有保底。`],
-        ['看哪裡','中間「成功後的 A」只顯示符文的變化；想看全部數值，按左下「顯示全部素質」。']]];
+      return [`重洗刻印：換掉一條詞條或符文${E}`,[
+        ['這頁做什麼',`${cat?'喵～':'嘿嘿，'}先在上面選一件裝備，再在右邊選要重洗的「一條詞條」或「符文」${E}。${me}只會換掉你選的那一項，其他詞條、品階、強化等級都不動${E}。`],
+        ['詞條',`隨機換成右邊清單裡的一種${E}（不會跟這件其他詞條重複，有可能抽回同一種），數值也重新隨機${E}；高品階裝備的詞條倍率照樣套用${E}。`],
+        ['符文',`隨機換成這個部位能用的符文，符文顏色（紫／藍／綠）維持不變${E}；有 ${Math.round(JOKE_P*100)}% 會變成搞笑符文${E}${cat?'':'，嘻嘻'}。沒有符文的裝備會加一顆（紫約 15%、藍約 35%、綠約 50%）${E}；傳說裝備固定紫色${E}。`],
+        ['花費',`詞條：碎片 ${RR_LINE.sh}＋${L} 金幣；符文：碎片 ${RR_RUNE.sh}＋${R} 金幣；夢幻：詞條 碎片 ${RRP[5][0].sh}＋${fmt(RRP[5][0].g)}、符文 碎片 ${RRP[5][1].sh}＋${fmt(RRP[5][1].g)}；傳說：詞條 碎片 ${RRP[6][0].sh}＋${fmt(RRP[6][0].g)}、符文 碎片 ${RRP[6][1].sh}＋${fmt(RRP[6][1].g)}${E}。`],
+        ['成功／失敗',`一定成功、沒有失敗，也沒有保底${E}：每次都是重新隨機，洗到不喜歡的結果不能復原${E}。`]]]}
+    if(kind==='inh')return [`賦魔繼承：把 B 的符文搬到 A${E}`,[
+        ['A 和 B',`A＝你要留下來用的裝備（拿到新符文）${E}。B＝提供符文的材料，必須跟 A 同部位、身上有符文，而且不能是穿在身上的${E}。`],
+        ['成功（'+INH.rate+'%）',`A 的符文變成 B 的符文，名稱、顏色、數值完全一樣${E}；A 原本的符文就消失了${E}。A 的品階、詞條、強化等級都不變${E}。`],
+        ['失敗',`A 完全不變${E}，但 B 一樣會消失${E}${cat?'':'，別怪我'}。`],
+        ['花費',`碎片 ${INH.sh}＋${fmt(INH.g)} 金幣${E}；A 或 B 是夢幻以上：碎片 12＋20,000 金幣${E}。成功或失敗都扣，B 都會被用掉${E}。沒有保底${E}。`],
+        ['看哪裡',`中間「成功後的 A」只顯示符文的變化${E}；想看全部數值，按左下「顯示全部素質」${E}。`]]];
     if(kind==='up'){const rows=Object.keys(UPG).map(Number).sort((a,b)=>a-b).map(r=>{const U=UPG[r];return `${rn(r)} → ${rn(U.to)}：成功率 ${U.rate}%、保底 ${U.pity} 次、碎片 ${U.sh}＋${fmt(U.g)} 金幣`});
-      return ['品階提升：把 A 升一個品階',[
-        ['A 和 B','A＝要升級的裝備。B＝祭品：跟 A 同部位、而且是「升級後那個顏色」的裝備（例如升到英雄就要紫色的）。特殊武器不能升級也不能當祭品；穿在身上的不能當祭品。'],
-        ['各品階',rows.join('；')+'；夢幻 → 傳說 不開放。'],
-        ['成功','主屬性照新品階放大、原本的詞條數值一起變高；詞條補到新品階的條數（新加的那幾條是隨機抽的，「成功後的 A」用「？ 隨機詞條」標出來）；還沒有魔法屬性的武器會抽一個；符文顏色升一級（綠→藍→紫，搞笑符文不變）。強化等級記在部位上，不受影響。'],
-        ['失敗','A 不會壞、也不會變；祭品 B 會消失；這件 A 的保底 +1。'],
-        ['保底','記在 A 這件裝備上。失敗次數累積到保底次數時，下一次一定成功；成功後歸零。']]]}
+      return [`品階提升：把 A 升一個品階${E}`,[
+        ['A 和 B',`A＝要升級的裝備${E}。B＝祭品：跟 A 同部位、而且是「升級後那個顏色」的裝備（例如升到英雄就要紫色的）${E}。特殊武器不能升級也不能當祭品，穿在身上的不能當祭品${E}。`],
+        ['各品階',rows.join('；')+`；夢幻 → 傳說 不開放${E}。`],
+        ['成功',`主屬性照新品階放大、原本的詞條數值一起變高${E}；詞條補到新品階的條數（新加的是隨機抽的，「成功後的 A」用「？ 隨機詞條」標出來）${E}；還沒有魔法屬性的武器會抽一個${E}；符文顏色升一級（綠→藍→紫，搞笑符文不變）${E}。強化等級記在部位上，不受影響${E}。`],
+        ['失敗',`A 不會壞、也不會變${E}；祭品 B 會消失${E}；這件 A 的保底 +1${E}。`],
+        ['保底',`保底記在 A 這件裝備上${E}。失敗次數累積到保底次數時，下一次一定成功${E}；成功後歸零${E}。`]]]}
     return null}
   const HELPK=['forge','draw','rr','inh','up'];
   function helpPanel(H){X.save();X.fillStyle='rgba(0,0,0,0.55)';X.fillRect(0,0,W,H0());X.restore();
@@ -1090,5 +1091,92 @@ if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
     if(ok&&UI.kind==='rr'&&k==='rr')T('選一件裝備 → 選一條詞條或符文 → 隨機換成新的（只換選的那一項，其他不動）',400,281,FN(13),[220,210,190],2,[0,0,0],'lm');
     return r})(window.m2Overlay);
   window.__w26help={helpOf};
+})();
+
+// ---- src27/m_w27.js
+// ===== W2.7 =====
+//  (1) 背包「裝備比較」：選到（或滑鼠指到）一件還沒穿的裝備 → 右邊並排比較「目前穿的」和「這件」，左邊角色總能力顯示「換上前 → 換上後」
+//      比較是「假裝換上、算完、馬上換回來」：SAVE.eq／最大 HP／目前 HP 都會還原，不存檔、不改任何數值
+//  (2) 紅圈落地保護：被紅圈在空中打到／打倒 → 落地或起身時 0.4 秒保護（在 game.js 的 teleHurtP 標記，這裡每格檢查）
+window.stepPlayer=(o=>function(dt){const s=S0,P=s&&s.P,h0=P?P.h:0;const r=o.apply(this,arguments);try{if(P&&P.tlArm)teleLandStep(P,h0)}catch(e){}return r})(window.stepPlayer);
+(function(){
+const UPC=[110,235,120],DNC=[255,120,110],NEU=[225,215,195],GRY=[165,158,146],GOLD=[214,172,84];
+const NUMRE=/^([+\-−×]?)(\d+(?:\.\d+)?)(%?)$/,RNGRE=/^(\d+)~(\d+)$/;
+function pv(s){s=String(s==null?'':s).trim();let m=s.match(RNGRE);if(m)return {k:'r',a:+m[1],b:+m[2],d:0};m=s.match(NUMRE);if(m){const dp=(m[2].split('.')[1]||'').length;return {k:'n',p:m[1]==='-'?'−':m[1],v:+m[2],u:m[3],d:dp}}return null}
+const fx=(v,d)=>{v=Math.abs(v);return d?v.toFixed(d):String(Math.round(v))};
+// 比兩個數值：回傳 {up:true/false, tx:'▲ +3%'}；沒變回傳 null。數字越大越好（受到傷害是「減少量」，一樣越大越好）
+function cmpv(a,b){if(!a&&!b)return null;const A=a||(b&&(b.k==='r'?{k:'r',a:0,b:0}:{k:'n',p:b.p,v:0,u:b.u,d:b.d})),B=b||(a.k==='r'?{k:'r',a:0,b:0}:{k:'n',p:a.p,v:0,u:a.u,d:a.d});
+  if(A.k!==B.k)return null;
+  if(A.k==='r'){const da=B.a-A.a,db=B.b-A.b;if(!da&&!db)return null;const sg=x=>(x<0?'−':'+')+Math.abs(x);const up=da+db>0;return {up,tx:(up?'▲ ':'▼ ')+sg(da)+'~'+sg(db)}}
+  const d=Math.max(A.d,B.d),dv=+(B.v-A.v).toFixed(d);if(!dv)return null;const up=dv>0,p=A.p||B.p;
+  const sg=p==='−'?(up?'−':'+'):(up?'+':'−');return {up,tx:(up?'▲ ':'▼ ')+sg+fx(dv,d)+(A.u||B.u)}}
+// 角色總能力（statRows 的字串）比較：魔法屬性這種文字 → 只標「變了」
+function cmpStat(a,b){if(a===b)return null;const r=cmpv(pv(a),pv(b));return r||{up:null,tx:'≠'}}
+const key=l=>/符文$/.test(l)?'符文':l;
+function lineMap(L){const m=new Map();for(const r of L){let k=key(r[0]);while(m.has(k))k+='#';m.set(k,r)}return m}
+function snapshot(){const P=S0&&S0.P;return {had:null,HM:HPMAX,HC:HEAL_CAP,hp:P?P.hp:null}}
+// 假裝換上 → 算出換上後的能力和這件的說明行 → 換回來
+function simEquip(it){const sl=it.t,E=SAVE.eq,had=Object.prototype.hasOwnProperty.call(E,sl),prev=E[sl],sn=snapshot(),P=S0&&S0.P;let out=null;
+  try{E[sl]=it.id;calcGS();out={rows:statRows(),hp:HPMAX,L:itemLines(it)}}
+  finally{if(had)E[sl]=prev;else delete E[sl];calcGS();HPMAX=sn.HM;HEAL_CAP=sn.HC;if(P&&sn.hp!=null)P.hp=sn.hp}return out}
+let CK=null,CV=null;
+function buildCmp(it){if(!it||isEq(it))return null;const sl=it.t,cur=eqItem(sl);
+  const k=[it.id,JSON.stringify(SAVE.eq),window.slotE?slotE(sl):0,HEROK,SAVE.inv.length,HPMAX].join('|');if(k===CK&&CV)return CV;
+  let C;if(it.t==='w'&&typeof wcOf==='function'&&wcOf(it)!==heroCls()){const W=WCLS[wcOf(it)];C={it,cur,sl,blocked:`這是${W.who}專用的${W.n}，${HERO[HEROK].n}不能裝備`}}
+  else{const L0=cur?itemLines(cur):[],before={rows:statRows(),hp:HPMAX},after=simEquip(it);
+    const M0=lineMap(L0),M1=lineMap(after.L),keys=[...M1.keys(),...[...M0.keys()].filter(x=>!M1.has(x))];const num=[],txt=[];
+    for(const kk of keys){const a=M0.get(kk),b=M1.get(kk),pa=a&&pv(a[1]),pb=b&&pv(b[1]);
+      if((a?pa:true)&&(b?pb:true)&&(pa||pb)&&(!pa||!pb||pa.k===pb.k))num.push({l:kk.replace(/#+$/,''),a:a?a[1]:'—',b:b?b[1]:'—',c:(b||a)[2],d:cmpv(pa,pb)});
+      else txt.push({l:kk.replace(/#+$/,''),a:a?(a[0]!==kk&&key(a[0])==='符文'?a[0]+'　'+a[1]:a[1]):null,b:b?(key(b[0])==='符文'?b[0]+'　'+b[1]:b[1]):null,c:(b||a)[2]})}
+    const st=before.rows.map((r,i)=>{const b=after.rows[i]?after.rows[i][1]:r[1];return {l:r[0],a:r[1],b,d:cmpStat(r[1],b)}});
+    C={it,cur,sl,num,txt,st,hp0:before.hp,hp1:after.hp,se:window.slotE?slotE(sl):0}}
+  CK=k;CV=C;return C}
+const nmOf=it=>(RAR[it.r].st?RAR[it.r].st+' ':'')+itName(it);
+// 右邊比較面板（x0..x1, y0..yB）；字級自動縮小，保證不重疊
+function layout(C,F,lh,w){const ops=[];// 每一項：[種類, 行數, 資料]
+  ops.push(['th',1]);for(const r of C.num)ops.push(['num',1,r]);
+  for(const r of C.txt){const same=r.a!=null&&r.a===r.b;let la,lb;if(same){la=wrapT('兩件相同：'+r.a,F,w);lb=[]}else{la=r.a==null?[]:wrapT('目前：'+r.a+(r.b==null?'（換上後就沒有了）':''),F,w);lb=r.b==null?[]:wrapT((r.a==null?'這件才有：':'這件：')+r.b,F,w)}ops.push(['txt',1+la.length+lb.length,{r,la,lb,same}])}
+  const ft=[];if(C.se)ft.push(`強化 +${C.se} 記在「${SLOTN[C.sl]||'欄位'}」上：換上這件照樣是 +${C.se}`);
+  if(C.hp1!==C.hp0)ft.push(`最大 HP ${C.hp0.toLocaleString('en-US')} → ${C.hp1.toLocaleString('en-US')}`);
+  for(const s of ft)ops.push(['ft',wrapT(s,F,w).length,wrapT(s,F,w)]);
+  return {ops,n:ops.reduce((a,o)=>a+o[1],0)+0.6*(C.txt.length?1:0)+(ft.length?0.4:0)}}
+function drawCmp(C,hover,x0,y0,x1,yB){
+  T(hover?'預覽：滑鼠指著的裝備（點一下選取）':'換上這件會怎樣？',x0,y0+6,FN(14),hover?[180,220,255]:[255,226,120],2,[0,0,0],'lm');
+  const half=(x1-x0-8)/2;
+  [[C.cur,'目前穿的',x0],[C.it,'這件',x0+half+8]].forEach(([it,lb,bx])=>{rrect(bx,y0+18,bx+half,y0+80,6,'rgba(30,22,18,0.75)',lb==='這件'?'rgba(255,226,120,0.8)':'rgba(150,120,70,0.7)',1);
+    T(lb,bx+6,y0+28,FN(11),lb==='這件'?[255,226,120]:GRY,2,[0,0,0],'lm');
+    if(it){gearCard(it,bx+5,y0+38,36,false);wrapT(nmOf(it),FN(11),half-50).slice(0,3).forEach((l,k)=>T(l,bx+46,y0+44+k*13,FN(11),RAR[it.r].col,2,[0,0,0],'lm'))}
+    else T('目前沒有裝備',bx+half/2,y0+56,FN(12),[200,190,170],2,[0,0,0],'mm')});
+  let y=y0+90;
+  if(C.blocked){wrapT(C.blocked,FN(14),x1-x0).forEach(l=>{T(l,x0,y+8,FN(14),DNC,2,[0,0,0],'lm');y+=22});return}
+  const W=x1-x0;const SZ=[[13,18],[12,16],[11,14],[10,12.5],[9,11]];let F,lh,Lo;
+  for(const [fs,h] of SZ){F=FN(fs);lh=h;Lo=layout(C,F,lh,W-8);if(Lo.n*lh<=yB-y)break}
+  const cx1=x0+Math.round(W*0.47),cx2=x0+Math.round(W*0.70);let maxL=Math.floor((yB-y)/lh);
+  const row=(tx,x,col,al)=>T(tx,x,y+lh/2,F,col,2,[0,0,0],al);
+  for(const [k,n,d] of Lo.ops){if(maxL<=0)break;
+    if(k==='th'){row('項目',x0,GRY,'lm');row('目前',cx1,GRY,'rm');row('這件',cx2,GRY,'rm');row('變化',x1,GRY,'rm');y+=lh;maxL--}
+    else if(k==='num'){const lab=wrapT(d.l,F,cx1-x0-tw('00~00',F)-8)[0];row(lab,x0,GOLD,'lm');row(d.a,cx1,[230,225,215],'rm');row(d.b,cx2,d.c||NEU,'rm');
+      row(d.d?d.d.tx:'＝',x1,d.d?(d.d.up?UPC:DNC):GRY,'rm');y+=lh;maxL--}
+    else if(k==='txt'){if(d===Lo.ops.find(o=>o[0]==='txt')[2]){y+=lh*0.6}row(d.r.l,x0,GOLD,'lm');y+=lh;maxL--;
+      for(const l of d.la){if(maxL<=0)break;row(l,x0+8,d.same?GRY:[200,192,180],'lm');y+=lh;maxL--}
+      for(const l of d.lb){if(maxL<=0)break;row(l,x0+8,d.r.c||NEU,'lm');y+=lh;maxL--}}
+    else if(k==='ft'){if(d===Lo.ops.find(o=>o[0]==='ft')[2])y+=lh*0.4;for(const l of d){if(maxL<=0)break;const hp=/^最大 HP/.test(l);row(l,x0,hp?(C.hp1>C.hp0?UPC:DNC):[255,220,120],'lm');y+=lh;maxL--}}}
+  C.lay={F,lh,yEnd:y,fit:Lo.n*lh<=yB-(y0+90)}}
+// 背包：決定要比較哪一件（滑鼠指著的優先，其次是選中的），把右邊說明換成比較面板，左邊總能力顯示「前 → 後」
+function hoverIdx(L){if(typeof MOUSE==='undefined'||!MOUSE)return -1;const mx=MOUSE.x,my=MOUSE.y;if(!(mx>=GX&&my>=GY))return -1;
+  const c=Math.floor((mx-GX)/GC),r=Math.floor((my-GY)/GC);if(c<0||c>=GCOLS||r<0||r>=GROWS)return -1;if(mx-GX-c*GC>GC-6||my-GY-r*GC>GC-6)return -1;const i=r*GCOLS+c;return i<L.length?i:-1}
+window.bagUI=(o=>function(inp){let C=null,hover=false;
+  try{const L=bagList(),sel=L[clamp(UI.sel,0,Math.max(0,L.length-1))],hi=W27.noHover?-1:hoverIdx(L);let tgt=sel;
+    if(hi>=0&&L[hi]&&L[hi]!==sel&&!isEq(L[hi])){tgt=L[hi];hover=true}
+    if(tgt&&!isEq(tgt))C=buildCmp(tgt)}catch(e){C=null;(window.__err=window.__err||[]).push('w27cmp: '+e)}
+  W27.cur=C;if(!C)return o.apply(this,arguments);
+  const oD=window.itemDetail,oS=window.statRows;
+  window.itemDetail=function(it,x0,y0,x1){if(x0===935&&y0===130)return drawCmp(C,hover,935,130,1190,552);return oD.apply(this,arguments)};
+  if(C.st)window.statRows=()=>C.st.map(r=>[r.l,r.d?`${r.a} → ${r.b}`:r.a]);
+  let r;try{r=o.apply(this,arguments)}finally{window.itemDetail=oD;window.statRows=oS}
+  if(C.st){T(hover?'▲▼＝換上「指著的裝備」後的總能力':'▲▼＝換上選中的裝備後的總能力',96,336,FN(12),[180,220,255],2,[0,0,0],'lm');
+    C.st.forEach((s,i)=>{if(s.d)T(s.d.up==null?'◆':s.d.up?'▲':'▼',88,348+i*19,FN(12),s.d.up==null?[255,226,120]:s.d.up?UPC:DNC,2,[0,0,0],'mm')})}
+  return r})(window.bagUI);
+const W27=window.__w27={buildCmp,simEquip,drawCmp,cmpv,pv,noHover:false,cur:null};
 })();
 
