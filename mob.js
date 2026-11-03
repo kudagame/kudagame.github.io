@@ -56,7 +56,7 @@ const stepWait=()=>new Promise(r=>{const n0=window.__fn||0;let k=0;const f=()=>{
 async function dbl(code,src){kev('keyup',code);kev('keydown',code);await stepWait();kev('keyup',code);kev('keydown',code);(HOLD[code]||(HOLD[code]=new Set())).add(src)}
 // ---------- 狀態 ----------
 const G=n=>{try{return eval(n)}catch(e){return undefined}};
-function ctx(){const md=G('mode'),ui=G('UI'),pa=G('paused'),pw=G('pauseWhy');if(md===undefined||!G('SAVE'))return 'load';
+function ctx(){const md=G('mode'),ui=G('UI'),pa=G('paused'),pw=G('pauseWhy');if(md===undefined||!G('SAVE'))return 'load';if(window.__w29ui)return 'menu';
   if(md==='play'&&!pa&&!(ui&&ui.kind))return 'play';
   if(md==='play'&&pa&&pw==='esc')return 'pause';
   if(ui&&ui.kind==='bag')return 'bag';if(ui&&ui.kind==='char')return 'char';if(ui&&/^(rr|inh|up)$/.test(ui.kind))return 'smith';if(ui&&ui.kind)return 'ui';
@@ -122,7 +122,7 @@ const BT={
  ok:{t:'確定',s:'Enter',k:['Enter'],big:1},j:{t:'J',s:'選擇',k:['KeyJ']},back:{t:'返回',s:'Esc',k:['Escape']},tab:{t:'切換',s:'Tab',k:['Tab']},
  toMap:{t:'回地圖',s:'Q',k:['KeyQ'],hot:1},musD:{t:'音樂－',s:'[',k:['BracketLeft']},musU:{t:'音樂＋',s:']',k:['BracketRight']},sfxD:{t:'音效－',s:';',k:['Semicolon']},sfxU:{t:'音效＋',s:"'",k:['Quote']},
  sell:{t:'賣掉',s:'X',k:['KeyX']},dis:{t:'分解',s:'C',k:['KeyC']},sellG:{t:'賣綠色',s:'G',k:['KeyG']},sellW:{t:'清白裝',s:'H',k:['KeyH']},tfU:{t:'搗蛋鬼',s:'U',k:['KeyU']},tfY:{t:'惡魔貓',s:'Y',k:['KeyY']},bagC:{t:'關閉',s:'I',k:['KeyI']},
- clr:{t:'清除',s:'X',k:['KeyX']},uiSz:{t:'按鍵大小',s:'中',fn:()=>uiSet('sz')},uiOp:{t:'按鍵濃淡',s:'中',fn:()=>uiSet('op')},juke:{t:'換曲',s:'B',k:['KeyB']},mapBag:{t:'背包',s:'I',k:['KeyI']},mapChar:{t:'角色',s:'C',k:['KeyC']},
+ clr:{t:'清除',s:'X',k:['KeyX']},uiSz:{t:'按鍵大小',s:'中',fn:()=>uiSet('sz')},uiOp:{t:'按鍵濃淡',s:'中',fn:()=>uiSet('op')},mpos:{t:'按鍵位置',s:'拖曳調整',fn:()=>edOpen()},juke:{t:'換曲',s:'B',k:['KeyB']},mapBag:{t:'背包',s:'I',k:['KeyI']},mapChar:{t:'角色',s:'C',k:['KeyC']},
 };
 const EL={};
 function mkBtn(id){const d=BT[id];const e=document.createElement('div');e.className='b'+(d.big?' big':'')+(d.sys?' sys':'')+(d.hot?' hot':'');e.dataset.id=id;
@@ -151,9 +151,10 @@ PAD.el.addEventListener('pointerup',padEnd);PAD.el.addEventListener('pointercanc
 let vib=true;function buzz(){if(!vib)return;try{if(BR&&BR.vibrate)BR.vibrate(12);else if(navigator.vibrate)navigator.vibrate(12)}catch(e){}}
 // ---------- M2.5e 戰鬥操作層：左半邊浮動搖桿＋右下扇形技能 ----------
 // 整層是一張預先畫好的畫布，只在按下／放開、冷卻或能量變化時重畫；搖桿只用 transform 移動，不觸發版面重排
-const UIO=(()=>{let o={};try{o=JSON.parse(localStorage.getItem('erinn_mobui')||'{}')}catch(e){}return {sz:[0,1,2].includes(o.sz)?o.sz:1,op:[0,1,2].includes(o.op)?o.op:1}})();
+const UIO=(()=>{let o={};try{o=JSON.parse(localStorage.getItem('erinn_mobui')||'{}')}catch(e){}const r={sz:[0,1,2].includes(o.sz)?o.sz:1,op:[0,1,2].includes(o.op)?o.op:1};if(typeof o.ov==='number'&&o.ov>=0.25&&o.ov<=1)r.ov=o.ov;return r})();
 const SZK=[0.86,1,1.14],OPK=[0.5,0.74,0.94];
-function uiSet(k){UIO[k]=(UIO[k]+1)%3;try{localStorage.setItem('erinn_mobui',JSON.stringify(UIO))}catch(e){}G('m21Toast')((k==='sz'?'按鍵大小：':'按鍵濃淡：')+(k==='sz'?['小','中','大']:['淡','中','濃'])[UIO[k]]);PL=null}
+const opA=()=>UIO.ov!=null?UIO.ov:OPK[UIO.op];
+function uiSet(k){UIO[k]=(UIO[k]+1)%3;if(k==='op')delete UIO.ov;try{localStorage.setItem('erinn_mobui',JSON.stringify(UIO))}catch(e){}G('m21Toast')((k==='sz'?'按鍵大小：':'按鍵濃淡：')+(k==='sz'?['小','中','大']:['淡','中','濃'])[UIO[k]]);PL=null}
 const hc=document.createElement('canvas');hc.id='mobc';root.appendChild(hc);const hx=hc.getContext('2d');
 const JB=document.createElement('canvas'),JK=document.createElement('canvas');JB.className=JK.className='mj';root.appendChild(JB);root.appendChild(JK);
 st.textContent+=`#mobc{position:absolute;left:0;top:0;pointer-events:none;display:none}#mob .mj{position:absolute;left:0;top:0;pointer-events:none;display:none;will-change:transform}
@@ -191,11 +192,15 @@ function playLayout(){const vw=L.vw,vh=L.vh,hr=hero(),D=PDEF[hr],S=G('SAVE');
   else{let ix=vw-SA.r-m-is/2;for(const id of TI){icon(id,ix,ty+is/2);ix-=is+ig}iBot=ty+is+ig;iconsR=true}
   const iy=0;
   // 小按鈕（演奏、互動、解變身）：扇形上方靠右
-  const top=Math.min(...B.filter(b=>b.kind!=='icon').map(b=>b.y-b.r)),rs=u*0.42;const sm=D.small.filter(id=>id!=='untf'||(S&&S.tf));
+  const top=Math.min(...B.filter(b=>b.kind!=='icon').map(b=>b.y-b.r)),rs=u*0.42;const sm=D.small.filter(id=>id!=='untf'||(S&&S.tf)||ED);
   if(L.mode==='panel'){const lx=Math.min(...B.filter(b=>b.kind!=='icon').map(b=>b.x-b.r));sm.forEach((id,k)=>add(id,lx-gap*2-rs-k*(2*rs+gap),vh-SA.b-m-rs,rs,'small'))}
   else sm.forEach((id,k)=>{let x=vw-SA.r-m-rs-Math.floor(k/2)*(2*rs+gap),y=top-gap-rs-(k%2)*(2*rs+gap);if(y-rs<(iconsR?iBot:0)){y=top-gap-rs;x=vw-SA.r-m-rs-k*(2*rs+gap)}add(id,x,y,rs,'small')});
-  const Rj=u*1.18,jx=SA.l+m+Rj+u*0.3,jy=vh-SA.b-m-Rj-u*0.15;
-  PL={u,B,Rj,jx,jy,rx:jx,ry:jy,zx:vw*0.5,zy:iconsR?0:iBot,hr,tf:!!(S&&S.tf),key:vw+'x'+vh+'|'+hr+'|'+(S&&S.tf?1:0)+'|'+UIO.sz};
+  let Rj=u*1.18,jx=SA.l+m+Rj+u*0.3,jy=vh-SA.b-m-Rj-u*0.15;
+  // W2.9：玩家自訂的位置／大小（以畫面比例存，沒調過就是原本的位置）
+  const ov=posGet(ED?ED.d:POS);
+  for(const b of B){const o=ov[b.id];if(!o)continue;const k=Math.max(0.6,Math.min(1.6,o.s||1));b.r*=k;b.w*=k;b.h*=k;if(o.x!=null){b.x=o.x*vw;b.y=o.y*vh}posClamp(b,vw,vh)}
+  {const o=ov.joy;if(o){Rj*=Math.max(0.6,Math.min(1.6,o.s||1));if(o.x!=null){jx=o.x*vw;jy=o.y*vh}}const mj=8;jx=Math.max(SA.l+Rj+mj,Math.min(vw*0.5,jx));jy=Math.max(SA.t+Rj+mj,(iconsR?0:iBot)+Rj,vh*0.35,Math.min(vh-SA.b-Rj-mj,jy));jy=Math.min(vh-SA.b-Rj-mj,jy)}
+  PL={u,B,Rj,jx,jy,rx:jx,ry:jy,zx:vw*0.5,zy:iconsR?0:iBot,hr,tf:!!(S&&S.tf),key:pkey()};
   const d=Math.min(devicePixelRatio||1,2);hc.width=Math.round(vw*d);hc.height=Math.round(vh*d);hc.style.width=vw+'px';hc.style.height=vh+'px';PL.d=d;
   // 搖桿底座與握把：先畫好兩張小圖，之後只移動
   const bw=Math.ceil(Rj*2+8);JB.width=JB.height=Math.round(bw*d);JB.style.width=JB.style.height=bw+'px';const bx=JB.getContext('2d');bx.setTransform(d,0,0,d,0,0);
@@ -224,15 +229,16 @@ function bState(id){const s=G('S0'),P=s&&s.P;const o={cd:0,ring:-1,ok:true,ready
     else if(id==='sumK'||id==='sumB'){o.ring=Math.min(1,s.food/FM);const busy=id==='sumK'?!!(s.bard||s.arA):(!!(s.ally||s.arA)||t<=(s.allyCD||0));o.ok=s.food>=FM&&!busy;o.ready=o.ok}}catch(e){}
   return o}
 const q=v=>Math.round(v*24);
-function hudRefresh(force){const S=G('SAVE');const key=L.vw+'x'+L.vh+'|'+hero()+'|'+(S&&S.tf?1:0)+'|'+UIO.sz;if(!PL||PL.key!==key||force){hudReleaseAll();playLayout()}
-  const R=G('REC');let sig=(R&&R.on?1:0)+'|'+(S&&S.opt&&(S.opt.mus||S.opt.sfx)?1:0)+'|'+UIO.op;for(const b of PL.B)if(b.kind!=='icon'){const o=bState(b.id);sig+='|'+q(o.cd)+','+q(Math.max(0,o.ring))+','+(o.ok?1:0)}
+function pkey(){const S=G('SAVE');return L.vw+'x'+L.vh+'|'+hero()+'|'+(S&&S.tf?1:0)+'|'+UIO.sz+'|'+POSV+'|'+(ED?1:0)}
+function hudRefresh(force){const key=pkey();if(!PL||PL.key!==key||force){hudReleaseAll();playLayout()}
+  const R=G('REC');let sig=(R&&R.on?1:0)+'|'+(S&&S.opt&&(S.opt.mus||S.opt.sfx)?1:0)+'|'+opA();for(const b of PL.B)if(b.kind!=='icon'){const o=bState(b.id);sig+='|'+q(o.cd)+','+q(Math.max(0,o.ring))+','+(o.ok?1:0)}
   if(sig!==hudSig){hudSig=sig;hudDirty=true}if(hudDirty)hudPaint()}
 function hudPaintSoon(){hudDirty=true;if(!hudRaf)hudRaf=requestAnimationFrame(()=>{hudRaf=0;if(hudDirty&&PL)hudPaint()})}
-function hudPaint(){hudDirty=false;const c=hx,d=PL.d,A=OPK[UIO.op];c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,L.vw,L.vh);
+function hudPaint(){hudDirty=false;const c=hx,d=PL.d,A=opA();c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,L.vw,L.vh);
   const R=G('REC'),S=G('SAVE');
   for(const b of PL.B){if(!b.vis)continue;const dn=PRESS.has(b.id);c.save();c.translate(b.x,b.y);if(dn)c.scale(0.92,0.92);
     if(b.kind==='icon'){drawIcon(c,b,dn,A,R,S);c.restore();continue}
-    const o=bState(b.id),r=b.r;c.globalAlpha=dn?1:A;
+    const o=ED?{cd:0,ring:-1,ok:true,ready:false}:bState(b.id),r=b.r;c.globalAlpha=dn?1:A;
     const col={atk:['#8c2416','#3c0c06'],ult:['#5a2a8c','#1e0c34'],sum:['#1f6a5c','#082420'],sk:['#6a4520','#24160a'],small:['#3c2c1c','#140e08']}[b.kind];
     const g=c.createRadialGradient(-r*0.3,-r*0.35,r*0.1,0,0,r);g.addColorStop(0,dn?'#ffd27a':col[0]);g.addColorStop(1,col[1]);c.fillStyle=g;c.beginPath();c.arc(0,0,r,0,7);c.fill();
     if(o.cd>0){c.fillStyle='rgba(0,0,0,.6)';c.beginPath();c.moveTo(0,0);c.arc(0,0,r,-Math.PI/2,-Math.PI/2+o.cd*Math.PI*2);c.closePath();c.fill()}
@@ -247,7 +253,8 @@ function hudPaint(){hudDirty=false;const c=hx,d=PL.d,A=OPK[UIO.op];c.setTransfor
     c.font=`bold ${Math.round(fs)}px NSans,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';c.lineWidth=3;c.strokeStyle='#000';
     const sub=SUBL[b.id],ty=sub?-fs*0.25:0;c.strokeText(lb,0,ty);c.fillStyle=o.ok?'#fff4d6':'#b8a888';c.fillText(lb,0,ty);
     if(sub){c.font=`bold ${Math.round(fs*0.62)}px NSans,sans-serif`;c.lineWidth=2.5;c.strokeText(sub,0,fs*0.62);c.fillStyle='#e8d2a0';c.fillText(sub,0,fs*0.62)}
-    c.restore()}}
+    c.restore()}
+  if(ED)edPaint(c)}
 function drawIcon(c,b,dn,A,R,S){const s=b.w/2;c.globalAlpha=dn?1:Math.min(1,A+0.08);c.fillStyle=dn?'rgba(150,104,40,.95)':'rgba(24,16,10,.78)';
   c.beginPath();c.moveTo(-s+5,-s);c.lineTo(s-5,-s);c.lineTo(s,-s+5);c.lineTo(s,s-5);c.lineTo(s-5,s);c.lineTo(-s+5,s);c.lineTo(-s,s-5);c.lineTo(-s,-s+5);c.closePath();c.fill();
   c.strokeStyle=dn?'#fff2c0':'#d6ac54';c.lineWidth=2;c.stroke();c.strokeStyle='rgba(92,62,28,.9)';c.lineWidth=1;c.strokeRect(-s+4,-s+4,2*s-8,2*s-8);
@@ -260,6 +267,67 @@ function drawIcon(c,b,dn,A,R,S){const s=b.w/2;c.globalAlpha=dn?1:Math.min(1,A+0.
     c.beginPath();if(off){c.moveTo(k*0.4,-k*0.35);c.lineTo(k*0.9,k*0.35);c.moveTo(k*0.9,-k*0.35);c.lineTo(k*0.4,k*0.35)}else c.arc(k*0.2,0,k*0.55,-0.8,0.8);c.stroke()}}
 // ---------- 觸控：視窗層攔截（不經過遊戲畫布，避免誤點到畫面上的背包熱區） ----------
 const PT=new Map();const JOY={id:null,bx:0,by:0,h:null,v:null};let audioOK=false;
+// ---------- W2.9：觸控按鍵位置編輯（拖曳換位置、調大小、濃淡；每個角色、橫／直向分開存） ----------
+const POSK='erinn_mobpos';let POSV=0,ED=null;
+let POS=(()=>{try{const o=JSON.parse(localStorage.getItem(POSK)||'null');if(o&&o.v===1&&o.L&&typeof o.L==='object')return o}catch(e){}return {v:1,L:{}}})();
+const posCls=()=>(L.mode==='panel'?'panel':'side')+(L.vw>=L.vh?'L':'P');
+function posGet(src){return ((src.L||{})[posCls()]||{})[hero()]||{}}
+function posSet(id,o){const c=posCls(),h=hero(),D=ED.d.L;const a=D[c]||(D[c]={}),b=a[h]||(a[h]={});b[id]=Object.assign(b[id]||{},o);POSV++}
+function posClamp(b,vw,vh){const hw=b.kind==='icon'?b.w/2:b.r*1.08,hh=b.kind==='icon'?b.h/2:b.r*1.08;
+  b.x=Math.max(SA.l+hw+2,Math.min(vw-SA.r-hw-2,b.x));b.y=Math.max(SA.t+hh+2,Math.min(vh-SA.b-hh-2,b.y))}
+const ET=document.createElement('div');ET.id='mobed';root.appendChild(ET);
+ET.innerHTML='<div class="t">拖曳按鍵換位置</div><div class="r"><span>大小</span><div class="sl" data-k="s"><i></i></div><b data-v="s">—</b></div>'+
+ '<div class="r"><span>濃淡</span><div class="sl" data-k="o"><i></i></div><b data-v="o">—</b></div>'+
+ '<div class="r"><div class="eb" data-a="def">恢復預設</div><div class="eb" data-a="no">取消</div><div class="eb ok" data-a="ok">儲存</div></div><div class="m"></div>';
+st.textContent+=`#mobed{position:absolute;display:none;pointer-events:auto;z-index:3;box-sizing:border-box;padding:8px 10px;border-radius:10px;background:rgba(16,10,8,.9);border:2px solid #d6ac54;color:#fff4d6;font-size:15px;text-align:center;touch-action:none}
+#mobed .t{font-size:16px;margin-bottom:4px}#mobed .r{display:flex;align-items:center;gap:8px;margin:5px 0}#mobed .r span{width:3em;text-align:right}#mobed .r b{width:3.4em;text-align:left;color:#ffe08a}
+#mobed .sl{flex:1;height:28px;position:relative;border-radius:14px;background:rgba(0,0,0,.5);border:1px solid #9c7a3c;touch-action:none}#mobed .sl i{position:absolute;top:3px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:#ffe08a;border:2px solid #5c3e1c;box-sizing:border-box}
+#mobed .sl.off{opacity:.35}#mobed .eb{flex:1;padding:9px 4px;border-radius:7px;background:rgba(40,26,14,.9);border:2px solid #d6ac54}#mobed .eb.ok{background:rgba(40,90,40,.9);border-color:#8fe08f}#mobed .eb.dn{background:rgba(150,104,40,.95)}
+#mobed .m{font-size:13px;min-height:1.2em;color:#e8d2a0}#mobed .m.bad{color:#ff9a8a}`;
+const SLR={s:[0.6,1.6],o:[0.3,1]};
+function edVal(k){if(k==='o')return opA();if(!ED.sel)return 1;const o=posGet(ED.d)[ED.sel];return o&&o.s||1}
+function edSync(){if(!ED)return;for(const k of ['s','o']){const v=edVal(k),[a,b]=SLR[k],el=ET.querySelector(`.sl[data-k="${k}"]`);el.firstChild.style.left=((v-a)/(b-a)*100)+'%';
+    el.classList.toggle('off',k==='s'&&!ED.sel);ET.querySelector(`b[data-v="${k}"]`).textContent=k==='s'&&!ED.sel?'—':Math.round(v*100)+'%'}
+  const ov=edOverlaps(),m=ET.querySelector('.m');ED.bad=ov;m.classList.toggle('bad',ov.size>0);
+  m.textContent=ED.msg||(ov.size?'紅框的按鍵疊在一起了，可能會按錯':ED.sel?'已選「'+edName(ED.sel)+'」：可以拖曳或調大小':'先點一下要調整的按鍵');
+  edPlace()}
+function edName(id){return id==='joy'?'搖桿':(LBL[id]||(BT[id]&&BT[id].t)||id)}
+function edItems(){if(!PL)return [];const a=PL.B.filter(b=>b.vis).map(b=>({id:b.id,x:b.x,y:b.y,r:b.kind==='icon'?b.w/2:b.r}));a.push({id:'joy',x:PL.jx,y:PL.jy,r:PL.Rj});return a}
+function edOverlaps(){const it=edItems(),S=new Set();for(let i=0;i<it.length;i++)for(let j=i+1;j<it.length;j++){const a=it[i],b=it[j];if(Math.hypot(a.x-b.x,a.y-b.y)<(a.r+b.r)*0.9){S.add(a.id);S.add(b.id)}}return S}
+function edPlace(){const w=Math.min(380,L.vw-SA.l-SA.r-16);ET.style.width=w+'px';const x=(L.vw-w)/2;ET.style.left=x+'px';
+  const h=ET.offsetHeight||170;const top=SA.t+8,mid=Math.max(top,(L.vh-h)/2-L.vh*0.12);
+  const hitAt=y=>edItems().some(b=>b.x+b.r>x&&b.x-b.r<x+w&&b.y+b.r>y&&b.y-b.r<y+h);
+  let y=ED.ty!=null?ED.ty:top;if(!ED.drag&&hitAt(y)){const alt=y===top?mid:top;if(!hitAt(alt))y=alt}ED.ty=y;ET.style.top=y+'px'}
+function edPaint(c){const ov=ED.bad||new Set();for(const b of edItems()){const sel=ED.sel===b.id;if(!sel&&!ov.has(b.id))continue;
+    c.save();c.globalAlpha=1;c.setLineDash(sel?[6,4]:[]);ring(c,b.x,b.y,b.r+4,3,ov.has(b.id)?'#ff5a4a':'#7fd8ff');c.restore()}
+  if(ED.sel==='joy'||ED.drag&&ED.drag.id==='joy'){}}
+function edHit(x,y){const b=hit(x,y);if(b)return b.id;if(Math.hypot(x-PL.jx,y-PL.jy)<PL.Rj)return 'joy';return null}
+function edDown(ev){if(ev.target&&ev.target.closest&&ev.target.closest('#mobed'))return;ev.preventDefault();ev.stopImmediatePropagation();if(!PL||ED.drag)return;
+  const x=ev.clientX,y=ev.clientY,id=edHit(x,y);ED.msg='';if(!id){ED.sel=null;edSync();hudPaint();return}
+  const it=edItems().find(b=>b.id===id);ED.sel=id;ED.drag={pid:ev.pointerId,id,ox:x-it.x,oy:y-it.y,moved:false};buzz();edSync();hudPaint()}
+function edMove(ev){const D=ED.drag;if(!D||ev.pointerId!==D.pid)return;ev.preventDefault();ev.stopImmediatePropagation();
+  const x=ev.clientX-D.ox,y=ev.clientY-D.oy;posSet(D.id,{x:x/L.vw,y:y/L.vh,s:edVal('s')});D.moved=true;edApply()}
+function edUp(ev){const D=ED.drag;if(!D||ev.pointerId!==D.pid)return;ev.preventDefault();ev.stopImmediatePropagation();ED.drag=null;
+  // 存成夾過邊界之後的位置（不會存到畫面外）
+  const it=edItems().find(b=>b.id===D.id);if(it&&D.moved)posSet(D.id,{x:it.x/L.vw,y:it.y/L.vh});edApply()}
+function edApply(){PL=null;hudRefresh(true);joyPaint();edSync();hudPaint()}
+function edSlide(k,f){const [a,b]=SLR[k],v=Math.round((a+(b-a)*Math.max(0,Math.min(1,f)))*20)/20;
+  if(k==='o'){UIO.ov=v;hudPaint();joyPaint();edSync();return}if(!ED.sel)return;posSet(ED.sel,{s:v});edApply()}
+for(const el of ET.querySelectorAll('.sl')){const k=el.dataset.k;let pid=null;const f=e=>{const r=el.getBoundingClientRect();edSlide(k,(e.clientX-r.left)/r.width)};
+  el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pid=e.pointerId;try{el.setPointerCapture(pid)}catch(_){}f(e)});
+  el.addEventListener('pointermove',e=>{if(e.pointerId===pid){e.preventDefault();f(e)}});
+  for(const t of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(t,e=>{if(e.pointerId===pid)pid=null})}
+for(const el of ET.querySelectorAll('.eb')){el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.classList.add('dn')});
+  el.addEventListener('pointerup',e=>{e.preventDefault();e.stopPropagation();el.classList.remove('dn');const a=el.dataset.a;buzz();
+    if(a==='ok')edClose(true);else if(a==='no')edClose(false);else{const c=posCls(),h=hero();if(ED.d.L[c])delete ED.d.L[c][h];delete UIO.ov;ED.sel=null;POSV++;ED.msg='已恢復預設（按「儲存」才會生效）';edApply()}});
+  el.addEventListener('pointercancel',()=>el.classList.remove('dn'))}
+function edOpen(cb){if(IM!=='touch'||ED)return false;const md=G('mode'),s=G('S0');if(md!=='play'||!s||!s.P){G('m21Toast')('進入關卡後，在暫停選單裡調整按鍵位置');return false}
+  hudReleaseAll();for(const c in HOLD){if(HOLD[c].size){HOLD[c].clear();kev('keyup',c)}}
+  ED={d:JSON.parse(JSON.stringify(POS)),sel:null,drag:null,cb,ov0:UIO.ov,ty:null,msg:''};ET.style.display='block';POSV++;curKey='';refresh(true);edApply();return true}
+function edClose(save){if(!ED)return;const cb=ED.cb;if(save){POS=ED.d;try{localStorage.setItem(POSK,JSON.stringify(POS));localStorage.setItem('erinn_mobui',JSON.stringify(UIO))}catch(e){}}
+  else{if(ED.ov0==null)delete UIO.ov;else UIO.ov=ED.ov0}
+  ED=null;ET.style.display='none';POSV++;PL=null;curKey='';hudReleaseAll();refresh(true);try{G('m21Toast')(save?'已儲存按鍵位置':'已取消，按鍵位置沒有改變')}catch(e){}if(cb)try{cb(save)}catch(e){}}
+window.__mobEdit={open:edOpen,close:edClose,get on(){return !!ED},state:()=>ED?{sel:ED.sel,bad:[...(ED.bad||[])],cls:posCls(),items:edItems().map(b=>[b.id,Math.round(b.x),Math.round(b.y),Math.round(b.r)]),bar:(()=>{const r=ET.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(Math.round)})()}:null,saved:()=>JSON.parse(JSON.stringify(POS))};
 function hit(x,y){let best=null,bd=9;for(const b of PL.B){if(!b.vis)continue;let dd;if(b.kind==='icon'){if(Math.abs(x-b.x)>b.w*0.6||Math.abs(y-b.y)>b.h*0.6)continue;dd=0.5}else{dd=Math.hypot(x-b.x,y-b.y)/b.r;if(dd>(b.kind==='atk'?1.18:1.12))continue}if(dd<bd){bd=dd;best=b}}return best}
 function hudOn(){return IM==='touch'&&root.classList.contains('play')&&PL}
 function bDown(b,pid){const n=(PRESS.get(b.id)||0)+1;PRESS.set(b.id,n);if(n>1)return;buzz();hudPaintSoon();const d=BT[b.id],src='h:'+b.id;
@@ -274,7 +342,7 @@ function bufTick(){if(!BUF)return;const s=G('S0'),P=s&&s.P;if(!P||performance.no
   if(P.act&&P.act!==BUF.act){BUF=null;return}
   if(!P.act){const d=BT[BUF.b.id];BUF=null;for(const k of d.k){if(HOLD[k]&&HOLD[k].size){kev('keyup',k);kev('keydown',k)}else{kDown('buf',k);setTimeout(()=>kUp('buf',k),60)}}window.__mobBuf=(window.__mobBuf||0)+1;return}
   requestAnimationFrame(bufTick)}
-function joyPaint(){const a=OPK[UIO.op],on=JOY.id!==null;JB.style.opacity=on?Math.min(1,a+0.15):a*0.55;JK.style.opacity=on?1:a*0.7;
+function joyPaint(){const a=opA(),on=JOY.id!==null;JB.style.opacity=on?Math.min(1,a+0.15):a*0.55;JK.style.opacity=on?1:a*0.7;
   JB.style.transform=`translate3d(${PL.jx-PL.bw/2}px,${PL.jy-PL.bw/2}px,0)`;const kx=on?JOY.kx:PL.jx,ky=on?JOY.ky:PL.jy;JK.style.transform=`translate3d(${kx-PL.kw/2}px,${ky-PL.kw/2}px,0)`}
 function joySet(h,v){if(JOY.h!==h){if(JOY.h)kUp('joy',JOY.h);if(h)kDown('joy',h);JOY.h=h}if(JOY.v!==v){if(JOY.v)kUp('joy',JOY.v);if(v)kDown('joy',v);JOY.v=v}}
 function joyMove(x,y){const R=PL.Rj;let dx=x-PL.jx,dy=y-PL.jy,dd=Math.hypot(dx,dy);
@@ -289,16 +357,16 @@ function joyEnd(){JOY.id=null;joySet(null,null);if(PL){PL.jx=PL.rx;PL.jy=PL.ry;j
 function hudReleaseAll(){for(const [id,p] of PT){if(p.b)bUp(p.b)}PT.clear();PRESS.clear();if(JOY.id!==null)joyEnd();BUF=null}
 function hudOff(){hudReleaseAll()}
 const opt={capture:true,passive:false};
-addEventListener('pointerdown',ev=>{if(IM!=='touch'||!hudOn())return;ev.preventDefault();ev.stopImmediatePropagation();
+addEventListener('pointerdown',ev=>{if(ED){edDown(ev);return}if(IM!=='touch'||!hudOn())return;ev.preventDefault();ev.stopImmediatePropagation();
   if(!audioOK){audioOK=true;try{const f=G('unlockAudio');if(f)f()}catch(e){}}
   const x=ev.clientX,y=ev.clientY,b=hit(x,y);
   if(b){PT.set(ev.pointerId,{b});bDown(b);return}
   if(x<PL.zx&&y>PL.zy&&JOY.id===null){PT.set(ev.pointerId,{joy:1});joyStart(ev.pointerId,x,y);return}
   PT.set(ev.pointerId,{})},opt);
-addEventListener('pointermove',ev=>{if(!PT.has(ev.pointerId))return;ev.preventDefault();ev.stopImmediatePropagation();if(ev.pointerId===JOY.id){const es=ev.getCoalescedEvents?ev.getCoalescedEvents():[];const e2=es.length?es[es.length-1]:ev;joyMove(e2.clientX,e2.clientY)}},opt);
-const pEnd=ev=>{const p=PT.get(ev.pointerId);if(!p)return;ev.preventDefault();ev.stopImmediatePropagation();PT.delete(ev.pointerId);if(p.b)bUp(p.b);if(p.joy&&JOY.id===ev.pointerId)joyEnd()};
+addEventListener('pointermove',ev=>{if(ED){edMove(ev);return}if(!PT.has(ev.pointerId))return;ev.preventDefault();ev.stopImmediatePropagation();if(ev.pointerId===JOY.id){const es=ev.getCoalescedEvents?ev.getCoalescedEvents():[];const e2=es.length?es[es.length-1]:ev;joyMove(e2.clientX,e2.clientY)}},opt);
+const pEnd=ev=>{if(ED){edUp(ev);return}const p=PT.get(ev.pointerId);if(!p)return;ev.preventDefault();ev.stopImmediatePropagation();PT.delete(ev.pointerId);if(p.b)bUp(p.b);if(p.joy&&JOY.id===ev.pointerId)joyEnd()};
 addEventListener('pointerup',pEnd,opt);addEventListener('pointercancel',pEnd,opt);
-for(const t of ['touchstart','touchmove','touchend'])addEventListener(t,ev=>{if(IM==='touch'&&hudOn()&&ev.cancelable)ev.preventDefault()},opt);
+for(const t of ['touchstart','touchmove','touchend'])addEventListener(t,ev=>{if(IM==='touch'&&hudOn()&&ev.cancelable&&!(ED&&ev.target&&ev.target.closest&&ev.target.closest('#mobed')))ev.preventDefault()},opt);
 // iOS：聲音要在觸控「放開」時才解鎖；靜音鍵開著也照樣出聲（audioSession）
 let auOK=false;const auUnlock=()=>{try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
   try{const AC=G('AC');if(!AC)return;if(AC.state!=='running')AC.resume().catch(()=>{});const b=AC.createBuffer(1,1,22050),sN=AC.createBufferSource();sN.buffer=b;sN.connect(AC.destination);sN.start(0);
@@ -322,7 +390,7 @@ addEventListener('contextmenu',ev=>ev.preventDefault(),opt);
 // ---------- 版面 ----------
 const SETS={
  play:{kudas:['atkK','jump','stabK','swordK','chgK','stpK','sumK'],bard:['atkB','jump','triB','melB','dodgeB','ultB','slideB','kneelB','sumB','emoteB'],archer:['atkA','jump','wingA','fireA','rainA','flipA','rollA','snipeA','ultA','sumA'],sys:['pause','bagO','charO','use','untf','rec','mute']},
- pause:{a:['ok','back','j','tab'],x:['toMap','musD','musU','sfxD','sfxU','mute','uiSz','uiOp'],sys:['rec']},
+ pause:{a:['ok','back','j','tab'],x:['toMap','musD','musU','sfxD','sfxU','mute','uiSz','uiOp','mpos'],sys:['rec']},
  bag:{a:['ok','bagC','j','tab'],x:['sell','dis','sellG','sellW','tfU','tfY'],sys:['rec','mute']},
  char:{a:['ok','back','j','tab'],x:[],sys:['rec','mute']},
  smith:{a:['ok','back','j','tab'],x:['clr'],sys:['rec','mute']},
@@ -355,7 +423,7 @@ function layout(){const vw=innerWidth,vh0=innerHeight;if(!vw||!vh0)return;readSA
   curKey='';refresh(true)}
 function place(e,x,y,w,h,fs){Object.assign(e.style,{display:'flex',left:Math.round(x)+'px',top:Math.round(y)+'px',width:Math.round(w)+'px',height:Math.round(h)+'px',fontSize:Math.round(fs)+'px'})}
 function refresh(force){if(IM!=='touch')return;const c=ctx(),hr=hero(),S=G('SAVE'),R=G('REC');let set=SETS[c]||SETS.menu;
-  if(c==='play'&&L.vw){if(!root.classList.contains('play')||force){root.classList.add('play');for(const id in EL)EL[id].style.display='none';PAD.el.style.display='none';curKey='HUD'}
+  if((c==='play'||ED)&&L.vw){if(!root.classList.contains('play')||force){root.classList.add('play');for(const id in EL)EL[id].style.display='none';PAD.el.style.display='none';curKey='HUD'}
     hudRefresh(force);return}
   if(root.classList.contains('play')){root.classList.remove('play');hudOff();curKey=''}
   EL.uiSz.lastChild.textContent=['小','中','大'][UIO.sz];EL.uiOp.lastChild.textContent=['淡','中','濃'][UIO.op];
@@ -396,7 +464,7 @@ setInterval(()=>refresh(false),100);layout();setTimeout(layout,600);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hudReleaseAll();for(const c in HOLD){if(HOLD[c].size){HOLD[c].clear();kev('keyup',c)}}PAD.id=null;PAD.dir={h:null,v:null};
   try{if(ctx()==='play'){paused=true;pauseWhy='esc'}const m=G('m2Save');if(m)m()}catch(e){}}});
 // Android 返回鍵＝Esc
-window.__mobBack=()=>{tapKey('Escape');return true};
+window.__mobBack=()=>{if(ED){edClose(false);return true}tapKey('Escape');return true};
 window.__mobLayout=()=>root.classList.contains('play')&&PL?({...L,ctx:ctx(),hud:1,u:PL.u,btn:PL.B.filter(b=>b.vis).map(b=>[b.id,Math.round(b.x-b.w/2),Math.round(b.y-b.h/2),Math.round(b.w),Math.round(b.h)]),pad:[Math.round(PL.rx-PL.Rj),Math.round(PL.ry-PL.Rj),Math.round(PL.Rj*2)],padC:[PL.rx,PL.ry]}):({...L,ctx:ctx(),btn:Object.keys(EL).filter(k=>EL[k].style.display!=='none').map(k=>{const r=EL[k].getBoundingClientRect();return [k,Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)]}),pad:(()=>{const r=PAD.el.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top),Math.round(r.width)]})()});
 window.__mobHold=()=>Object.keys(HOLD).filter(k=>HOLD[k].size);
 })();

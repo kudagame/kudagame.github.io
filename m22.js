@@ -444,13 +444,13 @@ window.drawHUD=(o=>(cx0,shy)=>{const s=S0,P=s&&s.P;if(!isBard()||!P)return o(cx0
   if(s.ally)s.bard={t0:s.ally.t0,out:s.ally.t0+1.5,buffT:1e9,in:1e9,x:-9999,y:0};TREMAP=true;
   try{o(cx0,shy)}finally{IMG.por=sv[0];IMG.bardh=sv[1];IMG.bardg=sv[2];s.bard=sv[3];TREMAP=false}
   // 額外：Shift 後跳、K+L 大招、樂想
-  const B=[[810,'後跳','Shift',P.dgCD||0,BD.dg,null]];for(const [x,l,k,cd,mx] of B){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(40,60,90,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(170,220,255)':'rgb(120,100,80)',3);
+  const B=[[810,'後跳','Shift',P.dgCD||0,BD.dg,null]];for(const [x,l,k,cd,mx] of B){const y=604,r=24,rdy=cd<=0;const _w=hudTB('dodge',x,y,r);circ(x,y,r,rdy?'rgba(40,60,90,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(170,220,255)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
-    T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm')}
+    T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');hudTE(_w)}
   skillTile(1070,524,22,'交',[150,60,200],'K+L','節奏5',P.rh<RHMAX||(P.ultCD||0)>0,s.denyU||-9,Math.max(0,(P.ultCD||0)/BD.ult),null);   // W2.3：改回舊版
-  {const x=748,y=604,I=P.idea&&P.idea.until>t?P.idea:null;circ(x,y,24,'rgba(20,14,20,0.9)',I?rgb(IDEA[I.c].c[2]):'rgb(120,100,80)',3);
+  {const x=748,y=604,I=P.idea&&P.idea.until>t?P.idea:null;const _w=hudTB('idea',x,y,24);circ(x,y,24,'rgba(20,14,20,0.9)',I?rgb(IDEA[I.c].c[2]):'rgb(120,100,80)',3);
     if(I){const [c,xx]=pxc(16,16);bdisc(xx,8,8,6,IDEA[I.c].c,1);pdot(xx,6,6,[255,255,255],2);pxOut(c,x,y);arc(x,y,21,-90,-90+360*(I.until-t)/BD.ideaHold,rgb(IDEA[I.c].c[1]),3)}else T('♪',x,y,FS(18),[150,140,130],2,[0,0,0],'mm');
-    T('樂想',x,y+30,FN(11),[220,210,190],2,[0,0,0],'mm')}
+    T('樂想',x,y+30,FN(11),[220,210,190],2,[0,0,0],'mm');hudTE(_w)}
   // buff 圖示
   let bx=124;const bf=[];if(P.redU>t)bf.push(['紅',[190,50,50],P.redU]);if(P.blueU>t)bf.push(['藍',[50,90,200],P.blueU]);if(P.grnU>t||P.regU>t)bf.push(['綠',[50,150,60],Math.max(P.grnU||0,P.regU||0)]);if(P.zyU>t)bf.push(['戰',[40,150,140],P.zyU]);if(P.ctrU>t)bf.push(['反',[200,90,40],P.ctrU]);
   for(const [g,col,u] of bf){rrect(bx,160,bx+24,184,5,rgb(col),'rgb(255,240,220)',2);T(g,bx+12,172,FS(15),[255,255,255],2,[10,20,50],'mm');T(Math.ceil(u-t)+'',bx+23,186,FN(10),[255,255,255],2,[0,0,0],'rb');bx+=30}})(window.drawHUD);

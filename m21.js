@@ -69,7 +69,7 @@ function m21RecStop(){if(!REC.on)return;REC.on=false;try{REC.mr.stop()}catch(e){
 setInterval(()=>{if(REC.on){const s=Math.floor((performance.now()-REC.t0)/1000);m21D.r.textContent=`● REC ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}},250);
 window.__rec=()=>({on:REC.on,seq:REC.seq||0,srv:REC.srv});
 // ---------- hotkeys ----------
-addEventListener('keydown',e=>{const k=e.code;if(e.repeat)return;
+addEventListener('keydown',e=>{const k=window.w29Key?w29Key(e,1):e.code;if(!k||e.repeat)return;
   if(k==='F9'){e.preventDefault();REC.on?m21RecStop():m21RecStart()}
   else if(k==='KeyM'&&SAVE)m21Mute()},true);
 // ==== b_moves.js
@@ -383,9 +383,9 @@ function m21Manual(){if(!CLICK||!SAVE)return false;const A=[[150,()=>m21Mute('mu
 // ---------- HUD：肩撞／踱地 冷卻、相機按鈕、變身標記 ----------
 window.drawHUD=(o=>(cx0,shy)=>{o(cx0,shy);const s=S0,P=s.P,t=s.t;if(!P)return;
   const B=[[872,'肩撞','→→',P.chgCD||0,CHG.cd*(1-(GS.mvcd||0)),s.denyChg],[934,'踱地','↓↓',P.stpCD||0,STP.cd*(1-(GS.mvcd||0)),s.denyStp]];
-  for(const [x,l,k,cd,mx,deny] of (HEROK==='archer'?[]:B)){const y=604,r=24,rdy=cd<=0;circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
+  for(const [x,l,k,cd,mx,deny] of (HEROK==='archer'?[]:B)){const y=604,r=24,rdy=cd<=0;const _w=hudTB(x<900?'chg':'stp',x,y,r);circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
-    T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');if(deny&&t-deny<0.3)circ(x,y,r+3,null,'rgb(255,90,70)',2)}
+    T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');if(deny&&t-deny<0.3)circ(x,y,r+3,null,'rgb(255,90,70)',2);hudTE(_w)}
   const cx=1248,cy=64;circ(cx,cy,17,REC.on?'rgba(120,20,20,0.9)':'rgba(30,24,20,0.85)',REC.on?'rgb(255,120,110)':'rgb(200,170,120)',2);m21CamIcon(cx,cy,REC.on&&Math.floor(t*2)%2===0);
   if(MOUSE&&Math.hypot(MOUSE[0]-cx,MOUSE[1]-cy)<18)T(REC.on?'停止錄影 F9':'錄影 F9',cx-24,cy,FN(13),[255,255,255],2,[0,0,0],'rm');
   if(!paused&&CLICK&&Math.hypot(CLICK[0]-cx,CLICK[1]-cy)<18){REC.on?m21RecStop():m21RecStart();CLICK=null}

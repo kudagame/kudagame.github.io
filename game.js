@@ -82,12 +82,12 @@ function numImg(v,kind){v=Math.round(v);const k=v+kind;if(NUMC[k])return NUMC[k]
 const NOTEC={};function noteImg(c){const k=c.join();return NOTEC[k]||(NOTEC[k]=prender('♪',S,c,null,[40,20,40]))}
 // ---------- text (hud6.T) ----------
 const FS=s=>`bold ${s}px NSerif`,FN=s=>`bold ${s}px NSans`;
-function T(s,x,y,font,fill,sw=2,sc=[0,0,0],anchor='la',a=1){X.save();X.font=font;
+function T(s,x,y,font,fill,sw=2,sc=[0,0,0],anchor='la',a=1){if(window.w29Rw)s=w29Rw(s);X.save();X.font=font;
   X.textAlign=anchor[0]==='l'?'left':anchor[0]==='r'?'right':'center';
   X.textBaseline=anchor[1]==='a'?'top':anchor[1]==='m'?'middle':anchor[1]==='b'?'bottom':'alphabetic';
   if(sw>0){X.lineJoin='round';X.lineWidth=sw*2;X.strokeStyle=rgb(sc,a);X.strokeText(s,x,y)}
   X.fillStyle=rgb(fill,a);X.fillText(s,x,y);X.restore()}
-function tw(s,font){X.save();X.font=font;const w=X.measureText(s).width;X.restore();return w}
+function tw(s,font){if(window.w29Rw)s=w29Rw(s);X.save();X.font=font;const w=X.measureText(s).width;X.restore();return w}
 // ---------- tunables (暫定) ----------
 let HPMAX=4125;const GOLDC=[214,172,84];let YMIN=508,YMAX=604;let WW=2752,CAMMAX=WW-W;
 const STAGES={canyon:{img:'world',ww:2752,name:'赤岩峽谷'},mine:{img:'mine',ww:2560,name:'赤岩礦坑・坑道'},shrine:{img:'shrine',ww:1280,name:'礦坑深處・女神祭壇'},boss:{img:'bossroom',ww:1280,name:'女神的試煉・看守者之間'},s2:{img:'world',ww:2752,name:'第二關（暫定）・灰色荒野',filter:'hue-rotate(150deg) saturate(0.5) brightness(0.8)'},b4mine:{img:'b4mine',ww:2560,name:'巴里地下城・2層'},b4boss:{img:'b4room',ww:1280,name:'2層3區・水晶監視者之間'},sp:{img:'mine',ww:2560,name:'第四關（暫定）・蜘蛛巢穴',filter:'hue-rotate(70deg) saturate(0.55) brightness(0.7)'},ms1:{img:'ms_hall',ww:1280,name:'理查宅邸 III・寶物大廳'},ms2:{img:'ms_glass',ww:1280,name:'理查宅邸 III・彩繪玻璃大廳'},sp1:{img:'sp_tunnel',ww:2560,name:'巴里2礦區・2層1區'},sp2:{img:'sp_tunnel',ww:2560,name:'巴里2礦區・2層1區'},sp3:{img:'sp_tunnel',ww:1280,name:'巴里2礦區・2層1區'},spb:{img:'sp_nest',ww:1280,name:'巴里2礦區・2層1區'}};
@@ -221,8 +221,9 @@ function drop(m){if(window.m2Drop)return m2Drop(m);const s=S0;const kinds=[];con
 const ITEMN={food:'烤麵包',coin:'金幣',clay:'泥塊',stone:'粗糙的石頭',pot:'生命藥水 (10)',herb:'基本草藥'};
 // ---------- input ----------
 const K={},KP={};
-addEventListener('keydown',e=>{const k=e.code;if(!K[k])KP[k]=1;K[k]=1;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(k))e.preventDefault();if(k==='F11'){}});
-addEventListener('keyup',e=>{K[e.code]=0});
+const KDN={};
+addEventListener('keydown',e=>{const k=window.w29Key?w29Key(e):e.code;if(!k)return;KDN[e.code]=k;if(!K[k])KP[k]=1;K[k]=1;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(k))e.preventDefault();if(k==='F11'){}});
+addEventListener('keyup',e=>{const k=KDN[e.code]||(window.w29Key?w29Key(e):e.code);delete KDN[e.code];if(k)K[k]=0});
 window.__key=(code,down)=>{if(down){if(!K[code])KP[code]=1;K[code]=1}else K[code]=0};
 let GP={},GPP={};
 function pollPad(){const pads=navigator.getGamepads?navigator.getGamepads():[];const p=pads&&[...pads].find(x=>x);const n={};
@@ -614,6 +615,9 @@ function drawBubble(sx,sy){const s=S0,t=s.t,sh=s.shield;const age=t-sh.t0,rem=sh
   X.beginPath();X.ellipse(sx,cy,rx,ry,0,0,Math.PI*2);X.fillStyle=gr;X.fill();X.lineWidth=3;X.strokeStyle='rgba(170,255,225,0.75)';X.stroke();
   X.beginPath();X.ellipse(sx,cy,Math.max(1,rx-8),Math.max(1,ry-8),0,Math.PI*1.1+t*0.6,Math.PI*1.45+t*0.6);X.lineWidth=4;X.strokeStyle='rgba(255,255,255,0.7)';X.stroke();
   for(let i=0;i<3;i++){const ang=t*1.6+i*2.1;X.fillStyle='rgba(220,255,240,0.85)';X.fillRect(Math.round((sx+Math.cos(ang)*(rx-4))/3)*3,Math.round((cy+Math.sin(ang)*(ry-4))/3)*3,3,3)}X.restore()}
+// W2.9：畫面按鍵位置（技能格）可移動；沒調整過＝原位
+function hudTB(id,x,y,r){const f=window.w29Tile;return f?f(id,x,y,r):0}
+function hudTE(n){if(n)X.restore();if(n&&window.w29TileEnd)w29TileEnd()}
 function keyBadge(x,y,k,w){w=w||Math.max(20,tw(k,FN(12))+10);rrect(x-w/2,y-10,x+w/2,y+10,5,'rgba(38,36,44,0.96)','rgb(210,210,215)',1);T(k,x,y+1,FN(12),[255,255,255],0,[0,0,0],'mm')}
 function skillTile(cx,cy,R,glyph,col,key,cost,dim,deny,cdFrac,name){const t=S0.t;const dn=t-deny<0.35;const ox=dn?Math.round(5*Math.sin(t*70)):0;cx+=ox;
   circ(cx,cy,R+5,'rgba(12,10,16,0.86)',rgb(GOLDC),2);
@@ -849,7 +853,7 @@ function cvPos(e){const r=cv.getBoundingClientRect();return [(e.clientX-r.left)*
 cv.addEventListener('pointerdown',e=>{CLICK=cvPos(e)});cv.addEventListener('pointermove',e=>{MOUSE=cvPos(e)});
 const inBox=(p,b)=>p&&p[0]>=b[0]&&p[0]<=b[2]&&p[1]>=b[1]&&p[1]<=b[3];
 let titleMus=false;
-function frame(now){requestAnimationFrame(frame);if(!last)last=now;let el=Math.min(0.1,(now-last)/1000);last=now;
+function frame(now){requestAnimationFrame(frame);try{const m=X.getTransform();if(!m.isIdentity){X.setTransform(1,0,0,1,0,0);X.globalAlpha=1;X.filter='none';X.globalCompositeOperation='source-over';window.__ctxFix=(window.__ctxFix||0)+1}}catch(e){}if(!last)last=now;let el=Math.min(0.1,(now-last)/1000);last=now;
   // M2.5e：高更新率螢幕（120/144Hz）上，沒有跑到邏輯格的那一格不畫也不清按鍵，免得按鍵被吃掉、也省一半繪圖
   if(mode==='play'&&!paused&&acc+el<DT){acc+=el;return}
   pollPad();
@@ -866,7 +870,7 @@ function frame(now){requestAnimationFrame(frame);if(!last)last=now;let el=Math.m
     if(mode==='play'&&!paused&&(IN.bag()||(CLICK&&Math.hypot(CLICK[0]-1218,CLICK[1]-574)<40))){paused=true;pauseWhy='bag';S0.bagpulse=S0.t;m2UI('bag');CLICK=null}
     if(!paused&&mode==='play'){acc+=el;let n=0;while(acc>=DT&&n<6){step(DT);if(S0.godmode)S0.P.hp=Math.max(S0.P.hp,HPMAX*0.5),S0.P.dead=false;acc-=DT;n++}if(n>=6)acc=0;if(n)window.__fn=(window.__fn||0)+1}
     else if(mode==='dead'){acc=0;if(IN.esc()&&!AUTO)m2ToMap();else if(IN.start()||AUTO)retry()}
-    const [cx0,shy]=drawWorld();drawHUD(cx0,shy);drawRitual();drawFades();if(mode==='dead')drawDead();
+    if(mode==='play'||mode==='dead'){const [cx0,shy]=drawWorld();drawHUD(cx0,shy);drawRitual();drawFades();if(mode==='dead')drawDead();}
     if(paused){X.save();X.fillStyle='rgba(0,0,0,0.5)';X.fillRect(0,0,W,H);X.restore();
       if(pauseWhy!=='esc'){m2Overlay()}
       else if(false){rrect(390,200,890,470,12,'rgba(16,10,8,0.94)',rgb(GOLDC),3);X.drawImage(IMG.bag,616,222);T('背包',640,300,FS(40),[255,236,200],4,[60,20,10],'mm');T(`金幣 ${S0.gold.toLocaleString('en-US')}　食物 ${S0.food}/${FOOD_MAX}`,640,350,FN(20),[255,255,255],2,[0,0,0],'mm');T('（試玩版：背包內容尚未開放）　遊戲暫停中',640,392,FN(16),[220,210,190],2,[0,0,0],'mm');T('I / 點背包 繼續',640,436,FS(22),[255,255,255],3,[0,0,0],'mm')}

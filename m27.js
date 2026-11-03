@@ -428,14 +428,14 @@ window.drawHUD=(o=>(cx0,shy)=>{const s=S0,P=s&&s.P;if(!P)return o(cx0,shy);const
   if(!isArcher())return o(cx0,shy);const a=astOf('archer');
   const sv=[IMG.por,IMG.bardh,IMG.bardg,s.bard];IMG.por=IMG.archerpor;if(a==='kudas'){IMG.bardh=IMG.kudash;IMG.bardg=IMG.kudasg;fakeBadge(s,s.ally)}AR_TXT=true;
   try{o(cx0,shy)}finally{IMG.por=sv[0];IMG.bardh=sv[1];IMG.bardg=sv[2];s.bard=sv[3];AR_TXT=false}
-  const tile=(x,y,r,l,k,cd,mx,col,deny)=>{const rdy=cd<=0;circ(x,y,r,rdy?rgb(col.map(v=>v*0.45|0),0.92):'rgba(30,24,20,0.85)',rdy?rgb(col.map(v=>Math.min(255,v+90))):'rgb(120,100,80)',3);
+  const tile=(x,y,r,l,k,cd,mx,col,deny)=>{const rdy=cd<=0;const _w=hudTB(k==='Shift'?'dodge':k==='↓L'?'flip':'rain',x,y,r);circ(x,y,r,rdy?rgb(col.map(v=>v*0.45|0),0.92):'rgba(30,24,20,0.85)',rdy?rgb(col.map(v=>Math.min(255,v+90))):'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
-    const dn=t-(deny||-9)<0.35;T(l,x+(dn?Math.round(4*Math.sin(t*70)):0),y-1,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm')};
+    const dn=t-(deny||-9)<0.35;T(l,x+(dn?Math.round(4*Math.sin(t*70)):0),y-1,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');hudTE(_w)};
   tile(810,604,24,'翻滾','Shift',P.rlCD||0,AR.roll.cd,[80,160,200]);tile(748,604,24,'扇射','↓L',P.flCD||0,AR.flip.cd*arMvcd(),[220,120,190],s.denyFl);tile(686,604,24,'箭雨','↓K',P.rnCD||0,AR.rain.cd*arMvcd(),[80,200,90],s.denyRn);
-  {const sn=P.act&&P.act.type==='as',cd=Math.max(0,P.snCD||0),mx=AR.snipe.cd*arMvcd();skillTile(1070,524,22,'狙',[60,140,200],'K+L',sn?'狙擊中':'集中5',!sn&&(P.rh<AR.snipe.cost||cd>0),s.denySn||-9,cd>0?cd/mx:0,null);
-   if(!sn&&cd<=0&&P.rh>=AR.snipe.cost)arc(1070,524,25,-90,270,Math.floor(t*6)%2?'rgb(170,230,255)':'rgb(110,190,240)',3)}
-  {const u=Math.min(1,(P.dragon||0)/DRG.max);skillTile(994,524,22,'龍',[140,70,210],'J+K',u>=1?'龍矢滿':'龍矢'+Math.floor(u*100)+'%',u<1,s.denyU||-9,1-u,null);
-   if(u>=1)arc(994,524,25,-90,270,Math.floor(t*6)%2?'rgb(233,160,255)':'rgb(190,110,240)',3);else if(u>0)arc(994,524,25,-90,-90+360*u,'rgb(170,100,230)',3)}
+  {const _w=hudTB('kl',1070,524,22);const sn=P.act&&P.act.type==='as',cd=Math.max(0,P.snCD||0),mx=AR.snipe.cd*arMvcd();skillTile(1070,524,22,'狙',[60,140,200],'K+L',sn?'狙擊中':'集中5',!sn&&(P.rh<AR.snipe.cost||cd>0),s.denySn||-9,cd>0?cd/mx:0,null);
+   if(!sn&&cd<=0&&P.rh>=AR.snipe.cost)arc(1070,524,25,-90,270,Math.floor(t*6)%2?'rgb(170,230,255)':'rgb(110,190,240)',3);hudTE(_w)}
+  {const _w=hudTB('jk',994,524,22);const u=Math.min(1,(P.dragon||0)/DRG.max);skillTile(994,524,22,'龍',[140,70,210],'J+K',u>=1?'龍矢滿':'龍矢'+Math.floor(u*100)+'%',u<1,s.denyU||-9,1-u,null);
+   if(u>=1)arc(994,524,25,-90,270,Math.floor(t*6)%2?'rgb(233,160,255)':'rgb(190,110,240)',3);else if(u>0)arc(994,524,25,-90,-90+360*u,'rgb(170,100,230)',3);hudTE(_w)}
   // 狙擊模式：剩餘時間＋龍矢
   {const A=P.act;if(A&&A.type==='as'){const left=Math.max(0,AR.snipe.dur-A.T),x=640,y=150;rrect(x-150,y-22,x+150,y+26,10,'rgba(10,20,30,0.82)','rgb(150,220,255)',2);
     T('狙擊模式',x-136,y-6,FS(16),[200,240,255],2,[0,0,0],'lm');X.fillStyle='rgba(60,80,100,0.9)';X.fillRect(x-136,y+8,200,8);X.fillStyle='rgb(150,220,255)';X.fillRect(x-136,y+8,Math.round(200*left/AR.snipe.dur),8);
@@ -1216,4 +1216,199 @@ function w28FoodBox(){const b=w28PetN('bread'),m=w28PetN('snackMat'),full=b>=W28
   T(full?W28F.sayFull:W28F.say,(x0+x1)/2,y0+32,FN(12),[214,190,150],2,[0,0,0],'mm')}
 window.bagUI=(o=>function(inp){const r=o.apply(this,arguments);try{if(SAVE)w28FoodBox()}catch(e){(window.__err=window.__err||[]).push('w28box: '+e)}return r})(window.bagUI);
 window.__w28food={cfg:W28F,n:w28PetN,add:w28PetAdd};
+
+// ---- src27/o_w29keys.js
+// ===== W2.9：改按鍵（鍵盤）＋電腦版畫面按鍵（技能格）位置 =====
+// 做法：遊戲內部一律用「原本的鍵名」（虛擬鍵）；玩家實際按的鍵先換算成虛擬鍵再交給遊戲。
+// 沒改過的玩家：完全照舊（換算＝原樣）。觸控按鍵、手把、測試用的 __key 不經過換算。
+const W29KS='erinn_keys',W29HS='erinn_pchud';
+const W29ROWS=[
+ ['往左',['ArrowLeft','KeyA']],['往右',['ArrowRight','KeyD']],['往上（縱深）',['ArrowUp','KeyW']],['往下（縱深）',['ArrowDown','KeyS']],
+ ['攻擊／確定',['KeyJ','KeyZ']],['跳躍',['Space']],['@K',['KeyK']],['@L',['KeyL','KeyX']],
+ ['後跳／翻滾',['ShiftLeft','ShiftRight']],['召喚／援助',['KeyV']],['互動',['KeyE','KeyF']],['背包',['KeyI']],
+ ['角色',['KeyC']],['演奏／說明',['KeyH']],['解除變身',['KeyT']],['暫停',['Escape','KeyP']],
+ ['回地圖（暫停中）',['KeyQ']],['靜音',['KeyM']],['錄影',['F9']],['換曲（旅店）',['KeyB']],
+ ['賣綠色（背包）',['KeyG']],['搗蛋鬼藥水',['KeyU']],['惡魔貓藥水',['KeyY']],['按鍵設定',['KeyO']]];
+const W29NOTE={KeyJ:'選單裡也是「確定」',KeyX:'背包裡也是「賣掉」、鍛造裡是「清除」',KeyC:'背包裡也是「分解」',KeyH:'也用來看說明、清白裝',
+  KeyA:'鍛造、選單裡的左右也跟著改',KeyD:'鍛造、選單裡的左右也跟著改',KeyO:'在暫停選單、說明頁打開這個畫面',Escape:'Esc 固定不能改（另一格可以加一個鍵）'};
+const W29FIX=new Set(['Escape']);
+const W29LIST=new Set(W29ROWS.flatMap(r=>r[1]));
+const W29OK=/^(Key[A-Z]|Digit\d|Numpad\d|Numpad(Add|Subtract|Multiply|Divide|Decimal)|Arrow(Left|Right|Up|Down)|Space|Shift(Left|Right)|Comma|Period|Slash|Minus|Equal|Backslash|IntlRo|IntlYen|Insert|Delete|Home|End|PageUp|PageDown|F9)$/;
+let W29M={},W29INV={},W29CH=false;
+function w29Lab(p){if(!p)return '—';if(p.startsWith('Key'))return p.slice(3);if(p.startsWith('Digit'))return p.slice(5);
+  const N={Space:'Space',ShiftLeft:'Shift',ShiftRight:'右Shift',ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Escape:'Esc',Comma:',',Period:'.',Slash:'/',Minus:'-',Equal:'=',Backslash:'\\',
+    IntlRo:'ろ',IntlYen:'¥',Insert:'Ins',Delete:'Del',Home:'Home',End:'End',PageUp:'PgUp',PageDown:'PgDn',NumpadAdd:'數字+',NumpadSubtract:'數字-',NumpadMultiply:'數字*',NumpadDivide:'數字/',NumpadDecimal:'數字.'};
+  if(N[p])return N[p];if(p.startsWith('Numpad'))return '數字'+p.slice(6);return p}
+function w29Build(){W29INV={};W29CH=false;for(const v of W29LIST){const p=W29M[v]||v;W29M[v]=p;W29INV[p]=v;if(p!==v)W29CH=true}W29RWC.clear();W29RX=null}
+function w29Load(){W29M={};try{const o=JSON.parse(localStorage.getItem(W29KS)||'null');if(o&&o.v===1&&o.b){const seen=new Set();let bad=false;
+    for(const v of W29LIST){const p=o.b[v]||v;if(!(p===v||W29OK.test(p))||W29FIX.has(v)&&p!==v||seen.has(p))bad=true;seen.add(p);W29M[v]=p}if(bad)W29M={}}}catch(e){W29M={}}w29Build()}
+function w29Save(){const b={};for(const v of W29LIST)if(W29M[v]!==v)b[v]=W29M[v];try{if(Object.keys(b).length)localStorage.setItem(W29KS,JSON.stringify({v:1,b}));else localStorage.removeItem(W29KS)}catch(e){}}
+// 實體鍵 → 虛擬鍵（null＝不理會）
+window.w29Key=function(e){if(!e.isTrusted)return e.code;if(W29.open||HE.open||(window.__mobEdit&&__mobEdit.on))return null;const p=e.code;if(!W29CH)return p;
+  const v=W29INV[p];if(v){if(v!==p){const t=e.target;if(!(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))e.preventDefault()}return v}
+  if(W29LIST.has(p))return null;return p};
+// 畫面上的按鍵文字：照目前的設定換掉（只有改過才會動）
+const W29TOK={J:'KeyJ',Z:'KeyZ',K:'KeyK',L:'KeyL',X:'KeyX',V:'KeyV',E:'KeyE',F:'KeyF',I:'KeyI',C:'KeyC',H:'KeyH',T:'KeyT',P:'KeyP',Q:'KeyQ',M:'KeyM',G:'KeyG',U:'KeyU',Y:'KeyY',O:'KeyO',Space:'Space',Shift:'ShiftLeft',F9:'F9'};
+const W29RWC=new Map();let W29RX=null,W29NORW=0;
+function w29Tok(t){if(t==='WASD')return ['KeyW','KeyA','KeyS','KeyD'].map(v=>w29Lab(W29M[v])).join('');if(t==='方向鍵')return ['ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].every(v=>W29M[v]===v)?t:['ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].map(v=>w29Lab(W29M[v])).join('');
+  if(t==='B')return w29Lab(W29M.KeyB);return w29Lab(W29M[W29TOK[t]])}
+window.w29Rw=function(s){if(!W29CH||W29NORW||typeof s!=='string'||!s)return s;if(mode==='manual'&&/^(X|A|B|Y|LB|RB|Back|左搖桿|—)$/.test(s))return s;
+  const c=W29RWC.get(s);if(c!==undefined)return c;
+  if(!W29RX){const tk=Object.keys(W29TOK).filter(t=>W29M[W29TOK[t]]!==W29TOK[t]);if(['KeyW','KeyA','KeyS','KeyD'].some(v=>W29M[v]!==v))tk.push('WASD');if(['ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].some(v=>W29M[v]!==v))tk.push('方向鍵');
+    if(W29M.KeyB!=='KeyB')tk.push('B(?= 換曲)');tk.sort((a,b)=>b.length-a.length);W29RX=tk.length?new RegExp('(^|[^A-Za-z0-9.])('+tk.join('|')+')(?![A-Za-z0-9])','g'):/$^/}
+  const r=s.replace(W29RX,(m,a,t)=>a+w29Tok(t));if(W29RWC.size>3000)W29RWC.clear();W29RWC.set(s,r);return r};
+window.keyBadge=(o=>function(x,y,k,w){const l=w29Rw(k);W29NORW++;try{return o.call(this,x,y,l,w)}finally{W29NORW--}})(window.keyBadge);
+window.m21Toast=(o=>function(s,...r){return o.call(this,w29Rw(s),...r)})(window.m21Toast);
+// ---------- 技能格位置（電腦版畫面按鍵） ----------
+const W29TID={J:'atk',K:'k',L:'l',Space:'jump','K+L':'kl','J+K':'jk'};
+const W29TN={atk:'攻擊',k:'技能 K',l:'技能 L',jump:'跳躍',kl:'K+L 大招',jk:'J+K 絕招',dodge:'後跳／翻滾',chg:'肩撞',stp:'踱地',idea:'樂想',flip:'扇射',rain:'箭雨'};
+let W29HUD=(()=>{try{const o=JSON.parse(localStorage.getItem(W29HS)||'null');if(o&&o.v===1&&o.h&&typeof o.h==='object')return o}catch(e){}return {v:1,h:{}}})();
+let W29REG={},W29DEP=0;
+function w29Ov(id){const src=HE.open?HE.d:W29HUD,h=(src.h||{})[HEROK]||{};return h[id]}
+window.w29Tile=function(id,x,y,r){if(W29DEP>0)return 0;W29REG[id]={x,y,r};const o=w29Ov(id);if(!o)return 0;
+  const s=Math.max(0.7,Math.min(1.5,o.s||1)),nx=o.x!=null?o.x*W:x,ny=o.y!=null?o.y*H:y;if(s===1&&Math.abs(nx-x)<0.01&&Math.abs(ny-y)<0.01)return 0;
+  X.save();X.translate(nx,ny);X.scale(s,s);X.translate(-x,-y);W29DEP++;return 1};
+window.w29TileEnd=()=>{W29DEP=Math.max(0,W29DEP-1)};
+window.skillTile=(o=>function(cx,cy,R,g,col,key,...r){const w=hudTB(W29TID[key]||String(key),cx,cy,R);try{return o.call(this,cx,cy,R,g,col,key,...r)}finally{hudTE(w)}})(window.skillTile);
+function w29TilePos(id){const d=W29REG[id];if(!d)return null;const o=w29Ov(id)||{},s=Math.max(0.7,Math.min(1.5,o.s||1));return {id,x:o.x!=null?o.x*W:d.x,y:o.y!=null?o.y*H:d.y,r:d.r*s,s,d}}
+function w29Clamp(id,x,y){const d=W29REG[id],o=w29Ov(id)||{},R=d.r*Math.max(0.7,Math.min(1.5,o.s||1))+4;return [Math.max(R+4,Math.min(W-R-4,x)),Math.max(R+8,Math.min(606,y))]}
+// ---------- 狀態 ----------
+const W29={open:false,sel:0,cap:false,msg:'',mc:null,mt:0,rst:0,from:''};
+const HE={open:false,d:null,sel:null,drag:null,msg:'',ty:0};
+let W29RAW={};
+addEventListener('keydown',e=>{if(!e.isTrusted)return;
+  if(W29.open||HE.open){const nav=/^(Arrow\w+|Space|Tab|Enter|NumpadEnter|Backspace|Escape|Minus|Equal|NumpadAdd|NumpadSubtract)$/.test(e.code);if(nav||W29.cap&&W29OK.test(e.code))e.preventDefault();
+    if(W29.cap&&W29.open){e.stopPropagation();if(!e.repeat)w29Capture(e.code);return}if(!e.repeat||/^Arrow/.test(e.code))W29RAW[e.code]=1}},true);
+w29Load();
+// ---------- 改鍵 ----------
+function w29RowName(r){const hk=typeof HEROK==='string'?HEROK:'kudas';if(r[0]==='@K')return '技能 K（'+({kudas:'心臟刺擊',bard:'三連音',archer:'翼矛'}[hk]||'技能')+'）';
+  if(r[0]==='@L')return '技能 L（'+({kudas:'大劍術',bard:'旋律衝擊',archer:'烈焰箭'}[hk]||'技能')+'）';return r[0]}
+function w29VName(v){const r=W29ROWS.find(r=>r[1].includes(v));return r?w29RowName(r):v}
+function w29Slot(i){const r=W29ROWS[i>>1];return r?r[1][i&1]||null:null}
+function w29Msg(s,c){W29.msg=s;W29.mc=c||null;W29.mt=performance.now()}
+function w29Capture(p){const v=w29Slot(W29.sel);W29.cap=false;
+  if(p==='Escape'){w29Msg('沒有改變');return}
+  if(!v||W29FIX.has(v)){w29Msg('這一格固定不能改',[255,150,140]);return}
+  if(!W29OK.test(p)){W29.cap=true;w29Msg(`「${p.replace(/^(Key|Digit)/,'')}」不能用（固定按鍵），請換一個鍵`,[255,150,140]);return}
+  const old=W29M[v];if(p===old){w29Msg(`「${w29VName(v)}」維持 ${w29Lab(p)}`);return}
+  const own=W29INV[p];if(own&&own!==v&&W29FIX.has(own)){w29Msg('這個鍵固定給「暫停」用，請換一個鍵',[255,150,140]);W29.cap=true;return}
+  if(own&&own!==v){W29M[own]=old;w29Msg(`${w29Lab(p)} 原本是「${w29VName(own)}」，已互換：「${w29VName(own)}」改成 ${w29Lab(old)}`,[255,214,120])}
+  else w29Msg(`「${w29VName(v)}」改成 ${w29Lab(p)}`,[150,255,150]);
+  W29M[v]=p;w29Build();w29Save();try{sfx('coin',0.35)}catch(e){}}
+function w29CanOpen(){return (mode==='play'&&paused&&pauseWhy==='esc')||mode==='manual'||(typeof UI==='object'&&UI&&UI.kind==='set')}
+function w29Open(){W29.open=true;W29.cap=false;W29.rst=0;W29.from=mode;w29Msg('');window.__w29ui=1;for(const k in K)K[k]=0;W29RAW={};try{sfx('coin',0.3)}catch(e){}}
+function w29Close(){W29.open=false;W29.cap=false;window.__w29ui=0;for(const k in K)K[k]=0;for(const k in KP)delete KP[k]}
+window.w29OpenKeys=()=>{if(!W29.open)w29Open();return true};
+const W29BX={def:[80,604,290,646],hud:[310,604,640,646],close:[1000,604,1200,646],cancel:[660,604,820,646]};
+function w29SlotBox(i){const row=i>>1,c=row<12?0:1,rr=row%12,x0=c?668:78,y=112+rr*38;return [x0+(i&1?378:262),y,x0+(i&1?488:372),y+32]}
+function w29InStage(){return mode==='play'&&S0&&S0.P}
+function w29Touch(){return !!(window.__mob&&__mob.im==='touch')}
+function w29Draw(){const t=performance.now()/1000;W29NORW++;try{
+  X.fillStyle='rgba(0,0,0,0.92)';X.fillRect(0,0,W,H);woodPanel(40,14,1240,706);
+  T('按鍵設定',640,46,FS(30),[255,236,200],3,[0,0,0],'mm');
+  T(W29.cap?'請按新的按鍵（Esc 取消）':'點一下按鍵格，再按想要的新按鍵　　↑↓←→ 選擇　Enter 修改　Esc 關閉',640,84,FN(15),W29.cap?[255,226,120]:[230,220,200],2,[0,0,0],'mm');
+  for(const c of [0,1]){const x0=c?668:78;T('動作',x0,100,FN(13),[255,210,140],2,[0,0,0],'lm');T('按鍵 1',x0+317,100,FN(13),[255,210,140],2,[0,0,0],'mm');T('按鍵 2',x0+433,100,FN(13),[255,210,140],2,[0,0,0],'mm')}
+  W29ROWS.forEach((r,ri)=>{const c=ri<12?0:1,x0=c?668:78,y=112+(ri%12)*38;if((W29.sel>>1)===ri)rrect(x0-8,y-3,x0+496,y+35,6,'rgba(255,220,140,0.10)');
+    T(w29RowName(r),x0,y+16,FS(16),[255,244,214],2,[0,0,0],'lm');
+    for(const j of [0,1]){const i=ri*2+j,v=r[1][j],b=w29SlotBox(i),sel=W29.sel===i,hov=MOUSE&&inBox(MOUSE,b);
+      if(!v){continue}
+      const fix=W29FIX.has(v),chg=W29M[v]!==v,cap=sel&&W29.cap;
+      rrect(b[0],b[1],b[2],b[3],6,fix?'rgb(44,40,38)':cap?(Math.floor(t*3)%2?'rgb(140,96,30)':'rgb(100,68,24)'):hov?'rgb(120,82,36)':'rgb(70,46,24)',sel?'rgb(255,226,120)':fix?'rgb(90,86,80)':chg?'rgb(150,230,150)':'rgb(170,120,60)',sel?3:2);
+      T(cap?'按新鍵…':w29Lab(W29M[v]),(b[0]+b[2])/2,(b[1]+b[3])/2+1,FN(cap?14:17),fix?[150,145,140]:chg?[180,255,180]:[255,255,255],2,[0,0,0],'mm');
+      if(fix)T('固定',b[2]-6,b[1]+8,FN(10),[170,160,150],0,[0,0,0],'rm')}});
+  // 訊息列
+  const v=w29Slot(W29.sel);let m=W29.msg,mc=W29.mc||[235,230,220];if(!m||performance.now()-W29.mt>9000){m=v?(W29NOTE[v]?`「${w29VName(v)}」：${W29NOTE[v]}`:`「${w29VName(v)}」目前是 ${w29Lab(W29M[v])}`):'';mc=[220,210,190]}
+  T(m,640,580,FN(15),mc,2,[0,0,0],'mm');
+  const rs=W29.rst&&performance.now()-W29.rst<4000;
+  btn(...W29BX.def,rs?'再按一次確認':'恢復預設',true,rs?[255,160,140]:null);
+  const st=w29InStage(),tl=w29Touch()?'調整觸控按鍵位置':'調整畫面按鍵位置';btn(...W29BX.hud,tl,st);
+  if(W29.cap)btn(...W29BX.cancel,'取消',true);
+  btn(...W29BX.close,'關閉（Esc）',true);
+  T(st?'拖曳畫面上的技能格／觸控按鍵，換位置、調大小':'畫面按鍵位置：進入關卡後按 Esc 暫停，再從這裡調整',475,664,FN(13),[200,190,170],2,[0,0,0],'mm');
+  T('Esc、Enter、Tab、音量鍵 [ ] ; \' 固定不能改　手把不受影響　設定存在這台裝置',640,690,FN(13),[200,190,170],2,[0,0,0],'mm')}finally{W29NORW--}}
+function w29Input(){const R=W29RAW,G=typeof GPP==='object'?GPP:{};
+  if(W29.cap){if(CLICK&&inBox(CLICK,W29BX.cancel)){W29.cap=false;w29Msg('沒有改變')}else if(KP.Escape){W29.cap=false;w29Msg('沒有改變')}return}
+  if(R.Escape||KP.Escape||G.esc){w29Close();return}
+  const n=W29ROWS.length*2,ok=i=>!!w29Slot(i);const mv=d=>{let i=W29.sel;for(let k=0;k<n;k++){i=(i+d+n)%n;if(ok(i))break}W29.sel=i};
+  if(R.ArrowDown||G.d){let i=W29.sel+2;if(i>=n)i=W29.sel%2;W29.sel=i;if(!ok(W29.sel))W29.sel&=~1}
+  if(R.ArrowUp||G.u){let i=W29.sel-2;if(i<0)i=n-2+(W29.sel%2);W29.sel=i;if(!ok(W29.sel))W29.sel&=~1}
+  if(R.ArrowRight||G.r){const row=W29.sel>>1;if(W29.sel%2===0&&ok(W29.sel+1))W29.sel++;else{const nr=row<12?row+12:row-12;W29.sel=Math.min(nr,W29ROWS.length-1)*2}}
+  if(R.ArrowLeft||G.l){const row=W29.sel>>1;if(W29.sel%2===1)W29.sel--;else{const nr=row<12?row+12:row-12;const r2=Math.min(nr,W29ROWS.length-1);W29.sel=r2*2+(ok(r2*2+1)?1:0)}}
+  if(R.Enter||R.NumpadEnter){const v=w29Slot(W29.sel);if(v&&W29FIX.has(v))w29Msg('這一格固定不能改',[255,150,140]);else if(v){W29.cap=true;w29Msg('')}}
+  if(R.Backspace)w29Reset();
+  if(R.Tab)w29Layout();
+  if(CLICK){for(let i=0;i<n;i++){if(!ok(i))continue;if(inBox(CLICK,w29SlotBox(i))){W29.sel=i;const v=w29Slot(i);if(W29FIX.has(v))w29Msg('這一格固定不能改',[255,150,140]);else{W29.cap=true;w29Msg('')}return}}
+    if(inBox(CLICK,W29BX.def))w29Reset();else if(inBox(CLICK,W29BX.hud))w29Layout();else if(inBox(CLICK,W29BX.close))w29Close()}}
+function w29Reset(){if(!(W29.rst&&performance.now()-W29.rst<4000)){W29.rst=performance.now();w29Msg('再按一次「恢復預設」就會把所有按鍵改回原本的設定',[255,214,120]);return}
+  W29.rst=0;W29M={};w29Build();w29Save();w29Msg('已恢復預設按鍵',[150,255,150]);try{sfx('coin',0.35)}catch(e){}}
+function w29Layout(){if(!w29InStage()){w29Msg('進入關卡後按 Esc 暫停，再從這裡調整按鍵位置',[255,214,120]);return}
+  if(w29Touch()&&window.__mobEdit){W29.open=false;window.__w29ui=0;if(!__mobEdit.open(()=>{w29Open()}))w29Open();return}
+  heOpen()}
+// ---------- 電腦版：拖曳技能格 ----------
+function heOpen(){W29.open=false;window.__w29ui=0;HE.open=true;HE.d=JSON.parse(JSON.stringify(W29HUD));HE.sel=null;HE.drag=null;HE.msg='';HE.ty=236;W29RAW={}}
+function heClose(save){if(save){W29HUD=HE.d;try{localStorage.setItem(W29HS,JSON.stringify(W29HUD))}catch(e){}}HE.open=false;HE.d=null;HE.drag=null;
+  try{m21Toast(save?'已儲存畫面按鍵位置':'已取消，畫面按鍵位置沒有改變')}catch(e){}w29Open();w29Msg(save?'已儲存畫面按鍵位置':'畫面按鍵位置沒有改變',save?[150,255,150]:null)}
+function heSet(id,o){const h=HE.d.h||(HE.d.h={}),a=h[HEROK]||(h[HEROK]={});a[id]=Object.assign(a[id]||{},o)}
+function heTiles(){return Object.keys(W29REG).map(w29TilePos).filter(Boolean)}
+function heBad(){const L=heTiles(),S=new Set();const bag={id:'bag',x:1218,y:574,r:34};for(let i=0;i<L.length;i++){const a=L[i];if(Math.hypot(a.x-bag.x,a.y-bag.y)<a.r+bag.r)S.add(a.id);
+    for(let j=i+1;j<L.length;j++){const b=L[j];if(Math.hypot(a.x-b.x,a.y-b.y)<(a.r+b.r)*0.92){S.add(a.id);S.add(b.id)}}}return S}
+function hePanel(){return [440,HE.ty,840,HE.ty+212]}
+const heInPanel=p=>p&&inBox(p,hePanel());
+function heSize(id,s){const o=w29Ov(id)||{};const d=W29REG[id];if(!d)return;heSet(id,{s:Math.round(Math.max(0.7,Math.min(1.5,s))*20)/20});const P=w29TilePos(id);const [x,y]=w29Clamp(id,P.x,P.y);heSet(id,{x:x/W,y:y/H})}
+let HEP=null;
+cv.addEventListener('pointerdown',e=>{if(!HE.open)return;const p=cvPos(e);if(heInPanel(p))return;let best=null,bd=1e9;
+  for(const t of heTiles()){const d=Math.hypot(p[0]-t.x,p[1]-t.y);if(d<t.r+8&&d<bd){bd=d;best=t}}
+  if(best){HE.sel=best.id;HE.drag={pid:e.pointerId,ox:p[0]-best.x,oy:p[1]-best.y};try{cv.setPointerCapture(e.pointerId)}catch(_){}}else HE.sel=null;HEP=p});
+cv.addEventListener('pointermove',e=>{if(!HE.open||!HE.drag||e.pointerId!==HE.drag.pid)return;const p=cvPos(e),D=HE.drag;const [x,y]=w29Clamp(HE.sel,p[0]-D.ox,p[1]-D.oy);heSet(HE.sel,{x:x/W,y:y/H})});
+for(const t of ['pointerup','pointercancel'])cv.addEventListener(t,e=>{if(HE.drag&&e.pointerId===HE.drag.pid){HE.drag=null;try{cv.releasePointerCapture(e.pointerId)}catch(_){}}});
+function heDraw(){const bad=heBad(),L=heTiles();
+  for(const t of L){const sel=HE.sel===t.id;X.save();X.setLineDash(sel?[]:[5,4]);X.beginPath();X.arc(t.x,t.y,t.r+6,0,Math.PI*2);X.strokeStyle=bad.has(t.id)?'rgb(255,90,70)':sel?'rgb(127,216,255)':'rgba(255,236,190,0.75)';X.lineWidth=sel?3:2;X.stroke();X.restore()}
+  // 面板：被技能格壓到就換到上面
+  const hit=y=>L.some(t=>t.x+t.r>440&&t.x-t.r<840&&t.y+t.r>y&&t.y-t.r<y+212);if(!HE.drag&&hit(HE.ty)){const alt=HE.ty===236?40:236;if(!hit(alt))HE.ty=alt}
+  const [x0,y0,x1,y1]=hePanel();W29NORW++;try{rrect(x0,y0,x1,y1,10,'rgba(16,10,8,0.92)',rgb(GOLDC),2);
+  T('調整畫面按鍵位置',640,y0+24,FS(20),[255,236,200],3,[0,0,0],'mm');T('用滑鼠拖曳技能格，選好之後可以調大小',640,y0+50,FN(14),[230,220,200],2,[0,0,0],'mm');
+  const sel=HE.sel&&W29REG[HE.sel]?HE.sel:null,s=sel?(w29Ov(sel)||{}).s||1:1;
+  if(btn(x0+40,y0+66,x0+90,y0+100,'－',!!sel)&&sel){heSize(sel,s-0.1);CLICK=null}
+  if(btn(x0+310,y0+66,x0+360,y0+100,'＋',!!sel)&&sel){heSize(sel,s+0.1);CLICK=null}
+  rrect(x0+100,y0+70,x0+300,y0+96,6,'rgba(0,0,0,0.55)','rgb(150,110,60)',1);if(sel){X.fillStyle='rgba(214,172,84,0.6)';X.fillRect(x0+102,y0+72,Math.round(196*(s-0.7)/0.8),22)}
+  T(sel?`大小 ${Math.round(s*100)}%`:'大小（先點一個技能格）',x0+200,y0+84,FN(14),sel?[255,255,255]:[170,160,150],2,[0,0,0],'mm');
+  if(sel&&CLICK&&inBox(CLICK,[x0+100,y0+66,x0+300,y0+100])){heSize(sel,0.7+0.8*(CLICK[0]-x0-100)/200);CLICK=null}
+  const m=HE.msg||(bad.size?'紅框的技能格疊在一起了（或壓到背包），不過還是可以儲存':sel?`已選「${W29TN[sel]||sel}」`:'點一下技能格來選擇');
+  T(m,640,y0+120,FN(14),bad.size&&!HE.msg?[255,150,140]:[220,210,190],2,[0,0,0],'mm');
+  if(btn(x0+16,y0+140,x0+128,y0+180,'恢復預設',true)){const h=HE.d.h||{};delete h[HEROK];HE.sel=null;HE.msg='已恢復預設（按「儲存」才會生效）';CLICK=null}
+  if(btn(x0+144,y0+140,x0+256,y0+180,'取消（Esc）',true)){CLICK=null;heClose(false);return}
+  if(btn(x0+272,y0+140,x0+384,y0+180,'儲存（Enter）',true,[150,255,150])){CLICK=null;heClose(true);return}
+  T('Tab 換選擇　方向鍵 微調　－／＋ 大小',640,y0+198,FN(12),[190,180,160],2,[0,0,0],'mm')}finally{W29NORW--}
+  const R=W29RAW;if(R.Escape){heClose(false);return}if(R.Enter||R.NumpadEnter){heClose(true);return}if(R.Backspace){const h=HE.d.h||{};delete h[HEROK];HE.sel=null;HE.msg='已恢復預設（按「儲存」才會生效）'}
+  if(R.Tab&&L.length){const ids=L.map(t=>t.id);HE.sel=ids[(ids.indexOf(HE.sel)+1)%ids.length];HE.msg=''}
+  if(HE.sel&&W29REG[HE.sel]){const P=w29TilePos(HE.sel);let dx=(R.ArrowRight?4:0)-(R.ArrowLeft?4:0),dy=(R.ArrowDown?4:0)-(R.ArrowUp?4:0);if(dx||dy){const [x,y]=w29Clamp(HE.sel,P.x+dx,P.y+dy);heSet(HE.sel,{x:x/W,y:y/H})}
+    if(R.Equal||R.NumpadAdd)heSize(HE.sel,P.s+0.1);if(R.Minus||R.NumpadSubtract)heSize(HE.sel,P.s-0.1)}}
+// 預覽：畫遊戲畫面＋HUD（不前進時間）
+function w29Preview(){if(!(mode==='play'&&S0&&S0.P)){X.fillStyle='#000';X.fillRect(0,0,W,H);return}W29REG={};const [cx0,shy]=drawWorld();drawHUD(cx0,shy)}
+// ---------- 接到主迴圈 ----------
+(()=>{const st=document.createElement('style');st.textContent='body.w29hide #cloudChip{visibility:hidden!important}';document.head.appendChild(st)})();
+let W29HID=false;
+window.frame=(o=>function(now){const med=!!(window.__mobEdit&&__mobEdit.on);
+  {const h=!!(W29.open||HE.open||med);if(h!==W29HID){W29HID=h;document.body.classList.toggle('w29hide',h)}}
+  if(!W29.open&&!HE.open&&!med){try{if(KP.KeyO&&w29CanOpen()){delete KP.KeyO;w29Open()}}catch(e){}if(!W29.open)return o.apply(this,arguments)}
+  requestAnimationFrame(frame);last=now;try{pollPad()}catch(e){}
+  try{if(med)w29Preview();else if(HE.open){w29Preview();heDraw()}else{w29Draw();w29Input()}}catch(e){(window.__err=window.__err||[]).push('w29 '+e)}
+  for(const k in KP)delete KP[k];CLICK=null;W29RAW={}})(window.frame);
+// ---------- 入口：暫停選單／設定（匯出、匯入並排，多一列「按鍵設定」）、說明頁 ----------
+window.m21OptRows=function(x0,y0,inp){const o=m24Opt();let hit=false;
+  const vrow=(y,lab,w)=>{const on=o[w],v=o[w+'V'];const c=on?[150,255,150]:[255,150,140];
+    if(btn(x0,y,x0+54,y+42,'－',true)&&inp){m24Vol(w,-10);hit=true}
+    if(btn(x0+60,y,x0+240,y+42,`${lab}：${on?v+'%':'關'}`,true,c)&&inp){m21Mute(w);hit=true}
+    if(btn(x0+246,y,x0+300,y+42,'＋',true)&&inp){m24Vol(w,10);hit=true}
+    const bw=168,bx=x0+66,by=y+35;X.fillStyle='rgba(0,0,0,0.5)';X.fillRect(bx,by,bw,4);const f=on?v/100:0;X.fillStyle=rgb(on?[70,150,70]:[120,70,60]);X.fillRect(bx,by,Math.round(bw*f),4);X.fillStyle=rgb(on?[150,240,150]:[200,120,110]);X.fillRect(bx,by,Math.round(bw*f),2)};
+  vrow(y0,'音樂','mus');vrow(y0+50,'音效','sfx');
+  {const y=y0+100;if(btn(x0,y,x0+300,y+42,REC.on?'停止錄影（F9）':'開始錄影（F9）',true,REC.on?[255,120,110]:[255,236,200])&&inp){REC.on?m21RecStop():m21RecStart();hit=true}m21CamIcon(x0+30,y+21,REC.on)}
+  {const y=y0+150;if(btn(x0,y,x0+147,y+42,'匯出存檔',true)&&inp){m21Export();hit=true}if(btn(x0+153,y,x0+300,y+42,'匯入存檔',true)&&inp){m21Import();hit=true}}
+  {const y=y0+200;if(btn(x0,y,x0+300,y+42,'按鍵設定（O）',true,[160,220,255])&&inp){CLICK=null;w29Open();hit=true}}
+  if(inp){if(press(['BracketLeft']))m24Vol('mus',-10);if(press(['BracketRight']))m24Vol('mus',10);if(press(['Semicolon']))m24Vol('sfx',-10);if(press(['Quote']))m24Vol('sfx',10)}
+  return hit};
+const W29MB=[112,34,282,78];
+window.drawManual=(o=>function(){const r=o.apply(this,arguments);btn(...W29MB,'按鍵設定（O）',true,[160,220,255]);return r})(window.drawManual);
+window.m21Manual=(o=>function(){if(CLICK&&inBox(CLICK,W29MB)){CLICK=null;w29Open();return true}return o.apply(this,arguments)})(window.m21Manual);
+window.__w29=()=>({open:W29.open,cap:W29.cap,sel:W29.sel,msg:W29.msg,ch:W29CH,map:Object.fromEntries([...W29LIST].filter(v=>W29M[v]!==v).map(v=>[v,W29M[v]])),he:HE.open,heSel:HE.sel,tiles:heTiles().map(t=>[t.id,Math.round(t.x),Math.round(t.y),Math.round(t.r)]),saved:JSON.parse(JSON.stringify(W29HUD)),rw:s=>w29Rw(s)});
 

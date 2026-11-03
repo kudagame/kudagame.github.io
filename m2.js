@@ -254,14 +254,15 @@ function fltImg(im,f){if(!im||!im.width)return null;let m=FLTC.get(im);if(!m){if
   const [cc,x]=mk(im.width,im.height);x.filter=f;x.drawImage(im,0,0);m.set(f,cc);return cc}
 function spr(n,sx,sy,o={}){
   const [cw,chh,cx,cy]=anchor(n);let im=IMG[(o.flash?'f_':'s_')+n];if(!o.flash&&GS.wk&&n.startsWith('kudas')&&TINT[n+'|'+GS.wk])im=TINT[n+'|'+GS.wk];
+  if(!im||!im.width)return;
   if(o.filter&&!o.glow){const c=fltImg(im,o.filter);if(c){im=c;o=Object.assign({},o,{filter:null})}}
-  X.save();X.globalAlpha=o.alpha==null?1:o.alpha;X.translate(Math.round(sx),Math.round(sy));
+  X.save();try{X.globalAlpha=o.alpha==null?1:o.alpha;X.translate(Math.round(sx),Math.round(sy));
   if(o.sc)X.scale(o.sc,o.sc);if(o.filter)X.filter=o.filter;
   if(o.flip)X.scale(-1,1);
   if(o.rot){X.translate(0,-30*SS);X.rotate(-o.rot*Math.PI/180);X.translate(0,30*SS)}
   const dx=-cx*SS,dy=-cy*SS+(o.dy||0)*SS;
   if(o.glow){X.globalAlpha*=o.glow[3]/255;X.drawImage(ringImg(n,o.glow),dx,dy,cw*SS,chh*SS);X.globalAlpha=o.alpha==null?1:o.alpha}
-  X.drawImage(im,dx,dy,cw*SS,chh*SS);X.restore()}
+  X.drawImage(im,dx,dy,cw*SS,chh*SS)}finally{X.restore()}}
 // ---------- gear icons (pixel, 20×20 native) ----------
 const GIC={};
 function gearIconC(it){const key=it.t+it.k+'_'+it.r;if(GIC[key])return GIC[key];const [c,x]=mk(20,20);const R=RAR[it.r];
