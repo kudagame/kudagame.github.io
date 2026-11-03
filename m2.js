@@ -248,8 +248,13 @@ function buildTints(){for(const n of META.names){if(!n.startsWith('kudas'))conti
   for(let k=1;k<9;k++){const [c,x]=mk(src.width,src.height);x.drawImage(src,0,0);const id=x.getImageData(0,0,c.width,c.height),d=id.data;const R=BLADE[k];
     for(let i=0;i<d.length;i+=4){if(md[i]<128||d[i+3]===0)continue;const l=(d[i]*0.3+d[i+1]*0.59+d[i+2]*0.11);const j=clamp(Math.round((l-45)/(205-45)*4),0,4);d[i]=R[j][0];d[i+1]=R[j][1];d[i+2]=R[j][2]}
     x.putImageData(id,0,0);TINT[n+'|'+k]=c}}}
+// W2.8：濾鏡圖快取：同一張圖＋同一組濾鏡只算一次（殘影每 frame 套 CSS 濾鏡很貴：1 張約 5 ms）。濾鏡只改顏色、不改形狀，先套好再縮放貼上，畫面一樣
+const FLTC=new Map();
+function fltImg(im,f){if(!im||!im.width)return null;let m=FLTC.get(im);if(!m){if(FLTC.size>=48)FLTC.delete(FLTC.keys().next().value);m=new Map();FLTC.set(im,m)}let c=m.get(f);if(c)return c;
+  const [cc,x]=mk(im.width,im.height);x.filter=f;x.drawImage(im,0,0);m.set(f,cc);return cc}
 function spr(n,sx,sy,o={}){
   const [cw,chh,cx,cy]=anchor(n);let im=IMG[(o.flash?'f_':'s_')+n];if(!o.flash&&GS.wk&&n.startsWith('kudas')&&TINT[n+'|'+GS.wk])im=TINT[n+'|'+GS.wk];
+  if(o.filter&&!o.glow){const c=fltImg(im,o.filter);if(c){im=c;o=Object.assign({},o,{filter:null})}}
   X.save();X.globalAlpha=o.alpha==null?1:o.alpha;X.translate(Math.round(sx),Math.round(sy));
   if(o.sc)X.scale(o.sc,o.sc);if(o.filter)X.filter=o.filter;
   if(o.flip)X.scale(-1,1);

@@ -1180,3 +1180,40 @@ window.bagUI=(o=>function(inp){let C=null,hover=false;
 const W27=window.__w27={buildCmp,simEquip,drawCmp,cmpv,pv,noHover:false,cur:null};
 })();
 
+// ---- src27/n_w28food.js
+// W2.8：寵物糧食先存著（寵物系統上線前，先讓玩家累積一點，現在還沒有用途）
+//  - 食物槽 3/3、或援助角色在場時撿到的烤麵包（原本只記一行字就浪費掉）→ 存成「剩食麵包」
+//  - 撿到「基本草藥」→ 35% 變成 1 個「零食材料」（其餘照舊只是一行字）
+//  - 存在 SAVE.pet.bread／SAVE.pet.snackMat（寵物系統之後直接讀這兩個欄位，見 design/pet_system_zh.md 附錄 B「SAVE.pet」）
+//  - 先存上限：剩食麵包 300、零食材料 30（到上限就不再增加；不會把已經有的數量往下砍，寵物系統上線後可以存到 999）
+//  - 舊存檔沒有 SAVE.pet：讀的時候當 0；第一次撿到才建立欄位（舊存檔內容一個字都不會變）
+//  - 共用：放在存檔最上層（不在 PERK 裡），換角色不會分開算
+//  - 畫面：只在背包下方加一個小計數＋一句話，不另外公告
+const W28F={cap:{bread:300,snackMat:30},herbMat:0.35,
+  say:'「先存著，以後會有小傢伙用得到喔。」',sayFull:'「先存這麼多就好，剩下的留給以後吧。」'};
+function w28PetN(k){try{const p=SAVE&&SAVE.pet;const v=p&&typeof p==='object'?+p[k]:0;return v>0&&isFinite(v)?Math.floor(v):0}catch(e){return 0}}
+// 加 n 個（不超過先存上限；已經超過上限的不動）。回傳實際加了幾個
+function w28PetAdd(k,n){if(!SAVE||!(n>0))return 0;const cap=W28F.cap[k],cur=w28PetN(k);if(cur>=cap)return 0;
+  if(!SAVE.pet||typeof SAVE.pet!=='object'||Array.isArray(SAVE.pet))SAVE.pet={};
+  const add=Math.min(n,cap-cur);SAVE.pet[k]=cur+add;return add}
+// 撿東西：飛進「背包」的烤麵包＝浪費掉的那份 → 存起來；基本草藥 → 機率變零食材料
+window.stepLoot=(o=>function(dt){const s=S0;let pend=null;
+  try{if(s&&s.fly&&SAVE)pend=s.fly.filter(f=>!f.done&&(f.k==='food'||f.k==='herb'))}catch(e){pend=null}
+  const r=o.apply(this,arguments);
+  if(pend&&pend.length)try{for(const f of pend){if(!f.done)continue;
+      let txt=null;
+      if(f.k==='food'&&f.dst==='bag'){txt=w28PetAdd('bread',1)?'烤麵包 → 剩食麵包 +1（存起來了）':null}
+      else if(f.k==='herb'&&Math.random()<W28F.herbMat){txt=w28PetAdd('snackMat',1)?'基本草藥 → 零食材料 +1（存起來了）':null}
+      if(txt){const L=s.log;for(let i=L.length-1;i>=0&&i>=L.length-8;i--){const e=L[i];if(e&&e[1]===f.k&&typeof e[2]==='string'&&e[2].startsWith('獲得 ')&&!e.w28){e[2]=txt;e.w28=1;break}}}}}
+    catch(e){(window.__err=window.__err||[]).push('w28food: '+e)}
+  return r})(window.stepLoot);
+// 背包：中間下方一個小框（不能點，只顯示）
+function w28FoodBox(){const b=w28PetN('bread'),m=w28PetN('snackMat'),full=b>=W28F.cap.bread&&m>=W28F.cap.snackMat;
+  const x0=632,y0=582,x1=904,y1=624;rrect(x0,y0,x1,y1,8,'rgba(40,30,20,0.85)','rgba(214,172,84,0.55)',1);
+  const ic=(n,x)=>{const im=IMG[n];if(!im)return;X.save();X.imageSmoothingEnabled=false;const sc=18/Math.max(im.width,im.height);X.drawImage(im,x,y0+4,Math.round(im.width*sc),Math.round(im.height*sc));X.restore()};
+  ic('i_food',x0+8);T(`剩食麵包 ${b}`,x0+30,y0+13,FN(13),b>=W28F.cap.bread?[255,226,120]:[255,240,210],2,[0,0,0],'lm');
+  ic('i_herb',x0+142);T(`零食材料 ${m}`,x0+164,y0+13,FN(13),m>=W28F.cap.snackMat?[255,226,120]:[255,240,210],2,[0,0,0],'lm');
+  T(full?W28F.sayFull:W28F.say,(x0+x1)/2,y0+32,FN(12),[214,190,150],2,[0,0,0],'mm')}
+window.bagUI=(o=>function(inp){const r=o.apply(this,arguments);try{if(SAVE)w28FoodBox()}catch(e){(window.__err=window.__err||[]).push('w28box: '+e)}return r})(window.bagUI);
+window.__w28food={cfg:W28F,n:w28PetN,add:w28PetAdd};
+
