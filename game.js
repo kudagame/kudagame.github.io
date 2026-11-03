@@ -98,7 +98,7 @@ let HEAL_CAP=Math.round(HPMAX*0.08);const BARD_STAY=12,BUFF_SPD=1.25,PET_RATE=0.
 const POOL={n:[1266,1317,3564,4091],c:[3484,3676,3778,3944,4230,5823,6132,7283],zj:[3570,2079,4156],
   slam:[16578,28120],chg:[9840,12460],chgc:[24610,29870],stomp:[6230,8410],stompc:[15820,19470],slamc:[59242,62605],air:[3570,4156,4091],airc:[7283,84109],wind:[75084,112583],windc:[131176,169922,174503],pet:[1266,1317]};
 // M1.1 心臟刺擊 + 出血 DOT (暫定)
-const STAB_COST=2,BLEED_DUR=5.0,BLEED_TICK=0.5,BLEED_POOL=[612,655,688,731,804],BLEED_WIND2=0.5; // 斬風打出血目標：第二段 1/2 傷害 (暫定)
+const STAB_COST=2,BLEED_DUR=5.0,BLEED_TICK=0.5,BLEED_POOL=[514,550,578,614,675],BLEED_CRIT=1.6,BLEED_WIND2=0.5; // 斬風打出血目標：第二段 1/2 傷害 (暫定)
 // 西施犬守護泡泡 (暫定)
 const PET_EN_MAX=3,SHIELD_COST=2,SHIELD_DUR=10,SHIELD_CD=30,SHIELD_TICK=0.5;
 // 礦坑強化怪 / 看守者 (暫定)
@@ -202,7 +202,8 @@ function registerHit(v){const s=S0,t=s.t;s.combo=(t-s.lastHit<=COMBO_GAP)?s.comb
   if(s.combo>0&&s.combo%20===0)proc('連擊',[40,150,200],'連');
   {const cb=comboBonus(s.combo);if(cb!==s.comboTier){if(cb>s.comboTier)s.tierT=t;s.comboTier=cb}}
   if(s.combo===1)s.comboTier=0;
-  if(t<=s.rev_until&&s.P.hp<HPMAX&&!s.P.dead){const hv=Math.min(HEAL_CAP,Math.floor(v/2));s.P.hp=Math.min(HPMAX,s.P.hp+hv);s.heals.push({t,v:hv})}}
+  if(HEROK==='kudas'&&t<=s.rev_until&&s.P.hp<HPMAX&&!s.P.dead){const hv=Math.min(HEAL_CAP,Math.floor(v/2));s.P.hp=Math.min(HPMAX,s.P.hp+hv);s.heals.push({t,v:hv,rev:1});s.revGlow=t; // W2.10：復仇只屬於苦達斯
+    if(!(t<(s.revSfx||-9))){s.revSfx=t+1;sfx('coin',0.18)}}}
 // W2.7 紅圈＝圓錐：離圓心越近，危險高度越高（TELE_H×(1−距離/半徑)）。圓心附近跳不過，只有外圈約兩成跳得過
 const TELE_H=700,TELE_LAND=0.4;
 function teleIn(c,P){const d=Math.hypot(P.x-c.x,(P.y-c.y)*2.2);return d<c.r&&P.h<TELE_H*(1-d/c.r)}
@@ -454,8 +455,8 @@ function stepRitual(dt){const s=S0,r=s.ritual;if(!r)return;const age=s.t-r.t0;
   if(age<1.6&&Math.floor(s.t/0.03)!==Math.floor((s.t-dt)/0.03)){const a=U(0,Math.PI*2),rr=U(90,150);s.parts.push({x:s.P.x+Math.cos(a)*rr,y:s.P.y-60+Math.sin(a)*rr*0.7,vx:-Math.cos(a)*rr/0.25,vy:-Math.sin(a)*rr*0.7/0.25,g:0,life:0.25,t0:s.t,c:[255,236,160],sz:1})}
   if(age>=5.2&&!r.end){r.end=1;s.ritual=null;setStage('boss',{x:220});s.fadeIn=s.t}}
 function stepBleed(dt){const s=S0,t=s.t;for(const m of s.mobs){const b=m.bleed;if(!b||m.gone)continue;if(t>b.until+0.01){m.bleed=null;continue}
-  if(t>=b.next){b.next+=BLEED_TICK;if(m.dying||(m.kind==='boss'&&bossShielded()))continue;const v=Math.round(CH(BLEED_POOL)*GS.wm*(m.kind==='boss'&&b4Prot()?0.2:1));m.hp-=v;statHit(v,false,false);
-    s.dmg.push({t,x:m.x+U(-12,12),y:(m.kind==='boss'?m.y-250:m.y-m.h-96),v,bleed:true});
+  if(t>=b.next){b.next+=BLEED_TICK;if(m.dying||(m.kind==='boss'&&bossShielded()))continue;const bc=rnd()<(buffed()?0.55:0.32)+m2Crit(m);const v=Math.round(CH(BLEED_POOL)*GS.wm*(bc?BLEED_CRIT*(1+GS.cdmg):1)*(m.kind==='boss'&&b4Prot()?0.2:1));m.hp-=v;statHit(v,bc,false);
+    s.dmg.push({t,x:m.x+U(-12,12),y:(m.kind==='boss'?m.y-250:m.y-m.h-96),v,bleed:true,crit:bc});
     for(let i=0;i<3;i++)s.parts.push({x:m.x+U(-14,14),y:m.y-m.h-U(50,90),vx:U(-40,40),vy:-U(40,120),g:900,life:0.4,t0:t,c:CH([[200,20,40],[150,10,30],[230,60,70]]),sz:1});
     if(m.hp<=0&&!m.dying)mobDie(m)}}}
 // ---------- particles ----------
@@ -667,9 +668,9 @@ function drawHUD(cx0,shy){const s=S0,t=s.t,P=s.P;
   circ(134,105,7,'rgb(250,200,40)','rgb(120,80,0)',2);T(s.gold.toLocaleString('en-US'),150,105,FN(15),[255,255,255],2,[0,0,0],'lm');m2GoldHUD(150+tw(s.gold.toLocaleString('en-US'),FN(15))+10,105);T(`EXP ${s.exp.toFixed(1)}%`,400,105,FN(12),[255,225,140],2,[0,0,0],'rm');
   // buffs
   const bufs=[];if(buffed()){const bt=s.bard.buffT;[['♪',''],['攻','3'],['暴','2']].forEach(([g,n],i)=>{if(t>=bt+i*0.12)bufs.push([g,n,bt+i*0.12,[44,104,196]])})}
-  if(t<=s.rev_until)bufs.push(['仇','',s.rev_until-REV_WIN,[150,36,40]]);
+  if(HEROK==='kudas'&&t<=s.rev_until)bufs.push(['仇','',s.rev_until-REV_WIN,[150,36,40]]);
   let bx=124;for(const [g,n,t0,col] of bufs){const pop=Math.max(0,1-(t-t0)/0.15),sz=24+Math.floor(8*pop),x0=bx+12-Math.floor(sz/2),y0=124+12-Math.floor(sz/2);
-    rrect(x0,y0,x0+sz,y0+sz,5,rgb(col),col[2]>150?'rgb(200,225,255)':'rgb(255,200,190)',2);T(g,bx+12,136,FS(15),[255,255,255],2,[10,20,50],'mm');if(n)T(n,bx+23,148,FN(11),[255,255,255],2,[0,0,0],'rb');bx+=30}
+    rrect(x0,y0,x0+sz,y0+sz,5,rgb(col),col[2]>150?'rgb(200,225,255)':'rgb(255,200,190)',2);if(g==='仇'){const f=Math.max(0,Math.min(1,(s.rev_until-t)/REV_WIN));if(f>0)arc(bx+12,136,17,-90,-90+360*f,'rgb(255,120,110)',3)}T(g,bx+12,136,FS(15),[255,255,255],2,[10,20,50],'mm');if(n)T(n,bx+23,148,FN(11),[255,255,255],2,[0,0,0],'rb');bx+=30}
   // support badge (尋歡作樂)
   {const hg=t-s.hungryT;const bx_=538+(hg>=0&&hg<0.5?Math.round(6*Math.sin(hg*60)*(1-hg/0.5)):0),by_=58,R=44;circ(bx_,by_,R+6,'rgba(12,10,16,0.84)',rgb(GOLDC),2);arc(bx_,by_,R,0,360,'rgb(60,40,30)',8);let pips=s.food,lab;const b=s.bard;
     const ih=IMG.bardh,ig=IMG.bardg;
@@ -703,7 +704,7 @@ function drawHUD(cx0,shy){const s=S0,t=s.t,P=s.P;
   const hus=s.dmg.filter(e=>e.hurt&&t-e.t>=0&&t-e.t<=0.85).sort((a,b)=>a.t-b.t);
   hus.forEach((e,hi)=>{const age=t-e.t,im=numImg(e.v,'hurt'),sc=1+0.5*Math.max(0,1-age/0.08),a=age<0.65?1:Math.max(0,1-(age-0.65)/0.2);const iw=Math.round(im.width*sc),ih=Math.round(im.height*sc);
     const hx=Math.round(P.x-cx0-48-iw),hy=Math.round(P.y+shy-92-30*Math.min(1,age/0.5)-(hus.length-1-hi)*26);X.save();X.globalAlpha=a;X.drawImage(im,hx,hy,iw,ih);X.restore()});
-  for(const e of s.dmg){if(!e.bleed)continue;const age=t-e.t;if(age<0||age>0.8)continue;const im=numImg(e.v,'bleed'),a=age<0.55?1:(0.8-age)/0.25;X.save();X.globalAlpha=a;X.drawImage(im,Math.round(e.x-cx0+30),Math.round(e.y+shy-24*Math.min(1,age/0.5)));X.restore()}
+  for(const e of s.dmg){if(!e.bleed)continue;const age=t-e.t;if(age<0||age>0.8)continue;const im=numImg(e.v,'bleed'),a=age<0.55?1:(0.8-age)/0.25;X.save();X.globalAlpha=a;X.drawImage(im,Math.round(e.x-cx0+30),Math.round(e.y+shy-24*Math.min(1,age/0.5)));X.restore();if(e.crit)T('暴擊',Math.round(e.x-cx0+26),Math.round(e.y+shy-24*Math.min(1,age/0.5)+im.height/2),FS(14),[255,120,60],2,[0,0,0],'rm',a)}
   const act=s.dmg.filter(e=>!e.hurt&&!e.bleed&&t-e.t>=0&&t-e.t<=0.85).sort((a,b)=>b.t-a.t).slice(0,5);const placed=[];
   for(const e of act){const age=t-e.t,kind=e.zero?'zero':e.v>=50000?'big':e.pet?'pet':e.crit?'crit':'n';const im=numImg(e.v,kind),sc=1+0.6*Math.max(0,1-age/0.08);const iw=Math.round(im.width*sc),ih=Math.round(im.height*sc);
     const rise=Math.floor(36*Math.min(1,age/0.5)),a=age<0.65?1:1-(age-0.65)/0.2;if(a<=0)continue;let x=clamp(Math.round(e.x-cx0-iw/2),8,W-iw-8),y=Math.round(e.y+shy-rise-ih/2);
@@ -716,7 +717,12 @@ function drawHUD(cx0,shy){const s=S0,t=s.t,P=s.P;
   if(s.callout){const age=t-s.callout.t0;const dur=1.07;if(age<dur){const a=Math.min(1,age/0.06)*(age<0.82?1:(dur-age)/0.25),sc=Math.max(1,1.5-age/0.08*0.5);
     T(s.callout.txt,Math.round(P.x-cx0-30*P.face),Math.round(P.y-200+shy),FS(Math.floor(44*sc)),[235,255,245],5,[20,70,60],'mm',a)}}
   // heals
-  const kx=P.x-cx0,ky=P.y+shy-P.h;const grp=[];for(const e of s.heals.slice().sort((a,b)=>a.t-b.t)){if(grp.length&&e.t-grp[grp.length-1].t<0.3)grp[grp.length-1].v+=e.v;else grp.push({t:e.t,v:e.v})}
+  const kx=P.x-cx0,ky=P.y+shy-P.h;
+  // W2.10 復仇回饋：腳下暗紅光＋獨立的「復仇 +N」（不和其他回血合併）
+  if(s.revGlow!=null&&t-s.revGlow>=0&&t-s.revGlow<0.25){const ga=1-(t-s.revGlow)/0.25,fx_=Math.round(kx),fy_=Math.round(P.y+shy);X.save();X.globalAlpha=0.55*ga;X.fillStyle='rgb(120,10,24)';X.beginPath();X.ellipse(fx_,fy_,74,16,0,0,7);X.fill();X.fillStyle='rgb(200,40,50)';X.beginPath();X.ellipse(fx_,fy_,52,11,0,0,7);X.fill();X.fillStyle='rgb(255,110,100)';X.beginPath();X.ellipse(fx_,fy_,30,6,0,0,7);X.fill();X.restore()}
+  {const rg=[];for(const e of s.heals){if(!e.rev)continue;if(rg.length&&e.t-rg[rg.length-1].t<0.3)rg[rg.length-1].v+=e.v;else rg.push({t:e.t,v:e.v})}
+    const rl=rg.filter(e=>t-e.t>=0&&t-e.t<0.9);rl.forEach((e,i)=>{const age=t-e.t,a=age<0.65?1:Math.max(0,1-(age-0.65)/0.25);T('復仇 +'+e.v.toLocaleString('en-US'),Math.round(kx+46),Math.round(ky-120-30*Math.min(1,age/0.5)-(rl.length-1-i)*28),FS(22),[200,36,48],3,[40,0,8],'lm',a)})}
+  const grp=[];for(const e of s.heals.slice().sort((a,b)=>a.t-b.t)){if(e.rev||e.hk)continue;if(grp.length&&e.t-grp[grp.length-1].t<0.3)grp[grp.length-1].v+=e.v;else grp.push({t:e.t,v:e.v})}
   const hl=grp.filter(e=>t-e.t>=0&&t-e.t<0.9);hl.forEach((e,i)=>{const age=t-e.t,a=age<0.65?1:Math.max(0,1-(age-0.65)/0.25),im=numImg(e.v,'heal');X.save();X.globalAlpha=a;X.drawImage(im,Math.round(kx-40-im.width),Math.round(ky-150-30*Math.min(1,age/0.5)-(hl.length-1-i)*28));X.restore()});
   // proc popups
   const pa=s.procs.filter(p=>t-p[0]>=0&&t-p[0]<1.1);pa.forEach(([t0,name,col,g],j)=>{const age=t-t0,a=Math.min(1,age/0.08)*(age<0.85?1:Math.max(0,(1.1-age)/0.25));
@@ -807,7 +813,7 @@ function drawManual(){X.fillStyle='#000';X.fillRect(0,0,W,H);X.save();X.globalAl
     ['召喚詩人','V：食物 3/3 時召喚尋歡作樂（彈魯特琴加攻擊）','LB'],['互動','E（或 F）：礦坑入口、女神像、搗蛋鬼／貓商人','RB'],['背包','I 或點右下背包：暫停並打開背包（裝備／出售／分解）','—'],['暫停','Esc（或 P）','Back'],['全螢幕','F11','—']];
   T('動作',200,150,FN(16),[255,210,140],2,[0,0,0],'lm');T('鍵盤',350,150,FN(16),[255,210,140],2,[0,0,0],'lm');T('手把',1000,150,FN(16),[255,210,140],2,[0,0,0],'lm');
   rows.forEach(([a,b,c],i)=>{const y=186+i*34;T(a,200,y,FS(19),[255,244,214],2,[0,0,0],'lm');T(b,350,y,FN(17),[235,230,220],2,[0,0,0],'lm');T(c,1000,y,FN(17),[200,230,255],2,[0,0,0],'lm')});
-  const tips=['斬風打到「出血」中的敵人：再追加一段 1/2 傷害。前方有倒地敵人時施放：免費、連發兩道。','西施犬：火球命中累積能量；HP ≤ 1/2 時自動花 2 格能量撐起守護泡泡（10 秒回復 1/2 HP）。','連擊越高傷害越高（+% 數值暫定）。被打後 3.2 秒內「復仇」：打中敵人回血。'];
+  const tips=['斬風打到「出血」中的敵人：再追加一段 1/2 傷害。前方有倒地敵人時施放：免費、連發兩道。','西施犬：火球命中累積能量；HP ≤ 1/2 時自動花 2 格能量撐起守護泡泡（10 秒回復 1/2 HP）。','連擊越高傷害越高。苦達斯的「復仇」：被打後 3.2 秒內打中敵人會回血（暗紅「復仇 +數字」）。'];
   tips.forEach((q,i)=>T('・'+q,180,546+i*30,FN(15),[220,214,200],2,[0,0,0],'lm'));
   T('Esc / Enter / 點一下 回標題',640,650,FS(20),[255,255,255],3,[0,0,0],'mm')}
 function drawQuit(){X.fillStyle='#000';X.fillRect(0,0,W,H);T('感謝遊玩！',640,320,FS(48),[255,236,200],4,[60,20,10],'mm');T('遊戲已結束，可以關閉這個視窗了。',640,390,FN(20),[220,220,220],2,[0,0,0],'mm')}

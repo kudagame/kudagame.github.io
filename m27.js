@@ -450,8 +450,8 @@ window.drawManual=(o=>()=>{const ks=['Tab','ArrowRight','ArrowLeft'],hit=ks.filt
   try{if(MAN.q<2){o();rrect(380,650,900,686,8,'rgba(16,10,8,0.95)');T(`（${MAN.q+1}/3）Tab／←→：換角色　　Esc / Enter 回標題`,640,668,FS(17),[255,255,255],3,[0,0,0],'mm');if(MAN.q===0){X.fillStyle='rgba(16,10,8,1)';X.fillRect(900,48,272,32);T('Tab／←→：換角色（1/3）',1160,64,FN(14),[255,210,140],2,[0,0,0],'rm')}return}
     X.fillStyle='#000';X.fillRect(0,0,W,H);X.save();X.globalAlpha=0.35;X.drawImage(IMG.titlebg,0,0,W,H);X.restore();
     rrect(100,26,1180,700,14,'rgba(16,10,8,0.92)',rgb(GOLDC),3);T('操作說明・三杯兔子（長弓兵）',640,64,FS(30),[255,236,200],4,[60,20,10],'mm');
-    const rows=[['射擊','J：邊走邊射（移動中也能射）；空中 J＝往斜下射（最多 2 發）；打中累積「集中」'],['蓄力射擊','按住 J：0.5／1.0／1.5 秒三段（白→金光），放開射出；第 3 段「尋心箭」貫穿＋擊退、集中 +1'],
-      ['翼矛','K：前方地面紫色符文，0.35 秒後木樁爆出：擊飛＋「破防」（5 秒內受到傷害 +10%）。冷卻 8 秒'],['箭雨','↓+K：前方綠色區域落箭 2 秒（8 段），之後留下綠霧 4 秒：緩速＋持續傷害。冷卻 12 秒'],
+    const rows=[['射擊','J：邊走邊射（移動中也能射）；空中 J＝往斜下射（最多 2 發）；打中累積「集中」；箭頭沾藥酒，打中會回血（「藥酒 +數字」，血少時更多）'],['蓄力射擊','按住 J：0.5／1.0／1.5 秒三段（白→金光），放開射出；第 3 段「尋心箭」貫穿＋擊退、集中 +1'],
+      ['翼矛','K：前方地面紫色符文，0.35 秒後木樁爆出：擊飛＋「破防」（5 秒內受到傷害 +10%）。冷卻 8 秒'],['箭雨','↓+K：先乾一杯回血，前方落箭 2 秒（8 段），留下藥酒綠霧 4 秒：緩速＋持續傷害，打中霧裡的敵人會回血。冷卻 12 秒'],
       ['烈焰箭','L：橘色火箭，打中爆炸，再往附近敵人連鎖爆炸 2 次。冷卻 10 秒'],['後翻扇射','↓+L：往後翻（無敵），在空中射出 3 支扇形箭；集中 ≥2 時消耗 2 → 5 支。冷卻 7 秒'],
       ['翻滾','Shift：往移動方向翻滾，有無敵時間，可接任何攻擊。冷卻 1 秒'],['狙擊模式','K+L：集中 5 全部用掉，跪地 8 秒（不能移動、不會被打斷、←→ 轉向）。J＝普攻傷害、射程 +20%；K 或 L＝貫穿龍矢，射完 3 發結束；時間到沒射的龍矢作廢。冷卻 18 秒'],
       ['穿天龍矢','J+K：龍矢量表滿（打中、用技能、挨打都會累積），紫白光柱＋巨大光束：6 段＋最後一擊擊退、破防 8 秒，放招中無敵'],
@@ -1411,4 +1411,32 @@ const W29MB=[112,34,282,78];
 window.drawManual=(o=>function(){const r=o.apply(this,arguments);btn(...W29MB,'按鍵設定（O）',true,[160,220,255]);return r})(window.drawManual);
 window.m21Manual=(o=>function(){if(CLICK&&inBox(CLICK,W29MB)){CLICK=null;w29Open();return true}return o.apply(this,arguments)})(window.m21Manual);
 window.__w29=()=>({open:W29.open,cap:W29.cap,sel:W29.sel,msg:W29.msg,ch:W29CH,map:Object.fromEntries([...W29LIST].filter(v=>W29M[v]!==v).map(v=>[v,W29M[v]])),he:HE.open,heSel:HE.sel,tiles:heTiles().map(t=>[t.id,Math.round(t.x),Math.round(t.y),Math.round(t.r)]),saved:JSON.parse(JSON.stringify(W29HUD)),rw:s=>w29Rw(s)});
+
+// ---- src27/p_w210heal.js
+// ===== W2.10：復仇回血只屬於苦達斯 → 詩人、三杯兔子改用自己的招式回血（體驗不輸 W2.9）=====
+// 詩人「希望旋律」：她自己的琴擊打中敵人就回血（每秒有上限）；綠色樂想／希望之歌期間回得更多，綠色回血本身也加強。
+// 三杯兔子「藥酒箭」：箭頭沾了藥酒，自己射出的箭打中敵人就回血（每秒有上限）；箭雨出手前先乾一杯（立刻回血），之後的綠霧是藥酒霧，打中霧裡的敵人回血加倍。
+// 數字：詩人「♪ +N」淡綠、兔子「藥酒 +N」黃綠，和一般回血分開顯示。
+const W210={bard:{hit:0.15,cap:0.75,grn:1.25,low:1.5},archer:{hit:0.18,cap:1.00,mist:1.5,cast:0.20,low:1.5}};
+function w210Heal(kind,frac,capFrac){const s=S0,P=s&&s.P,t=s&&s.t;if(!P||P.dead||P.hp<=0||P.hp>=HPMAX)return 0;
+  let v=Math.round(HPMAX*frac);if(capFrac){if(!(t<(P.hkWT||-9))){P.hkWT=t+1;P.hkWD=0}v=Math.min(v,Math.round(HPMAX*capFrac)-(P.hkWD||0));if(v<=0)return 0;P.hkWD=(P.hkWD||0)+v}
+  v=Math.min(v,Math.ceil(HPMAX-P.hp));P.hp=Math.min(HPMAX,P.hp+v);s.heals.push({t,v,hk:kind});return v}
+// 詩人：自己的琴擊（不含苦達斯助戰的斬風 kwind）；血量低於 40% 時 ×1.5（「堅持的旋律」）
+window.bHit=(o=>function(m,mv,pool,mul,multi){const hp0=m&&m.hp;const r=o.apply(this,arguments);
+  try{if(isBard()&&pool!=='kwind'&&m&&m.hp<hp0){const P=S0.P,g=P.regU>S0.t||P.grnU>S0.t,lo=P.hp<HPMAX*0.4?W210.bard.low:1;w210Heal('bard',W210.bard.hit*(g?W210.bard.grn:1)*lo,W210.bard.cap*(g?W210.bard.grn:1)*lo)}}catch(e){}return r})(window.bHit);
+// 三杯兔子：自己的箭打中 → 回血（綠霧裡的敵人 ×1.5；自己血量低於 40% 時再 ×1.5「醉意護身」）；箭雨出手 → 乾一杯
+window.aHit=(o=>function(m){const hp0=m&&m.hp;const r=o.apply(this,arguments);
+  try{if(isArcher()&&m&&m.hp<hp0){const k=(m.mistU>S0.t?W210.archer.mist:1)*(S0.P.hp<HPMAX*0.4?W210.archer.low:1);w210Heal('archer',W210.archer.hit*k,W210.archer.cap)}}catch(e){}return r})(window.aHit);
+window.arZone=(o=>function(z){const r=o.apply(this,arguments);
+  try{if(isArcher()&&z&&z.k==='rain'){const s=S0;if(w210Heal('archer',W210.archer.cast)){s.fx.push({k:'w210cup',t0:s.t});sfx('coin',0.22)}}}catch(e){}return r})(window.arZone);
+window.drawHUD=(o=>function(cx0,shy){const r=o.apply(this,arguments);try{const s=S0,P=s&&s.P;if(!P||!s.heals)return r;const t=s.t;
+  const kx=P.x-cx0,ky=P.y+shy-P.h;const g=[];
+  for(const e of s.heals){if(!e.hk)continue;const L=g.length?g[g.length-1]:null;if(L&&L.k===e.hk&&e.t-L.t<0.3)L.v+=e.v;else g.push({t:e.t,v:e.v,k:e.hk})}
+  const hl=g.filter(e=>t-e.t>=0&&t-e.t<0.9);
+  hl.forEach((e,i)=>{const age=t-e.t,a=age<0.65?1:Math.max(0,1-(age-0.65)/0.25),txt=(e.k==='bard'?'♪ +':'藥酒 +')+e.v.toLocaleString('en-US'),col=e.k==='bard'?[140,255,170]:[200,245,110];
+    T(txt,Math.round(kx-40),Math.round(ky-130-30*Math.min(1,age/0.5)-(hl.length-1-i)*28),FS(22),col,3,[10,50,20],'rm',a)});
+  // 回血時角色身上的淡綠光
+  const last=hl.length?hl[hl.length-1]:null;if(last&&t-last.t<0.22){const ga=1-(t-last.t)/0.22;X.save();X.globalAlpha=0.35*ga;X.fillStyle=last.k==='bard'?'rgb(120,255,160)':'rgb(190,245,100)';X.beginPath();X.ellipse(Math.round(kx),Math.round(P.y+shy),60,13,0,0,7);X.fill();X.restore()}
+  for(const f of s.fx){if(f.k!=='w210cup')continue;const age=t-f.t0;if(age<0||age>0.9)continue;const a=age<0.6?1:(0.9-age)/0.3;T('乾杯！',Math.round(kx),Math.round(ky-210-20*Math.min(1,age/0.4)),FS(26),[255,235,140],4,[70,40,0],'mm',a)}
+  }catch(e){}return r})(window.drawHUD);
 

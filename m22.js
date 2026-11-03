@@ -186,7 +186,7 @@ function bTrip(m,dur){const s=S0,t=s.t;if(m.dying||m.kind==='pillar')return;if(m
 function bIdeaGain(c){const s=S0,P=s.P,t=s.t;if(P.idea&&P.idea.until>t)return;c=c||CH(['r','g','b']);P.idea={c,until:t+BD.ideaHold,t0:t};
   s.fx.push({k:'b_idea',x:P.x,y:P.y,t0:t,c});sfx('ready',0.25)}
 function bIdeaUse(){const s=S0,P=s.P,t=s.t,I=P.idea;if(!I||I.until<=t)return null;P.idea=null;const d=BD.buff*(I.x2||1);
-  if(I.c==='r')P.redU=t+d;else if(I.c==='b')P.blueU=t+d;else{if(P.hp>=HPMAX)P.grnU=t+d;else{const h=Math.round(HPMAX*0.06);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h});P.regU=t+3*(I.x2||1);P.regN=t+0.5}}
+  if(I.c==='r')P.redU=t+d;else if(I.c==='b')P.blueU=t+d;else{if(P.hp>=HPMAX)P.grnU=t+d;else{const h=Math.round(HPMAX*0.10);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h,hk:'bard'});P.regU=t+5*(I.x2||1);P.regN=t+0.5}}
   s.fx.push({k:'b_iflash',x:P.x,y:P.y,t0:t,c:I.c});proc(IDEA[I.c].n,IDEA[I.c].c[1],'樂');sfx('summon',0.3);bUE(UE.idea);return I.c}
 const bRed=()=>S0.P.redU>S0.t,bBlue=()=>S0.P.blueU>S0.t;
 // --- 動作 ---
@@ -207,7 +207,7 @@ function bPerfect(){const s=S0,P=s.P,t=s.t;P.dgIF=0;P.invU=t+0.35;P.dgCD=0;P.pfU
   s.dmg.push({t,x:P.x,y:P.y-210,v:0,crit:false,label:'哎唷～',zj:false,pet:false,zero:true});proc('完美閃避',[120,200,255],'閃');s.fx.push({k:'b_pf',x:P.x,y:P.y,t0:t});if(GS.aftr)P.aftrU=t+2}
 // 每 frame
 function bStep(dt){const s=S0,P=s.P,t=s.t;if(P.chgCD==null){P.chgCD=0;P.stpCD=0}P.dgCD=(P.dgCD||0)-dt;P.ultCD=(P.ultCD||0)-dt;P.slamCD-=dt;P.chgCD-=dt;P.stpCD-=dt;
-  if(P.regU>t&&t>=P.regN){P.regN+=0.5;const h=Math.round(HPMAX*0.01);P.hp=Math.min(HPMAX,P.hp+h)}
+  if(P.regU>t&&t>=P.regN){P.regN+=0.5;if(P.hp<HPMAX&&!P.dead){const h=Math.min(Math.round(HPMAX*0.015),Math.ceil(HPMAX-P.hp));P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h,hk:'bard',tick:1})}}
   if(P.idea&&P.idea.until<=t)P.idea=null;
   bNotesStep(dt);
   const wantJump=IN.jump()||(AUTO&&AI.jump);
@@ -283,7 +283,7 @@ function bKneelImpact(A){const s=S0,P=s.P,t=s.t;const rx=bBlue()||A.song==='b'?3
   for(const m of s.mobs){if(m.gone||m.dying)continue;const big=m.kind==='boss'?80:0;const dx=(m.x-P.x)/(rx+big),dy=(m.y-P.y)/(ry+big*0.4);if(dx*dx+dy*dy>1||m.h>130)continue;tg.push(m)}
   const mul=(A.song==='r'?1.3:1)*BAL_W2.bp;for(const m of tg){const inv=m21Boss(m)&&m21BossInv();bHit(m,'stomp',null,mul,tg.length>=2);if(m.dying||m.kind==='pillar'||inv)continue;m.slowU=t+3;m.slowK=0.6;if(m21Boss(m)&&s.boss)s.boss.slowU=t+3}
   const SONG={r:['勇猛讚歌',1.3],g:['希望之歌',1],b:['反擊序曲',1]};if(A.song==='g'||A.song==='b'){}
-  if(A.song==='g'){const h=Math.round(HPMAX*0.06*1.5);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h})}
+  if(A.song==='g'){const h=Math.round(HPMAX*0.12);P.hp=Math.min(HPMAX,P.hp+h);s.heals.push({t,x:P.x,y:P.y-200,v:h,hk:'bard'});P.regU=Math.max(P.regU||0,t+4);P.regN=t+0.5}
   if(A.song==='b'){P.ctrU=t+4}
   if(SONG[A.song])bUE(UE.song);   // W2：唱出讚歌／希望之歌／反擊序曲＝多累積樂章
   if(SONG[A.song])s.callout={t0:t,txt:SONG[A.song][0]};
@@ -463,7 +463,7 @@ window.drawManual=(o=>()=>{if(press(['Tab'])||press(['ArrowRight'])||press(['Arr
   const rows=[['攻擊','J 連按＝4 段，第 4 下「調音敲擊」（鏗！）；空中 J＝音符射擊（紅色樂想時 2 發）'],['三連音','K：節奏 2，連發三個音圈（越來越大），第 3 個緩速 50%'],
     ['旋律衝擊','L：節奏 ≥3，衝刺旋轉＋把敵人打飛；不足＝旋音射擊（會彈到 2 個敵人，冷卻 2.2 秒）'],['跪地滑行','同方向連按兩下：滑過去絆倒敵人 1.2 秒（冷卻 3.5 秒）；強化每 +3 遠 8%、每 +5 多 1 段'],
     ['跪地彈奏','↓ 連按兩下：震地緩速；帶著樂想會變成彩色樂曲（紅 勇猛讚歌／藍 反擊序曲／綠 希望之歌）'],['後跳閃避','Shift：往後跳，有無敵時間；剛好躲過攻擊＝完美閃避（哎唷～）：節奏 +1、送一個樂想、冷卻重置'],
-    ['戰鬥交響曲','K+L 一起按：節奏 5，3.2 秒無敵大招，最後全場倒地；放完再無敵 0.5 秒'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉'],
+    ['戰鬥交響曲','K+L 一起按：節奏 5，3.2 秒無敵大招，最後全場倒地；放完再無敵 0.5 秒'],['樂想','K／L／滑行／跪彈打中時得到（紅 攻速移速、藍 傷害範圍、綠 回血），下一招自動用掉；琴擊打中也會回血（♪）'],
     ['召喚苦達','V：食物 3/3 時苦達從天而降、臉著地噴出兩道特大斬風，給你「戰意」（6 秒內被打 4 下才倒地）'],['比較脆','HP 3,300、被打 3 下就倒地；倒地瞬間按 Space＝受身翻起'],['其他','E 互動　I 背包　Esc 暫停　M 靜音　F9 錄影（變身藥水只有苦達斯能用）']];
   rows.forEach(([a,b],i)=>{const y=124+i*38;T(a,150,y,FS(17),[255,244,214],2,[0,0,0],'lm');for(const [j,l] of wrapT(b,FN(15),820).entries())T(l,310,y+j*18,FN(15),[235,230,220],2,[0,0,0],'lm')});
   T('Tab／←→：看苦達斯的操作　　Esc / Enter 回標題',640,668,FS(18),[255,255,255],3,[0,0,0],'mm')})(window.drawManual);
