@@ -3,7 +3,7 @@
 // ---------- M2.2 角色分開存檔 ----------
 // 存檔最上層＝「目前角色」的資料（原本的程式碼完全不用改）；另一個角色收在 SAVE.chars[角色]。
 // 共用：金幣、刻印碎片、寶石、設定、倉庫 SAVE.wh、物品編號 uid。各自獨立：背包、裝備、強化、關卡進度、難度、等級、變身藥水。
-const HERO={kudas:{n:'苦達斯',job:'大劍士',hp:4125},bard:{n:'尋歡作樂',job:'吟遊詩人',hp:3300},archer:{n:'三杯兔子',job:'長弓兵',hp:3000}};
+const HERO={kudas:{n:'苦達斯',job:'大劍士',hp:4125},bard:{n:'尋歡作樂',job:'吟遊詩人',hp:3300},archer:{n:'三杯兔子',job:'長弓兵',hp:3000},heal:{n:'夾夾',job:'治癒師',hp:3450}};
 const PERK=['inv','eq','clear','dsel','sel','slot','pots','pots2','lv','exp'];
 const WH_MAX=96,BAG_MAX=80;
 let HEROK='kudas';
@@ -36,7 +36,7 @@ window.m2Step=(o=>dt=>{o(dt);const s=S0;if(s&&SAVE){SAVE.lv=s.lv;SAVE.exp=s.exp}
 window.m21Pot=(o=>kind=>{if(HEROK==='kudas')return o(kind);const k=kind==='tfpot2'||kind===2?2:1,key=k===2?'pots2':'pots',c=SAVE.chars.kudas;if(c)c[key]=(c[key]||0)+1;const s=S0;
   if(s){s.log.push([s.t,'tfpot'+(k===2?'2':''),`獲得 ${TFS[k].pot}（已送到苦達斯的背包）`]);proc('稀有掉落',k===2?[170,40,60]:[150,70,200],'變');sfx('crit',0.4)}m2Save()})(window.m21Pot);
 window.m21Transform=(o=>(k,q)=>{if(HEROK!=='kudas'&&k){m21Toast('變身藥水只有苦達斯能用');return}return o(k,q)})(window.m21Transform);
-window.m2Assets=(o=>()=>[...o(),'inn','bardpor','kudash','kudasg','archerpor','archerh','archerg'])(window.m2Assets);
+window.m2Assets=(o=>()=>[...o(),'inn','bardpor','kudash','kudasg','archerpor','archerh','archerg','healpor','healh','healg'])(window.m2Assets);
 window.__m22={save:()=>SAVE,sw:k=>m22Switch(k),hero:()=>HEROK,char:k=>m22Char(k)};
 // ==== b_sel.js
 // ---------- 角色選擇（封面 → 選角 → 任務旅店） ----------
@@ -161,7 +161,7 @@ window.__wh={move:whMove};
 // 依 design/bard_research.md：樂想 紅/藍/綠、J×4（第 4 下調音敲擊）、空中 J 音符射擊、K 三連音、L 旋律衝擊（節奏≥3）／旋音射擊、
 // 方向連按＝跪地滑行（絆倒）、↓連按＝跪地彈奏（彩色樂曲）、K+L＝戰鬥交響曲、Shift＝後跳閃避（完美閃避獎勵）、倒地受身、V＝召喚苦達
 const BD={postIF:0.5,sp:345,spy:170,air:330,jv:1250,dg:1.2,sl:3.5,kn:6,ult:20,lcd:2.2,ideaHold:7,buff:6};   // W2.3：大招改回舊版（節奏 5＋冷卻 20 秒），樂章量表停用
-// （W2.3 已停用，bUE 不再累積；大招改回節奏 5）W2：大招改用獨立的「樂章」量表（0–100），不再吃節奏 5 → K／L 花節奏不會再擋到大招。量表只存在關卡中（P.ue），不進存檔、不會衰減
+// W2：大招改用獨立的「樂章」量表（0–100），不再吃節奏 5 → K／L 花節奏不會再擋到大招。量表只存在關卡中（P.ue），不進存檔、不會衰減
 const UE={max:100,rh:4,spend:2,hit:0.4,hitGap:0.1,idea:4,song:4,hurt:3,hurtGap:0.4,pf:5};
 function bUE(n,gap,key){return;const s=S0,P=s.P,t=s.t;if(!isBard())return;if(!n||P.dead||(P.act&&P.act.type==='bu'))return;if(gap){if(t-(P[key]||-9)<gap)return;P[key]=t}
   const u0=P.ue||0;P.ue=Math.min(UE.max,u0+n);if(u0<UE.max&&P.ue>=UE.max){P.ueFullT=t;proc('樂章滿・K+L 大招',[200,120,255],'交');sfx('ready',0.4)}}

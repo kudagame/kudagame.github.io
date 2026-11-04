@@ -61,7 +61,7 @@ function ctx(){const md=G('mode'),ui=G('UI'),pa=G('paused'),pw=G('pauseWhy');if(
   if(md==='play'&&pa&&pw==='esc')return 'pause';
   if(ui&&ui.kind==='bag')return 'bag';if(ui&&ui.kind==='char')return 'char';if(ui&&/^(rr|inh|up)$/.test(ui.kind))return 'smith';if(ui&&ui.kind)return 'ui';
   if(md==='map')return 'map';return 'menu'}
-const hero=()=>{const S=G('SAVE');return S&&(S.hero==='bard'||S.hero==='archer')?S.hero:'kudas'};
+const hero=()=>{const S=G('SAVE');return S&&(S.hero==='bard'||S.hero==='archer'||S.hero==='heal')?S.hero:'kudas'};
 const face=()=>{const s=G('S0');return s&&s.P&&s.P.face<0?'ArrowLeft':'ArrowRight'};
 // ---------- 樣式 ----------
 const css=`
@@ -116,6 +116,8 @@ const BT={
  sumK:{t:'召喚',s:'V',k:['KeyV']},sumB:{t:'召喚',s:'V',k:['KeyV']},
  atkA:{t:'射擊',s:'J',k:['KeyJ'],big:1},wingA:{t:'翼矛',s:'K',k:['KeyK']},fireA:{t:'烈焰箭',s:'L',k:['KeyL']},rainA:{t:'箭雨',s:'↓K',k:['ArrowDown','KeyK']},flipA:{t:'扇射',s:'↓L',k:['ArrowDown','KeyL']},
  rollA:{t:'翻滾',s:'Shift',k:['ShiftLeft']},snipeA:{t:'狙擊',s:'K+L',k:['KeyK','KeyL']},ultA:{t:'絕招',s:'J+K',k:['KeyJ','KeyK']},sumA:{t:'援助',s:'V',k:['KeyV']},
+ atkH:{t:'普攻',s:'J',k:['KeyJ'],big:1},linkH:{t:'生命連結',s:'K',k:['KeyK']},phH:{t:'幻痛',s:'L',k:['KeyL']},puH:{t:'生命脈動',s:'↓K',k:['ArrowDown','KeyK']},prH:{t:'防護',s:'↓L',k:['ArrowDown','KeyL']},
+ dashH:{t:'衝刺',s:'Shift',k:['ShiftLeft']},glH:{t:'召喚輝光',s:'K+L',k:['KeyK','KeyL']},ultH:{t:'天使之翼',s:'J+K',k:['KeyJ','KeyK']},sumH:{t:'援助',s:'V',k:['KeyV']},
  use:{t:'互動',s:'E',k:['KeyE'],sys:1},pause:{t:'暫停',s:'Esc',k:['Escape'],sys:1},bagO:{t:'背包',s:'I',k:['KeyI'],sys:1},
  charO:{t:'角色',s:'C',k:['KeyC'],sys:1},untf:{t:'解變身',s:'T',k:['KeyT'],sys:1,hot:1},
  rec:{t:'錄影',s:'F9',k:['F9'],sys:1},mute:{t:'靜音',s:'M',k:['KeyM'],sys:1},
@@ -163,11 +165,12 @@ st.textContent+=`#mobc{position:absolute;left:0;top:0;pointer-events:none;displa
 const PDEF={
  kudas:{atk:'atkK',r1:['jump','stabK','swordK'],r2:[['chgK',178],['stpK',204],['sumK',236,'sum']],small:['use','untf']},
  bard:{atk:'atkB',r1:['dodgeB','triB','melB'],r2:[['jump',175],['slideB',199],['kneelB',223],['ultB',249,'ult'],['sumB',277,'sum']],small:['emoteB','use','untf']},
- archer:{atk:'atkA',r1:['rollA','wingA','fireA'],r2:[['rainA',176],['flipA',200],['snipeA',226,'ult'],['ultA',254,'ult'],['sumA',280,'sum']],small:['jump','use']}};
+ archer:{atk:'atkA',r1:['rollA','wingA','fireA'],r2:[['rainA',176],['flipA',200],['snipeA',226,'ult'],['ultA',254,'ult'],['sumA',280,'sum']],small:['jump','use']},
+ heal:{atk:'atkH',r1:['dashH','linkH','phH'],r2:[['puH',176],['prH',200],['glH',226,'ult'],['ultH',254,'ult'],['sumH',280,'sum']],small:['jump','use']}};
 const TOPI=['pause','bagO','charO','rec','mute'];
-const LBL={atkK:'連斬',atkB:'連擊',jump:'跳躍',stabK:'刺擊',swordK:'大劍',chgK:'肩撞',stpK:'踱地',sumK:'召喚',triB:'三連音',melB:'旋律',dodgeB:'後跳',ultB:'大招',slideB:'滑行',kneelB:'跪彈',sumB:'召喚',emoteB:'演奏',atkA:'射擊',wingA:'翼矛',fireA:'烈焰',rainA:'箭雨',flipA:'扇射',rollA:'翻滾',snipeA:'狙擊',ultA:'絕招',sumA:'援助',use:'互動',untf:'解變身'};
-const SUBL={chgK:'→→',stpK:'↓↓',slideB:'→→',kneelB:'↓↓',sumK:'詩人',sumB:'苦達',rainA:'↓K',flipA:'↓L',snipeA:'K+L',ultA:'J+K'};
-const BUFOK={jump:1,stabK:1,swordK:1,triB:1,melB:1,dodgeB:1,ultB:1,sumK:1,sumB:1,wingA:1,fireA:1,rainA:1,flipA:1,rollA:1,snipeA:1,ultA:1,sumA:1};
+const LBL={atkK:'連斬',atkB:'連擊',jump:'跳躍',stabK:'刺擊',swordK:'大劍',chgK:'肩撞',stpK:'踱地',sumK:'召喚',triB:'三連音',melB:'旋律',dodgeB:'後跳',ultB:'大招',slideB:'滑行',kneelB:'跪彈',sumB:'召喚',emoteB:'演奏',atkA:'射擊',wingA:'翼矛',fireA:'烈焰',rainA:'箭雨',flipA:'扇射',rollA:'翻滾',snipeA:'狙擊',ultA:'絕招',sumA:'援助',atkH:'普攻',linkH:'連結',phH:'幻痛',puH:'脈動',prH:'防護',dashH:'衝刺',glH:'輝光',ultH:'絕招',sumH:'援助',use:'互動',untf:'解變身'};
+const SUBL={chgK:'→→',stpK:'↓↓',slideB:'→→',kneelB:'↓↓',sumK:'詩人',sumB:'苦達',rainA:'↓K',flipA:'↓L',snipeA:'K+L',ultA:'J+K',puH:'↓K',prH:'↓L',glH:'K+L',ultH:'J+K'};
+const BUFOK={jump:1,stabK:1,swordK:1,triB:1,melB:1,dodgeB:1,ultB:1,sumK:1,sumB:1,wingA:1,fireA:1,rainA:1,flipA:1,rollA:1,snipeA:1,ultA:1,sumA:1,linkH:1,phH:1,puH:1,prH:1,dashH:1,glH:1,ultH:1,sumH:1};
 let PL=null,hudSig='',hudDirty=true,hudRaf=0;const PRESS=new Map();// id -> 指頭數
 function playLayout(){const vw=L.vw,vh=L.vh,hr=hero(),D=PDEF[hr],S=G('SAVE');
   const base=L.uFix?L.uFix:L.mode==='panel'?Math.min((vh-L.gh)*0.2,vw*0.075,vh*0.13):Math.min(vh*0.125,vw*0.07);
@@ -224,8 +227,10 @@ function bState(id){const s=G('S0'),P=s&&s.P;const o={cd:0,ring:-1,ok:true,ready
     else if(id==='ultB'){const UC=(G('BD')||{ult:20}).ult;o.ring=Math.min(1,P.rh/RH);o.cd=Math.max(0,Math.min(1,(P.ultCD||0)/UC));o.ok=P.rh>=RH&&!(P.ultCD>0);o.ready=o.ok}   // W2.3：改回節奏 5
     else if(id==='wingA'||id==='fireA'||id==='rainA'||id==='flipA'||id==='rollA'){const A=G('__ar').AR,M={wingA:['wgCD',A.wing.cd*mv],fireA:['fiCD',A.fire.cd*mv],rainA:['rnCD',A.rain.cd*mv],flipA:['flCD',A.flip.cd*mv],rollA:['rlCD',A.roll.cd]}[id];o.cd=Math.min(1,Math.max(0,(P[M[0]]||0)/M[1]));o.ok=o.cd<=0}
     else if(id==='snipeA'){const A=G('__ar').AR;o.ring=Math.min(1,P.rh/A.snipe.cost);o.cd=Math.min(1,Math.max(0,(P.snCD||0)/(A.snipe.cd*mv)));o.ok=P.rh>=A.snipe.cost&&o.cd<=0;o.ready=o.ok}
+    else if(id==='linkH'||id==='phH'||id==='puH'||id==='prH'||id==='dashH'||id==='glH'){const H=P.hl||{},X=G('HL'),M={linkH:['lkCD',X.link.cd*mv],phH:['phCD',X.ph.cd*mv],puH:['puCD',X.pu.cd*mv],prH:['prCD',X.pr.cd*mv],dashH:['dCD',X.dash.cd],glH:['glCD',X.gl.cd*mv]}[id];o.cd=Math.min(1,Math.max(0,(H[M[0]]||0)/M[1]));o.ok=o.cd<=0;if(id==='glH')o.ready=o.ok}
+    else if(id==='ultH'){o.ring=Math.min(1,((P.hl||{}).ug||0)/100);o.ok=o.ring>=1;o.ready=o.ok}
     else if(id==='ultA'){const D=G('__ar').DRG;o.ring=Math.min(1,(P.dragon||0)/D.max);o.ok=o.ring>=1;o.ready=o.ok}
-    else if(id==='sumA'){o.ring=Math.min(1,s.food/FM);const busy=!!(s.bard||s.ally||s.arA)||t<=(s.allyCD||0);o.ok=s.food>=FM&&!busy;o.ready=o.ok}
+    else if(id==='sumA'||id==='sumH'){o.ring=Math.min(1,s.food/FM);const busy=!!(s.bard||s.ally||s.arA)||t<=(s.allyCD||0);o.ok=s.food>=FM&&!busy;o.ready=o.ok}
     else if(id==='sumK'||id==='sumB'){o.ring=Math.min(1,s.food/FM);const busy=id==='sumK'?!!(s.bard||s.arA):(!!(s.ally||s.arA)||t<=(s.allyCD||0));o.ok=s.food>=FM&&!busy;o.ready=o.ok}}catch(e){}
   return o}
 const q=v=>Math.round(v*24);
@@ -384,12 +389,12 @@ addEventListener('pointerdown',e=>{if(e.isTrusted&&(e.pointerType==='touch'||e.p
 addEventListener('contextmenu',ev=>ev.preventDefault(),opt);
 // 觸控版提示列：不顯示鍵盤按鍵
 {const KH='方向鍵/WASD 移動　J 攻擊　K 心臟刺擊　L 大劍術　Space 跳躍　V 召喚詩人　E 互動　I 背包（暫停）　Esc 暫停';
- const TK='左半邊拖曳移動　連斬　刺擊／大劍　連點兩下方向＝肩撞／踱地　召喚詩人（食物 3/3）　上方暫停鈕',TB='左半邊拖曳移動　連擊　三連音／旋律　後跳　大招（節奏滿）　滑行／跪彈　召喚苦達　演奏',TA='左半邊拖曳移動　射擊（按住蓄力）　翼矛／烈焰箭　箭雨／扇射　翻滾　狙擊（集中 5）　絕招（龍矢滿）　援助';
- const oT=window.T;window.T=function(s,...r){if(s===KH&&IM==='touch')s=hero()==='bard'?TB:hero()==='archer'?TA:TK;return oT.call(this,s,...r)}}
+ const TK='左半邊拖曳移動　連斬　刺擊／大劍　連點兩下方向＝肩撞／踱地　召喚詩人（食物 3/3）　上方暫停鈕',TB='左半邊拖曳移動　連擊　三連音／旋律　後跳　大招（節奏滿）　滑行／跪彈　召喚苦達　演奏',TA='左半邊拖曳移動　射擊（按住蓄力）　翼矛／烈焰箭　箭雨／扇射　翻滾　狙擊（集中 5）　絕招（龍矢滿）　援助',TH='左半邊拖曳移動　普攻　生命連結／幻痛　生命脈動／防護　衝刺　召喚輝光　天使之翼（量表滿）　援助';
+ const oT=window.T;window.T=function(s,...r){if(s===KH&&IM==='touch')s=hero()==='bard'?TB:hero()==='archer'?TA:hero()==='heal'?TH:TK;return oT.call(this,s,...r)}}
 
 // ---------- 版面 ----------
 const SETS={
- play:{kudas:['atkK','jump','stabK','swordK','chgK','stpK','sumK'],bard:['atkB','jump','triB','melB','dodgeB','ultB','slideB','kneelB','sumB','emoteB'],archer:['atkA','jump','wingA','fireA','rainA','flipA','rollA','snipeA','ultA','sumA'],sys:['pause','bagO','charO','use','untf','rec','mute']},
+ play:{kudas:['atkK','jump','stabK','swordK','chgK','stpK','sumK'],bard:['atkB','jump','triB','melB','dodgeB','ultB','slideB','kneelB','sumB','emoteB'],archer:['atkA','jump','wingA','fireA','rainA','flipA','rollA','snipeA','ultA','sumA'],heal:['atkH','jump','linkH','phH','puH','prH','dashH','glH','ultH','sumH'],sys:['pause','bagO','charO','use','untf','rec','mute']},
  pause:{a:['ok','back','j','tab'],x:['toMap','musD','musU','sfxD','sfxU','mute','uiSz','uiOp','mpos'],sys:['rec']},
  bag:{a:['ok','bagC','j','tab'],x:['sell','dis','sellG','sellW','tfU','tfY'],sys:['rec','mute']},
  char:{a:['ok','back','j','tab'],x:[],sys:['rec','mute']},
@@ -400,7 +405,7 @@ const SETS={
  load:{a:[],x:[],sys:[]}};
 // 動作鍵：以右下角為原點的格子（c 從右數、r 從下數）；大按鈕佔 2×2
 const GRID={atkK:[0,0,2],jump:[2,0],stabK:[2,1],swordK:[3,0],chgK:[3,1],stpK:[1,2],sumK:[2,2],
-  atkB:[0,0,2],triB:[2,1],melB:[3,1],dodgeB:[3,0],ultB:[3,2],slideB:[0,2],kneelB:[1,2],sumB:[2,2],emoteB:[0,3],atkA:[0,0,2],wingA:[2,1],fireA:[3,1],rollA:[3,0],rainA:[0,2],flipA:[1,2],snipeA:[3,2],ultA:[1,3],sumA:[2,2],/* M2.6 預留：詩人表演動作鈕 */
+  atkB:[0,0,2],triB:[2,1],melB:[3,1],dodgeB:[3,0],ultB:[3,2],slideB:[0,2],kneelB:[1,2],sumB:[2,2],emoteB:[0,3],atkA:[0,0,2],wingA:[2,1],fireA:[3,1],rollA:[3,0],rainA:[0,2],flipA:[1,2],snipeA:[3,2],ultA:[1,3],sumA:[2,2],atkH:[0,0,2],linkH:[2,1],phH:[3,1],dashH:[3,0],puH:[0,2],prH:[1,2],glH:[3,2],ultH:[1,3],sumH:[2,2],/* M2.6 預留：詩人表演動作鈕 */
   ok:[0,0,2],back:[2,0],bagC:[2,0],j:[2,1],tab:[3,1]};
 let L={},curKey='';
 function layout(){const vw=innerWidth,vh0=innerHeight;if(!vw||!vh0)return;readSA();

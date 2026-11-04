@@ -375,7 +375,8 @@ window.m2Save=(o=>function(){if(!SAVE)return o.apply(this,arguments);const real=
 // ---------- 選角：3 張卡＋每張卡下面選援助角色 ----------
 CHS.ks.push('archer');
 CHINFO.archer={col:[90,170,90],tag:['邊走邊射、拉開距離的長弓兵','比較脆：被打 3 下就倒地；翻滾、後翻有無敵','J 射擊（按住蓄力 3 段）・K 翼矛・L 烈焰箭','↓K 箭雨・↓L 後翻扇射・K+L 狙擊・J+K 絕招'],
-  poses:['ar_idle0','ar_idle2','ar_shot1','ar_shot3','ar_ch3','ar_ch8','ar_sn_hold0','ar_ult1','ar_ult3']};
+  // 選角動作：一個招式接一個招式、每一步都有銜接（拉弓→放箭→收弓→站好→蹲下→跪射→後座→起身→絕招架勢→比 YA），不再直接從收弓跳回滿弓、站著瞬間變跪姿
+  poses:['ar_idle0','ar_idle2','ar_shot0','ar_shot1','ar_shot2','ar_shot3','ar_idle0','ar_sn_in1','ar_sn_hold0','ar_sn_shot0','ar_sn_out1','ar_ult1','ar_ult3']};
 const CHS3={t0:0};
 const porImg=k=>k==='kudas'?IMG.por:k==='bard'?IMG.bardpor:IMG.archerpor;
 function drawPor(k,x,y,z,on,dim){const im=porImg(k);X.save();X.imageSmoothingEnabled=false;if(dim)X.globalAlpha=0.45;rrect(x-2,y-2,x+z+2,y+z+2,6,on?'rgba(60,40,20,0.95)':'rgba(16,12,10,0.9)',on?'rgb(255,226,140)':'rgba(150,120,70,0.7)',on?3:1);
@@ -766,7 +767,124 @@ window.hurtP=(o=>function(v,x,y){const s=S0,P=s&&s.P;if(!P||P.dead||!s.boss||!(v
   const t=s.t;if(t>(P.exT||0))P.exN=0;const n=P.exN||0,hp0=P.hp;const r=o.call(this,Math.round(v*(1+HCAP.exP*n)),x,y);
   if(P.hp<hp0){P.exN=Math.min(HCAP.exN,n+1);P.exT=t+HCAP.exT;if(n>0)s.exHit=(s.exHit||0)+1;if(P.exN>n)proc(`破綻 ×${P.exN}`,[255,140,90],'綻')}return r})(window.hurtP);
 
-// ---- src27/j_w23.js
+// ---- src27/j_doll.js
+// ===== W3：苦達斯 HD 紙娃娃 =====
+// 24 格動作改成 440×300 的 HD 圖（畫的時候一樣縮成 220×150 的格子，所以引擎不用改）。
+// 每格分三層：身體 b_、武器（依裝備的武器從 wd_<武器>.png 圖集取出）、前手 h_。
+// 換武器時烘焙一次：合成 s_，再產生 f_（受擊閃白）、g_（2px 外圈）、m_（武器遮罩，給手上光暈用），
+// 直接換掉 IMG 裡的圖，所以其他地方照舊用 IMG['s_kudas_*'] 就會拿到新的。
+// 舊的 TINT（只換刀身顏色）對這 24 格停用；倒地 ko00–47 還是 220 的舊圖，照舊用 TINT。
+const DOLLF=['idle','run0','run1','run2','run3','windup','swing','lowwind','upswing','follow','charge','airdive','jump','slam','windup2',
+  'sh0','sh1','sh2','sh3','st0','st2','faceplant','scramble0','scramble1'];
+const DOLL={j:null,at:{},cur:null,ok:false,bakes:0,ms:0};
+window.__doll=DOLL;
+window.m2Assets=(o=>()=>[...o(),...DOLLF.flatMap(f=>['b_kudas_'+f,'h_kudas_'+f])])(window.m2Assets);
+window.m2Load=(o=>async function(){const r=await o.apply(this,arguments);
+  try{const q=await fetch('a/doll_kudas.json',{cache:'no-store'});if(q.ok)DOLL.j=await q.json()}catch(e){}
+  DOLL.ok=!!(DOLL.j&&DOLLF.every(f=>IMG['b_kudas_'+f]&&IMG['b_kudas_'+f].width));dollNoTint();return r})(window.m2Load);
+function dollNoTint(){if(typeof TINT==='undefined')return;for(const f of DOLLF)for(let k=0;k<9;k++)delete TINT['kudas_'+f+'|'+k]}
+window.buildTints=(o=>function(){const r=o.apply(this,arguments);dollNoTint();return r})(window.buildTints);
+// 現在要拿哪一把：苦達斯的特殊武器 → sp01..sp08；一般武器 → n0..n8；其他角色（召喚出來的苦達斯）→ n0
+function dollWid(){try{if(heroCls()!=='k'||!SAVE)return 'n0';const it=eqItem('w');if(!it)return 'n0';
+  if(it.sp&&typeof SPW!=='undefined'&&SPW[it.sp]&&SPW[it.sp].c==='k')return it.sp.toLowerCase();return 'n'+(it.k||0)}catch(e){return 'n0'}}
+function dollAtlas(w){let im=DOLL.at[w];if(!im){im=new Image();im.src='a/wd_'+w+'.png';DOLL.at[w]=im}return im.complete&&im.naturalWidth?im:null}
+function dollSync(){if(!DOLL.ok)return;const w=dollWid();if(w===DOLL.cur)return;const at=dollAtlas(w);if(!at)return;dollBake(w,at)}
+// 換武器時只標記「要重烘」，真的畫到那一格時才烘那一格（全部用 canvas 合成，不讀像素，一格約 1–3 ms）
+function dollBake(wid,at){DOLL.cur=wid;DOLL.atw=at;DOLL.dirty=new Set(DOLLF);DOLL.bakes++;dollClear()}
+function dollFrame(f){const t0=performance.now(),J=DOLL.j,W=J.w,H=J.h,r=J.atlas[DOLL.cur][f],F=J.frames[f],at=DOLL.atw,b=IMG['b_kudas_'+f],h=IMG['h_kudas_'+f];
+  const wpn=x=>x.drawImage(at,r[0],r[1],r[4],r[5],r[2],r[3],r[4],r[5]);
+  const [c,x]=mk(W,H);if(F.z<0){wpn(x);x.drawImage(b,0,0)}else{x.drawImage(b,0,0);wpn(x)}if(h&&h.width)x.drawImage(h,0,0);
+  // f_：受擊閃白＝原色×0.4＋153（等於蓋一層 60% 白）
+  const [fc,fx]=mk(W,H);fx.drawImage(c,0,0);fx.globalCompositeOperation='source-atop';fx.fillStyle='rgba(255,255,255,0.6)';fx.fillRect(0,0,W,H);
+  // g_：剪影往外 2px 的白圈（菱形擴張＝十字擴張兩次）
+  const [gc,gx]=mk(W,H);for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=2)gx.drawImage(c,dx,dy);
+  gx.globalCompositeOperation='source-in';gx.fillStyle='#fff';gx.fillRect(0,0,W,H);gx.globalCompositeOperation='destination-out';gx.drawImage(c,0,0);
+  // m_：黑底白武器（扣掉前手）
+  const [wc,wx]=mk(W,H);wpn(wx);wx.globalCompositeOperation='source-in';wx.fillStyle='#fff';wx.fillRect(0,0,W,H);if(h&&h.width){wx.globalCompositeOperation='destination-out';wx.drawImage(h,0,0)}
+  const [mc,mx]=mk(W,H);mx.fillStyle='#000';mx.fillRect(0,0,W,H);mx.drawImage(wc,0,0);
+  const k='kudas_'+f;IMG['s_'+k]=c;IMG['f_'+k]=fc;IMG['g_'+k]=gc;IMG['m_'+k]=mc;DOLL.dirty.delete(f);
+  const pre=[k,'m_'+k];for(const C of [typeof GLC!=='undefined'&&GLC,typeof TFC!=='undefined'&&TFC,typeof AITC!=='undefined'&&AITC,typeof tintC!=='undefined'&&tintC])if(C)for(const q of Object.keys(C))if(pre.some(p=>q.startsWith(p)&&(q.length===p.length||!/[0-9a-z]/.test(q[p.length]))))delete C[q];
+  DOLL.ms=Math.round((performance.now()-t0)*10)/10}
+function dollClear(){dollNoTint();const pre=DOLLF.map(f=>'kudas_'+f);const hit=k=>pre.some(p=>k.startsWith(p)||k.startsWith('m_'+p));
+  for(const C of [typeof GLC!=='undefined'&&GLC,typeof TFC!=='undefined'&&TFC,typeof AITC!=='undefined'&&AITC,typeof tintC!=='undefined'&&tintC])if(C)for(const k of Object.keys(C))if(hit(k))delete C[k]}
+function dollNeed(n){dollSync();if(DOLL.dirty&&DOLL.dirty.size){const f=n.slice(6);if(DOLL.dirty.has(f))dollFrame(f)}}
+window.spr=(o=>function(n,sx,sy,op){if(n&&n.charCodeAt(0)===107&&n.startsWith('kudas_'))dollNeed(n);return o.apply(this,arguments)})(window.spr);
+window.__dollAll=()=>{dollSync();const t0=performance.now();for(const f of DOLLF)if(DOLL.dirty&&DOLL.dirty.has(f))dollFrame(f);return Math.round(performance.now()-t0)};
+// 手上光暈：HD 遮罩先縮回 220 再算（光帶粗細、流光、火星的座標都還是用 220 的格子）
+if(typeof m24GlowCv==='function'){const G0=m24GlowCv;
+  const half=(src,mask)=>{const w=src.width,h=src.height,[c0,x0]=mk(w,h);x0.drawImage(src,0,0);const d=x0.getImageData(0,0,w,h).data;const W2=w>>1,H2=h>>1;const [c,x]=mk(W2,H2);const o=x.createImageData(W2,H2),p=o.data;
+    for(let y=0;y<H2;y++)for(let xx=0;xx<W2;xx++){const q=(y*W2+xx)*4;let pick=-1;for(const [dy,dx] of [[0,0],[0,1],[1,0],[1,1]]){const j=((2*y+dy)*w+2*xx+dx)*4;if(mask?d[j]>=128:d[j+3]>40){pick=j;break}}
+      if(mask){const v=pick>=0?255:0;p[q]=p[q+1]=p[q+2]=v;p[q+3]=255}else if(pick>=0){p[q]=d[pick];p[q+1]=d[pick+1];p[q+2]=d[pick+2];p[q+3]=255}}
+    x.putImageData(o,0,0);if(mask)c.__mask=1;return c};
+  window.m24GlowCv=function(key,src,r,body){if(src&&src.width===440){const K=key+'|'+r;if(GLC[K]!==undefined)return GLC[K];return G0(key,half(src,!!src.__mask),r,body&&body.width===440?half(body,false):body)}return G0(key,src,r,body)}}
+
+// ---- src27/k_dollopt.js
+// ===== W3：紙娃娃顯示 開／關（設定面板） =====
+// SAVE.opt.doll：undefined／true＝開（預設），false＝關。只是顯示選項，武器的存檔格式完全不動、能力值不變。
+// 關掉時：三位主角一律顯示自己原本的預設武器圖（苦達斯＝n0 鋼鐵大劍的 HD 格；尋歡作樂、三杯兔子＝原本畫在圖上的樂器／弓），
+// 不跟著裝備換外觀。之後詩人／弓手的紙娃娃也走 dollOn() 這個開關。
+function dollOn(){try{return !(SAVE&&SAVE.opt&&SAVE.opt.doll===false)}catch(e){return true}}
+window.dollOn=dollOn;
+function dollToggle(){const o=SAVE.opt||(SAVE.opt={mus:1,sfx:1});o.doll=!dollOn();if(typeof m2Save==='function')m2Save();
+  if(typeof m21Toast==='function')m21Toast('紙娃娃顯示：'+(o.doll?'開（手上武器跟著裝備換）':'關（顯示原本的武器）'))}
+window.dollToggle=dollToggle;
+// 關掉時苦達斯固定拿 n0（dollSync 發現 wid 變了會自動重烘）
+if(typeof dollWid==='function'){const W0=dollWid;dollWid=function(){return dollOn()?W0():'n0'}}
+// 設定列：在「匯入存檔」下面加一列（只加在設定面板；暫停選單下面已經有「放棄並回到地圖」，不擠進去）
+window.m21OptRows=(o=>function(x0,y0,inp){let hit=o.apply(this,arguments);if(y0>230)return hit;const y=y0+5*50,on=dollOn();
+  if(btn(x0,y,x0+300,y+42,`紙娃娃顯示：${on?'開':'關'}`,true,on?[150,255,150]:[255,150,140])&&inp){dollToggle();hit=true}
+  return hit})(window.m21OptRows);
+
+// ---- src27/l_doll2.js
+// ===== W3：紙娃娃 第二批（尋歡作樂的樂器、三杯兔子的弓、苦達斯倒地 ko00–47） =====
+// 這幾組不拆層：原圖照舊，換武器時「蓋一層」——
+//   先畫原圖 → 擦掉 erase 塊（舊樂器／舊弓／舊劍露在外面的部分）→ 蓋上 paint 塊（新武器＋補好的身體／外框）。
+// 圖集 a/dl_<組>_<武器>.png、座標 a/doll_<組>.json（chars/doll_w3/build_doll2.py 產生，握持位置全部自動對過 gripcheck）。
+// 只在用到那一格時才烘那一格：詩人／弓手的圖是在別的 spr 包裝裡把 kudas_* 換名字後才畫，所以不包 spr，
+// 而是把這幾格的 IMG['s_/f_/g_/m_'+名字] 換成 getter——任何地方讀到就先確認／烘好，同時重做 f_（受擊閃白）、g_（外圈），苦達斯倒地另外重做 m_（武器遮罩）。
+// 紙娃娃關掉（dollOn()=false）或拿 n0（原本的預設武器）→ 換回原圖。
+// 苦達斯倒地原本用 TINT 只換刀身顏色：有紙娃娃後一律停用（關掉時顯示原本的鋼鐵大劍，跟 HD 那 24 格一致）。
+const DL2={sets:{bard:{pre:'bh_',cls:'b'},archer:{pre:'ar_',cls:'a'},kko:{pre:'kudas_ko',cls:'k'}},j:{},at:{},o:{},v:{},st:{},bakes:0,ms:0};
+window.__doll2=DL2;
+window.m2Load=(o=>async function(){const r=await o.apply(this,arguments);
+  for(const h of Object.keys(DL2.sets)){try{const q=await fetch('a/doll_'+h+'.json',{cache:'no-store'});if(q.ok){const j=await q.json();DL2.j[h]=j;
+    const N=new Set();for(const w of j.wids)for(const k of Object.keys(j.frames[w]||{}))N.add(h==='kko'?'kudas_'+k:k);j.names=[...N];DL2.st[h]={cur:'n0',dirty:new Set()}}}catch(e){}}
+  dl2Hook();dl2NoTint();return r})(window.m2Load);
+function dl2Hook(){for(const h of Object.keys(DL2.j))for(const n of DL2.j[h].names){const O=DL2.o[n]={};
+  for(const p of ['s','f','g','m']){const k=p+'_'+n;if(!(k in IMG))continue;O[p]=IMG[k];DL2.v[k]=IMG[k];
+    Object.defineProperty(IMG,k,{configurable:true,enumerable:true,get(){dl2Need(n);return DL2.v[k]},set(v){DL2.v[k]=v;O[p]=v;const S=DL2.st[h];if(S)S.dirty.add(n)}})}}}
+function dl2NoTint(){if(typeof TINT==='undefined'||!DL2.j.kko)return;for(let i=0;i<48;i++){const n='kudas_ko'+String(i).padStart(2,'0');for(let k=0;k<9;k++)delete TINT[n+'|'+k]}}
+window.buildTints=(o=>function(){const r=o.apply(this,arguments);dl2NoTint();return r})(window.buildTints);
+// 現在這組要用哪一把（只有自己是那個職業時才換；同伴召喚出來的、或紙娃娃關掉 → n0）
+function dl2Wid(h){try{if(typeof dollOn==='function'&&!dollOn())return 'n0';const S=DL2.sets[h];if(heroCls()!==S.cls||!SAVE)return 'n0';
+  if(h==='kko')return typeof dollWid==='function'?dollWid():'n0';
+  const it=eqItem('w');if(!it)return 'n0';let w;
+  if(it.sp&&typeof SPW!=='undefined'&&SPW[it.sp]&&SPW[it.sp].c===S.cls)w=it.sp.toLowerCase();else w='n'+(it.k||0);
+  return DL2.j[h].wids.includes(w)?w:'n0'}catch(e){return 'n0'}}
+function dl2Atlas(h,w){const k=h+'_'+w;let im=DL2.at[k];if(!im){im=new Image();im.src='a/dl_'+k+'.png';DL2.at[k]=im}return im.complete&&im.naturalWidth?im:null}
+function dl2Sync(h){const J=DL2.j[h],S=DL2.st[h];if(!J)return;const w=dl2Wid(h);if(w===S.cur)return;
+  let at=null;if(w!=='n0'){at=dl2Atlas(h,w);if(!at)return}  // 圖集還沒載到：先維持原樣
+  S.cur=w;S.at=at;S.dirty=new Set(J.names);DL2.bakes++}
+function dl2Clear(n){const ps=[n,'m_'+n];for(const C of [typeof GLC!=='undefined'&&GLC,typeof TFC!=='undefined'&&TFC,typeof AITC!=='undefined'&&AITC,typeof tintC!=='undefined'&&tintC])
+  if(C)for(const q of Object.keys(C))if(ps.some(p=>q.startsWith(p)))delete C[q]}   // 多刪幾個快取只是重算，不會錯
+function dl2Frame(h,n){const t0=performance.now(),J=DL2.j[h],S=DL2.st[h];S.dirty.delete(n);
+  const O=DL2.o[n],V=DL2.v;
+  const key=h==='kko'?n.slice(6):n,r=S.cur!=='n0'&&J.frames[S.cur]&&J.frames[S.cur][key];
+  if(!r||!S.at||!O.s){for(const p of ['s','f','g','m'])if(O[p])V[p+'_'+n]=O[p];dl2Clear(n);return}
+  const W=O.s.width,H=O.s.height,at=S.at,blit=(x,i)=>{if(r[i+4])x.drawImage(at,r[i],r[i+1],r[i+4],r[i+5],r[i+2],r[i+3],r[i+4],r[i+5])};
+  const [c,x]=mk(W,H);x.drawImage(O.s,0,0);x.globalCompositeOperation='destination-out';blit(x,6);x.globalCompositeOperation='source-over';blit(x,0);
+  const [fc,fx]=mk(W,H);fx.drawImage(c,0,0);fx.globalCompositeOperation='source-atop';fx.fillStyle='rgba(255,255,255,0.6)';fx.fillRect(0,0,W,H);
+  const [gc,gx]=mk(W,H);for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=2)gx.drawImage(c,dx,dy);
+  gx.globalCompositeOperation='source-in';gx.fillStyle='#fff';gx.fillRect(0,0,W,H);gx.globalCompositeOperation='destination-out';gx.drawImage(c,0,0);
+  V['s_'+n]=c;V['f_'+n]=fc;V['g_'+n]=gc;
+  if(r.length>12&&O.m){const [mc,mx]=mk(W,H);mx.fillStyle='#000';mx.fillRect(0,0,W,H);blit(mx,12);V['m_'+n]=mc}
+  dl2Clear(n);DL2.ms=Math.round((performance.now()-t0)*10)/10}
+function dl2Need(n){if(DL2.busy)return;const h=n.startsWith('bh_')?'bard':n.startsWith('ar_')?'archer':n.startsWith('kudas_ko')?'kko':null;if(!h||!DL2.j[h])return;
+  DL2.busy=1;try{dl2Sync(h);const S=DL2.st[h];if(S.dirty.size&&S.dirty.has(n))dl2Frame(h,n)}finally{DL2.busy=0}}
+// 測試用：把某組全部烘完，回傳毫秒
+window.__doll2All=h=>{dl2Sync(h);const S=DL2.st[h],t0=performance.now();for(const n of [...S.dirty])dl2Frame(h,n);return Math.round(performance.now()-t0)};
+
+// ---- src27/m_w23.js
 // ===== W2.3 熱修：一鍵清除白裝／援助角色 自動・手動／老手加成（Lv55 以上）／捕捉搗蛋鬼 =====
 // （詩人大招改回舊版、放完大招 0.5 秒無敵 → web/m22.js；強化 +15 加成 → src27/e_enh.js）
 
@@ -976,7 +1094,7 @@ window.drawTele=(o=>function(cx0,shy){const r=o.apply(this,arguments);try{const 
   X.fillRect(-3,-2,6,22);X.strokeRect(-3,-2,6,22);X.fillStyle='rgb(170,170,180)';X.fillRect(-12,-12,24,12);X.strokeRect(-12,-12,24,12);X.restore()}}catch(e){}return r})(window.drawTele);
 window.__pk23={PK24TIP,pk24Tip,pk23,pk23Roll,pk23Spots,vet23,w23WhiteList,w23WhiteAsk,w23WhiteDo,w23AutoWant,w23AstSet,pkStart,PK23};
 
-// ---- src27/k_w25.js
+// ---- src27/n1_w25.js
 // W2.5：賦魔繼承（符文覆蓋／替換）畫面只顯示符文的變化：A 目前符文、B 要移過去的符文、成功後「舊 → 新」＋增減（綠升紅降）
 // 其他素質預設收起（「顯示全部素質」切換）；只換掉這個畫面的卡片內容，不動繼承邏輯
 {const runeOf=it=>{if(!it||!it.rune)return null;const L=itemLines(it).find(x=>/符文$/.test(x[0]));const Rn=RUNES[it.rune.n];
@@ -1012,7 +1130,7 @@ window.W25MV=v=>{const k=typeof HEROK!=='undefined'?HEROK:'kudas';
   return `肩撞（→→）和踱地（↓↓）冷卻 −${v}%`};
 if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
 
-// ---- src27/l_w26.js
+// ---- src27/n2_w26.js
 // W2.6：品階提升預覽顯示「成功時會抽的詞條」；裝備摘要卡內容多時自動縮行距，不再被切掉
 (function(){
   const PH=[150,230,255];
@@ -1093,7 +1211,7 @@ if(RUNES['輕快步伐'])RUNES['輕快步伐'][1]=v=>W25MV(v);
   window.__w26help={helpOf};
 })();
 
-// ---- src27/m_w27.js
+// ---- src27/n3_w27.js
 // ===== W2.7 =====
 //  (1) 背包「裝備比較」：選到（或滑鼠指到）一件還沒穿的裝備 → 右邊並排比較「目前穿的」和「這件」，左邊角色總能力顯示「換上前 → 換上後」
 //      比較是「假裝換上、算完、馬上換回來」：SAVE.eq／最大 HP／目前 HP 都會還原，不存檔、不改任何數值
@@ -1180,7 +1298,7 @@ window.bagUI=(o=>function(inp){let C=null,hover=false;
 const W27=window.__w27={buildCmp,simEquip,drawCmp,cmpv,pv,noHover:false,cur:null};
 })();
 
-// ---- src27/n_w28food.js
+// ---- src27/n4_w28food.js
 // W2.8：寵物糧食先存著（寵物系統上線前，先讓玩家累積一點，現在還沒有用途）
 //  - 食物槽 3/3、或援助角色在場時撿到的烤麵包（原本只記一行字就浪費掉）→ 存成「剩食麵包」
 //  - 撿到「基本草藥」→ 35% 變成 1 個「零食材料」（其餘照舊只是一行字）
@@ -1217,7 +1335,7 @@ function w28FoodBox(){const b=w28PetN('bread'),m=w28PetN('snackMat'),full=b>=W28
 window.bagUI=(o=>function(inp){const r=o.apply(this,arguments);try{if(SAVE)w28FoodBox()}catch(e){(window.__err=window.__err||[]).push('w28box: '+e)}return r})(window.bagUI);
 window.__w28food={cfg:W28F,n:w28PetN,add:w28PetAdd};
 
-// ---- src27/o_w29keys.js
+// ---- src27/n5_w29keys.js
 // ===== W2.9：改按鍵（鍵盤）＋電腦版畫面按鍵（技能格）位置 =====
 // 做法：遊戲內部一律用「原本的鍵名」（虛擬鍵）；玩家實際按的鍵先換算成虛擬鍵再交給遊戲。
 // 沒改過的玩家：完全照舊（換算＝原樣）。觸控按鍵、手把、測試用的 __key 不經過換算。
@@ -1281,8 +1399,8 @@ addEventListener('keydown',e=>{if(!e.isTrusted)return;
     if(W29.cap&&W29.open){e.stopPropagation();if(!e.repeat)w29Capture(e.code);return}if(!e.repeat||/^Arrow/.test(e.code))W29RAW[e.code]=1}},true);
 w29Load();
 // ---------- 改鍵 ----------
-function w29RowName(r){const hk=typeof HEROK==='string'?HEROK:'kudas';if(r[0]==='@K')return '技能 K（'+({kudas:'心臟刺擊',bard:'三連音',archer:'翼矛'}[hk]||'技能')+'）';
-  if(r[0]==='@L')return '技能 L（'+({kudas:'大劍術',bard:'旋律衝擊',archer:'烈焰箭'}[hk]||'技能')+'）';return r[0]}
+function w29RowName(r){const hk=typeof HEROK==='string'?HEROK:'kudas';if(r[0]==='@K')return '技能 K（'+({kudas:'心臟刺擊',bard:'三連音',archer:'翼矛',heal:'生命連結'}[hk]||'技能')+'）';
+  if(r[0]==='@L')return '技能 L（'+({kudas:'大劍術',bard:'旋律衝擊',archer:'烈焰箭',heal:'幻痛'}[hk]||'技能')+'）';return r[0]}
 function w29VName(v){const r=W29ROWS.find(r=>r[1].includes(v));return r?w29RowName(r):v}
 function w29Slot(i){const r=W29ROWS[i>>1];return r?r[1][i&1]||null:null}
 function w29Msg(s,c){W29.msg=s;W29.mc=c||null;W29.mt=performance.now()}

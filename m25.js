@@ -66,8 +66,8 @@ function msTitle(L,k){let t='';for(const [l,f] of msList(k))if(l<=L&&f.ttl)t=f.t
 const AWK={atk:{n:'攻擊',per:0.01,cap:10,u:'%'},hp:{n:'體力',per:0.015,cap:10,u:'%'},crit:{n:'暴擊率',per:0.005,cap:10,u:'%'},
   ms:{n:'移動速度',per:0.01,cap:6,u:'%'},drop:{n:'掉寶率',per:0.02,cap:10,u:'%'},cls:{n:'職業',per:0.03,cap:10,u:'%'}};
 const AWK_ORDER=['atk','hp','crit','ms','drop','cls'];
-const awkClsName=()=>isBard()?'樂想持續':HEROK==='archer'?'龍矢威力':'斬風威力';
-const awkPer=k=>k==='cls'&&isBard()?0.05:k==='cls'&&HEROK==='archer'?0.04:AWK[k].per;
+const awkClsName=()=>isBard()?'樂想持續':HEROK==='archer'?'龍矢威力':HEROK==='heal'?'苦痛蔓延':'斬風威力';
+const awkPer=k=>k==='cls'&&isBard()?0.05:k==='cls'&&(HEROK==='archer'||HEROK==='heal')?0.04:AWK[k].per;
 function awkV(k){const A=SAVE&&SAVE.awk;return A&&A.a?(A.a[k]|0)*awkPer(k):0}
 const awkSpent=()=>{const A=SAVE&&SAVE.awk;let n=0;if(A&&A.a)for(const k in A.a)n+=A.a[k]|0;return n};
 const awkFree=()=>Math.max(0,((SAVE&&SAVE.awk&&SAVE.awk.pts)|0)-awkSpent());
@@ -98,7 +98,7 @@ const fmt=n=>Math.round(n).toLocaleString('en-US');
 function m25Open(){if(UI.kind)return;if(mode==='play'){if(paused)return;paused=true;pauseWhy='char'}m2UI('char');UI.tab=0;UI.as=0;UI.conf=null;sfx('ready',0.3)}
 // 面板用的分項
 function m25Rows(){const g=grow25(),G=GS,g0=G.g0||G,m=g.ms,bard=isBard(),hp0=HERO[HEROK].hp,w=eqItem('w');
-  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,ar=HEROK==='archer',cls=bard?1:ar?(typeof BAL27!=='undefined'?BAL27.wm:1):BAL24.kudasWm,tf=SAVE.tf|0,tfA=!bard&&tf===1?1.05:1,atkM=(1+G.g25.atk)*cls*tfA;
+  const wr=w?wRange(w,0):[26,34],we=w?wRange(w):[26,34],enh=w?enhAtk(effE(w)):0,ar=HEROK==='archer',cls=bard?1:ar?(typeof BAL27!=='undefined'?BAL27.wm:1):HEROK==='heal'?1.15:BAL24.kudasWm,tf=SAVE.tf|0,tfA=!bard&&tf===1?1.05:1,atkM=(1+G.g25.atk)*cls*tfA;
   const R=[];
   R.push(['體力 HP',fmt(HPMAX),[fmt(hp0),pct(g.lvHp),'—','—',pct(g.awk.hp),'—']]);
   R.push(['攻擊力',`${Math.round(we[0]*atkM)}~${Math.round(we[1]*atkM)}`,[w?`武器 ${wr[0]}~${wr[1]}`:'26~34',pct(g.lvAtk),w?itName(w).slice(0,6):'—',enh?pct(enh):'—',pct(g.awk.atk),bard||cls===1?'—':'職業 ×'+cls.toFixed(2)+(tfA>1?'　搗蛋鬼 +5%':'')]]);

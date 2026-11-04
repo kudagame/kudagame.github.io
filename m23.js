@@ -4,18 +4,19 @@
 // 數值表共用 WPN（同一階同攻擊力），只有名字、圖示、可裝備的人不同。it.wc：'k' 大劍、'b' 樂器
 // 名字修正：舊「雙手剩刀」是錯字（改成 斬馬大刀）；「S／SS」英文字尾改成中文階級「精鍛／名匠」
 const WPN_K=['雙手巨劍','巨刃','斬馬大刀','灰岩重劍','精鍛雙手巨劍','精鍛巨刃','精鍛斬馬大刀','精鍛灰岩重劍','名匠雙手巨劍'];
+const WPN_H=['見習祈禱杖','橡木牧杖','銀鈴短杖','日輪短杖','朝聖者之杖','精鍛銀鈴短杖','精鍛日輪短杖','白金聖杖','鼠王權杖'];  // W3 夾夾（設計稿 7 名，精鍛 2 名補齊）
 const WPN_A=['練習長弓','樺木長弓','紫杉長弓','灰岩長弓','精鍛長弓','精鍛紫杉長弓','精鍛龍骨長弓','精鍛灰岩長弓','名匠長弓'];  // M2.7 三杯兔子
 const WPN_B=['旅人魯特琴','楓木豎琴','曼陀林','灰岩七弦琴','精製魯特琴','精製豎琴','精製曼陀林','精製七弦琴','名匠魯特琴'];
 WPN_K.forEach((n,k)=>{if(WPN[k])WPN[k][0]=n});
-const WCLS={k:{n:'大劍',who:'苦達斯',hero:'kudas',col:[255,190,140]},b:{n:'樂器',who:'尋歡作樂',hero:'bard',col:[150,220,255]},a:{n:'長弓',who:'三杯兔子',hero:'archer',col:[170,240,150]}};
+const WCLS={k:{n:'大劍',who:'苦達斯',hero:'kudas',col:[255,190,140]},b:{n:'樂器',who:'尋歡作樂',hero:'bard',col:[150,220,255]},a:{n:'長弓',who:'三杯兔子',hero:'archer',col:[170,240,150]},h:{n:'短杖',who:'夾夾',hero:'heal',col:[255,226,140]}};
 const M23={to:null};
-const heroCls=h=>{h=h||HEROK;return h==='bard'?'b':h==='archer'?'a':'k'};
-const wcOf=it=>it&&it.t==='w'?(it.wc==='b'?'b':it.wc==='a'?'a':'k'):null;
+const heroCls=h=>{h=h||HEROK;return h==='bard'?'b':h==='archer'?'a':h==='heal'?'h':'k'};
+const wcOf=it=>it&&it.t==='w'?(it.wc==='b'?'b':it.wc==='a'?'a':it.wc==='h'?'h':'k'):null;
 window.mkItem=(o=>(t,k,r,sv)=>{const it=o(t,k,r,sv);if(t==='w')it.wc=M23.to||heroCls();return it})(window.mkItem);
 window.m22Blank=(o=>(S,k)=>{const p=M23.to;M23.to=heroCls(k);try{return o(S,k)}finally{M23.to=p}})(window.m22Blank);
-window.itName=(o=>it=>it&&it.t==='w'?((wcOf(it)==='b'?WPN_B:wcOf(it)==='a'?WPN_A:WPN_K)[it.k]||o(it)):o(it))(window.itName);
+window.itName=(o=>it=>it&&it.t==='w'?((wcOf(it)==='b'?WPN_B:wcOf(it)==='a'?WPN_A:wcOf(it)==='h'?WPN_H:WPN_K)[it.k]||o(it)):o(it))(window.itName);
 // 舊存檔：沒有 wc 的武器跟著持有人（詩人身上的大劍＝轉成同階樂器，稀有度、數值、強化、詞條、符文、屬性全部不動）；倉庫裡的舊武器算苦達斯的
-function m23Mig(S){let n=0,nb=0;const fix=(L,c)=>{for(const it of L||[]){if(it&&it.rune&&it.rune.n==='火炬+')it.rune.n='火炬';if(it&&it.t==='w'&&it.wc!=='k'&&it.wc!=='b'&&it.wc!=='a'){it.wc=c;n++;if(c==='b')nb++}}};
+function m23Mig(S){let n=0,nb=0;const fix=(L,c)=>{for(const it of L||[]){if(it&&it.rune&&it.rune.n==='火炬+')it.rune.n='火炬';if(it&&it.t==='w'&&it.wc!=='k'&&it.wc!=='b'&&it.wc!=='a'&&it.wc!=='h'){it.wc=c;n++;if(c==='b')nb++}}};
   fix(S.inv,heroCls(S.hero));if(S.chars)for(const k in S.chars)if(S.chars[k])fix(S.chars[k].inv,heroCls(k));fix(S.wh,'k');
   if(n&&!S.m23mig)S.m23mig={t:Date.now(),weapons:n,toInstrument:nb};return S}
 window.m21Migrate=(o=>S=>{o(S);m23Mig(S);return S})(window.m21Migrate);
@@ -46,7 +47,7 @@ window.gearIconC=(o=>it=>{if(!(it&&it.t==='w'&&wcOf(it)==='b'))return o(it);cons
     for(let xs=8;xs<=12;xs+=2)for(let y=6;y<14;y++)px(xs,y,G[3])}
   GIC[key]=c;return c})(window.gearIconC);
 // 卡片角落標「劍」「琴」，倉庫裡一眼看得出是誰的
-window.gearCard=(o=>(it,x,y,z,sel)=>{o(it,x,y,z,sel);if(it&&it.t==='w'&&z>=40){const c=wcOf(it),b=c==='b';rrect(x+2,y+z-17,x+18,y+z-2,4,b?'rgba(40,110,170,0.95)':c==='a'?'rgba(50,130,60,0.95)':'rgba(150,70,40,0.95)');T(b?'琴':c==='a'?'弓':'劍',x+10,y+z-9,FN(11),[255,255,255],0,[0,0,0],'mm')}})(window.gearCard);
+window.gearCard=(o=>(it,x,y,z,sel)=>{o(it,x,y,z,sel);if(it&&it.t==='w'&&z>=40){const c=wcOf(it),b=c==='b';rrect(x+2,y+z-17,x+18,y+z-2,4,b?'rgba(40,110,170,0.95)':c==='a'?'rgba(50,130,60,0.95)':c==='h'?'rgba(170,130,30,0.95)':'rgba(150,70,40,0.95)');T(b?'琴':c==='a'?'弓':c==='h'?'杖':'劍',x+10,y+z-9,FN(11),[255,255,255],0,[0,0,0],'mm')}})(window.gearCard);
 // M2.7 長弓圖示：弓臂弧線（木色依階級）、弦、握把、箭
 window.gearIconC=(o=>it=>{if(!(it&&it.t==='w'&&wcOf(it)==='a'))return o(it);const key='wa'+it.k+'_'+it.r;if(GIC[key])return GIC[key];
   const [c,x]=mk(20,20);const R=RAR[it.r];const px=(xx,yy,col)=>{x.fillStyle=rgb(col);x.fillRect(xx,yy,1,1)};
@@ -57,7 +58,16 @@ window.gearIconC=(o=>it=>{if(!(it&&it.t==='w'&&wcOf(it)==='a'))return o(it);cons
   px(12,1,G);px(12,18,G);for(let y=2;y<=17;y++)px(13,y,[240,236,220]);for(let y=8;y<=11;y++){px(6,y,OL);px(7,y,[60,40,30])}
   for(let xx=3;xx<=16;xx++)px(xx,10,[220,214,200]);px(17,10,[230,230,240]);px(18,10,OL);px(17,9,[180,180,190]);px(17,11,[180,180,190]);px(3,9,[220,60,60]);px(3,11,[220,60,60]);px(4,9,[255,120,120]);
   GIC[key]=c;return c})(window.gearIconC);
-window.__m23={wcOf,heroCls,names:()=>({k:WPN_K,b:WPN_B,a:WPN_A})};
+window.gearIconC=(o=>it=>{if(!(it&&it.t==='w'&&wcOf(it)==='h'))return o(it);const key='wh'+it.k+'_'+it.r;if(GIC[key])return GIC[key];
+  const [c,x]=mk(20,20);const R=RAR[it.r];const px=(xx,yy,col)=>{x.fillStyle=rgb(col);x.fillRect(xx,yy,1,1)};
+  x.fillStyle=rgb(R.bg);x.fillRect(1,1,18,18);for(let i=0;i<18;i++){x.fillStyle=rgb(R.bg.map(v=>Math.min(255,v+Math.round(i*1.6))));x.fillRect(1,1+i,18,1)}
+  x.fillStyle=rgb(R.fr);x.fillRect(1,0,18,1);x.fillRect(1,19,18,1);x.fillRect(0,1,1,18);x.fillRect(19,1,1,18);x.fillStyle=rgb(R.fr.map(v=>Math.min(255,v+70)));x.fillRect(2,1,16,1);
+  const OL=[26,16,22],WD=it.k>=7?[[150,120,60],[230,200,120],[255,240,190]]:it.k>=4?[[110,110,126],[190,190,206],[240,240,250]]:[[90,54,28],[150,96,50],[206,150,86]],G=it.k>=8?[255,220,90]:[255,236,170];
+  for(let i=0;i<12;i++){const xx=5+i,yy=17-i;px(xx-1,yy,OL);px(xx,yy,WD[1]);px(xx,yy-1,WD[2]);px(xx+1,yy,OL)}
+  for(const [dx,dy] of [[0,-2],[-1,-1],[0,-1],[1,-1],[-2,0],[-1,0],[0,0],[1,0],[2,0],[-1,1],[0,1],[1,1],[0,2]])px(15+dx,4+dy,(dx||dy)?G:[255,255,240]);
+  px(15,1,OL);px(18,4,OL);px(12,4,OL);px(15,7,OL);
+  GIC[key]=c;return c})(window.gearIconC);
+window.__m23={wcOf,heroCls,names:()=>({k:WPN_K,b:WPN_B,a:WPN_A,h:WPN_H})};
 // ==== b_npc.js
 // ---------- M2.3 NPC：貓商人＝像素惡魔貓、搗蛋鬼＝像素搗蛋鬼（idle／walk 動畫、無底框、會在附近閒晃） ----------
 const NPCSP={cat:{pre:'dcat',idle:1.4,col:'rgba(120,40,140,0.9)'},prank:{pre:'prank',idle:1.2,col:'rgba(40,90,60,0.9)'}};

@@ -383,7 +383,7 @@ function m21Manual(){if(!CLICK||!SAVE)return false;const A=[[150,()=>m21Mute('mu
 // ---------- HUD：肩撞／踱地 冷卻、相機按鈕、變身標記 ----------
 window.drawHUD=(o=>(cx0,shy)=>{o(cx0,shy);const s=S0,P=s.P,t=s.t;if(!P)return;
   const B=[[872,'肩撞','→→',P.chgCD||0,CHG.cd*(1-(GS.mvcd||0)),s.denyChg],[934,'踱地','↓↓',P.stpCD||0,STP.cd*(1-(GS.mvcd||0)),s.denyStp]];
-  for(const [x,l,k,cd,mx,deny] of (HEROK==='archer'?[]:B)){const y=604,r=24,rdy=cd<=0;const _w=hudTB(x<900?'chg':'stp',x,y,r);circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
+  for(const [x,l,k,cd,mx,deny] of (HEROK==='archer'||HEROK==='heal'?[]:B)){const y=604,r=24,rdy=cd<=0;const _w=hudTB(x<900?'chg':'stp',x,y,r);circ(x,y,r,rdy?'rgba(70,46,26,0.92)':'rgba(30,24,20,0.85)',rdy?'rgb(255,214,140)':'rgb(120,100,80)',3);
     if(!rdy){X.save();X.beginPath();X.moveTo(x,y);X.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,cd/mx));X.closePath();X.fillStyle='rgba(0,0,0,0.55)';X.fill();X.restore()}
     T(l,x,y-2,FS(15),rdy?[255,244,214]:[170,160,150],2,[0,0,0],'mm');T(k,x,y+r+6,FN(11),[220,210,190],2,[0,0,0],'mm');if(deny&&t-deny<0.3)circ(x,y,r+3,null,'rgb(255,90,70)',2);hudTE(_w)}
   const cx=1248,cy=64;circ(cx,cy,17,REC.on?'rgba(120,20,20,0.9)':'rgba(30,24,20,0.85)',REC.on?'rgb(255,120,110)':'rgb(200,170,120)',2);m21CamIcon(cx,cy,REC.on&&Math.floor(t*2)%2===0);
