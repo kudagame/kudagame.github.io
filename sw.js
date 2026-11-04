@@ -24,7 +24,7 @@ async function asset(req,path){const idx=await getIdx();let key=path;const aud=a
   return new Response(b,{headers:{'Content-Type':ct,'Content-Length':String(b.size),'Accept-Ranges':'bytes'}})}
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==location.origin)return;
   const base=new URL('./',self.registration.scope).pathname;let p=u.pathname.startsWith(base)?u.pathname.slice(base.length):u.pathname.replace(/^\//,'');
-  if(p.startsWith('__/'))return;// Firebase 登入輔助頁（自架在同網域）一律走網路，不能被快取或換成遊戲首頁
+  if(p.startsWith('__/'))return;if(p.startsWith('pettest/')||p==='pettest')return;// Firebase 登入輔助頁（自架在同網域）一律走網路，不能被快取或換成遊戲首頁
   // exe 版才有的伺服器功能：網頁版存檔只用 localStorage，錄影直接下載
   if(p==='__cfg'){e.respondWith((async()=>{AUD=u.searchParams.get('aud')||'ogg';const c=await caches.open(CFG);await c.put('aud',new Response(AUD));return new Response('ok')})());return}
   if(p==='save'||p==='ping'){e.respondWith(new Response(null,{status:204}));return}
