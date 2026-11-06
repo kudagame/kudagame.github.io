@@ -607,18 +607,19 @@ if(typeof module!=='undefined'&&module.exports) module.exports=API; else root.Li
 // ---- src29/a_heal.js
 // ===== W3：治癒師「老鼠國王 夾夾」核心（輸入、動作、傷害、治療、受傷、AI）=====
 // 數值依 design §10/§11/§13 定稿；所有特效畫法在 b_fx.js，介面在 c_ui.js
+// W3.2 平衡（2026-11-06）：光柱 DoT 不再疊 wm/罪印/祝福；慈悲 9%/48%；wm 1.12；絕招填充 28s；回流 0.5%/8%；脈動 5600 — 靠補血磨贏、不可秒殺同關其他英雄
 const HL={sp:300,spy:150,jv:1250,dash:{cd:0.9,dur:0.22,dist:150,inv:0.2},
   atk:[{v:1700,dur:0.33,hit:0.13,rng:150,f:'atk1_'},{v:1600,dur:0.32,hit:0.12,f:'atk2_',bolt:1},{v:1950,dur:0.40,hit:0.16,rng:140,kb:20,f:'atk3_'},{v:1150,dur:0.47,hit:0.14,n:3,f:'atk2_',bolt:1}],
   link:{v:3200,cd:5,dot:780,tick:0.5,dur:8,max:3,slow:0.7,mark:0.08,spl:0.6,splR:90,splN:3,heal:0.0015,brk:320,rng:340,dur0:0.66,fly:0.27,lat:0.42},
   spirit:{every:3,max:3,n:12,v:520,gap:0.5,heal:0.002,bless:0.22,blessT:9},
   ph:{v:3000,n:6,r:56,v6:7000,r6:70,stun:0.8,heal:0.012,heal6:0.04,cd:9,spd:950,rng:520,cast:0.24,out:0.12},
-  pu:{v:6500,n:6,nF:8,len:260,slow:0.75,slowT:3,pain:600,painT:4,painN:2,heal:0.01,healMax:0.06,cd:9,root:0.83,fire:0.3},
+  pu:{v:5600,n:6,nF:8,len:260,slow:0.75,slowT:3,pain:600,painT:4,painN:2,heal:0.01,healMax:0.06,cd:9,root:0.83,fire:0.3},
   pr:{cast:0.5,abs:0.255,reg:0.04,ctr:1560,ctrCD:0.5,dur:15,cd:15,weak:0.9},
   gl:{dur:15,every:1.5,v:2000,n:3,rng:400,fear:260,fearT:3,heal:0.012,cd:25,cast:0.4,H:[-56,124],A:[78,124],lerp:0.09},
-  ult:{cast:2.6,air:10,out:1.67,burst:20000,pil:9000,pilR:400,heal:0.13,cap:0.20,sanR:380,sanAtk:0.75,sanSpd:0.3,dr:0.4,ms:0.65,cry:{n:3,v:2000,heal:0.012},boom:9000,boomHeal:0.02,fill:22,airGap:0.32},
-  mercy:{p:0.12,cap:0.60,low:1.5,lowP:0.4},
+  ult:{cast:2.6,air:10,out:1.67,burst:8800,pil:9000,pilR:400,heal:0.08,cap:0.16,sanR:380,sanAtk:0.75,sanSpd:0.3,dr:0.4,ms:0.65,cry:{n:3,v:2000,heal:0.012},boom:4200,boomHeal:0.015,fill:28,airGap:0.32},
+  mercy:{p:0.06,cap:0.32,low:1.5,lowP:0.4,hurtT:1.2,hurtK:0.4,dodge:0.10,dodgeCD:1,woundT:4,woundK:0.15},
   // W3.1 自我續航：生命回流（連結每跳把光點拉回自己）＋慈光庇護（重傷時金色光點圈，短暫不受傷＋分段回血）
-  sus:{share:0.08,tick:0.006,low:1.6,lowP:0.4,cap:0.10,gr:{p:0.4,big:0.3,cd:10,inv:0.9,n:4,v:0.03,gap:0.3,kb:170}},hm:1,cap:0.06,heavy:{p:0.15,t:2.5},faith:{max:6,icd:1,decay:5,per:0.04},wm:1.25,crit:1.87,res:0.06,resMax:0.30};
+  sus:{share:0.06,tick:0.005,low:1.6,lowP:0.4,cap:0.08,gr:{p:0.4,big:0.3,cd:10,inv:0.9,n:4,v:0.03,gap:0.3,kb:170}},hm:1,cap:0.06,heavy:{p:0.15,t:2.5},faith:{max:6,icd:1,decay:5,per:0.04},wm:2.7,dotK:2.6,crit:1.87,res:0.06,resMax:0.30};
 window.HL=HL;
 // 杖頭水晶位置（腳下為原點，由 tools/heal_export 匯出的 s_hl_* 量出）
 const HL_TIP={"atk1_0":[52,-58],"atk1_1":[63,-87],"atk1_2":[63,-102],"atk1_3":[62,-102],"atk1_4":[62,-98],"atk1_5":[62,-76],"atk2_0":[63,-98],"atk2_1":[51,-111],"atk2_2":[33,-115],"atk2_3":[63,-100],"atk2_4":[65,-96],"atk2_5":[64,-90],"atk3_0":[50,-38],"atk3_1":[49,-42],"atk3_2":[50,-44],"atk3_3":[48,-42],"atk3_4":[49,-40],"atk3_5":[49,-37],"depart0":[51,-111],"depart1":[33,-115],"idle0":[42,-31],"idle1":[42,-31],"idle10":[42,-31],"idle11":[42,-31],"idle2":[42,-31],"idle3":[42,-31],"idle4":[42,-31],"idle5":[42,-31],"idle6":[42,-31],"idle7":[42,-31],"idle8":[42,-31],"idle9":[42,-31],"link0":[52,-58],"link1":[63,-98],"link2":[51,-111],"link3":[33,-115],"link4":[63,-100],"link5":[63,-102],"link6":[62,-98],"link7":[62,-76],"link8":[52,-58],"run0":[39,-31],"run1":[40,-31],"run2":[42,-31],"run3":[44,-31],"run4":[45,-31],"run5":[44,-31],"run6":[42,-31],"run7":[40,-31],"walk0":[40,-31],"walk1":[41,-31],"walk2":[42,-31],"walk3":[43,-31],"walk4":[44,-31],"walk5":[43,-31],"walk6":[42,-31],"walk7":[41,-31]};
@@ -654,18 +655,19 @@ function hlDot(m,base,lab){const s=S0,t=s.t;if(!hlLive(m))return 0;if(m.kind==='
 window.hlHit=hlHit;window.hlDot=hlDot;
 // 治療：技能 6%/秒（絕招中 20%/秒）、慈悲 40%/秒（分開算），重創中技能治療減半，信仰每層 +4%
 function hlHeal(p,kind){const s=S0,P=s.P,t=s.t,H=hlS();if(P.dead||P.hp<=0)return 0;const w=H.win;if(t-w.t0>=1){w.t0=t;w.sk=0;w.m=0;w.v=0}
-  let a=HPMAX*p;if(kind!=='m'){a*=(1+HL.faith.per*H.faith)*(HL.hm||1);if(H.heavyU>t&&kind!=='g')a*=0.5}if(w.v==null)w.v=0;
+  let a=HPMAX*p;if((kind==='m'||kind==='v')&&t-(H.hurtT||-9)<HL.mercy.hurtT)a*=HL.mercy.hurtK;if(H.woundU>t&&kind!=='g'&&kind!=='u')a*=HL.mercy.woundK;if(kind!=='m'){a*=(1+HL.faith.per*H.faith)*(HL.hm||1);if(H.heavyU>t&&kind!=='g')a*=0.5}if(w.v==null)w.v=0;
   const ult=P.act&&P.act.type==='hu';const cap=kind==='g'?1e12:HPMAX*(kind==='m'?HL.mercy.cap:kind==='v'?HL.sus.cap*(HL.hm||1):(ult?HL.ult.cap:HL.cap)*(HL.hm||1)),used=kind==='m'?w.m:kind==='v'?w.v:kind==='g'?0:w.sk;a=Math.max(0,Math.min(a,cap-used));
-  const a0=a;a=Math.min(a,HPMAX-P.hp);if(window.hlOver&&a0>a)hlOver(a0-a);a=Math.round(a);if(a<=0)return 0;P.hp+=a;if(kind==='m')w.m+=a;else if(kind==='v')w.v+=a;else if(kind!=='g')w.sk+=a;
+  const a0=a;a=Math.min(a,HPMAX-P.hp);if(window.hlOver&&a0>a)hlOver(a0-a);a=Math.round(a);if(a<=0)return 0;P.hp+=a;if(window.__hlHK)__hlHK[kind]=(__hlHK[kind]||0)+a;if(kind==='m')w.m+=a;else if(kind==='v')w.v+=a;else if(kind!=='g')w.sk+=a;
   if(kind==='m'){H.mn.push({t,v:a});if(H.mn.length>6)H.mn.shift()}else s.heals.push({t,v:a});return a}
 window.hlHeal=hlHeal;
 function hlUg(v){}
 // 罪印共鳴：身上有夾夾減益的敵人數
 function hlDebuffed(m,t){return m.hlLinkU>t||m.hlPainU>t||m.hlFearU>t||m.hlSlowU>t}
-window.m2Dmg=(o=>function(v,m,mv,crit){let r=o.apply(this,arguments);if(!hlOn()||typeof r!=='number'||mv==='pet'||!m)return r;const s=S0,t=s.t,H=hlS();let k=HL.wm;
-  let n=0;for(const q of s.mobs)if(hlFoe(q)&&hlDebuffed(q,t))n++;k*=1+Math.min(HL.resMax,HL.res*n);
-  if(m.hlLinkU>t)k*=1+HL.link.mark;if(H.blessU>t)k*=1+HL.spirit.bless;
-  if(mv==='dot')k*=1+((GS.g25&&GS.g25.hdot)||0);
+window.m2Dmg=(o=>function(v,m,mv,crit){let r=o.apply(this,arguments);if(!hlOn()||typeof r!=='number'||mv==='pet'||!m)return r;const s=S0,t=s.t,H=hlS();
+  // DoT（光柱／光縛／痛楚／恐懼）走「近絕對值」：保留 m2Dmg 裝備攻擊，但不疊 wm／罪印／祝福，避免中後期光柱破十萬
+  let k;if(mv==='dot'){k=HL.dotK;if(m.hlLinkU>t)k*=1+HL.link.mark*0.5;k*=1+((GS.g25&&GS.g25.hdot)||0)}
+  else{k=HL.wm;let n=0;for(const q of s.mobs)if(hlFoe(q)&&hlDebuffed(q,t))n++;k*=1+Math.min(HL.resMax,HL.res*n);
+    if(m.hlLinkU>t)k*=1+HL.link.mark;if(H.blessU>t)k*=1+HL.spirit.bless}
   return Math.round(r*k)})(window.m2Dmg);
 // ---------- 信仰 ----------
 function hlFaith(n){const s=S0,t=s.t,H=hlS();const f0=H.faith;H.faith=Math.min(hlFmax(),H.faith+n);H.fG=t;H.fD=0;if(H.faith>f0&&H.faith===hlFmax())proc('信仰滿',[255,220,120],'信')}
@@ -705,7 +707,7 @@ function hlSus(m){const s=S0,P=s.P,t=s.t,U=HL.sus;const lo=P.hp<HPMAX*U.lowP?U.l
   if(v>0)hlFx({k:'hl_mote',x:m.x,y:m.y,h:hlChest(m),t0:t,lo:lo>1})}
 // 慈光庇護：這一下會讓 HP 掉到 40% 以下（或單下 ≥30%、或致命）→ 金色光點圈 0.6 秒不受傷、1.2 秒內分 4 段回 12%（冷卻 12 秒）；致命的那一下留 1 HP
 function hlGrace(r){const s=S0,P=s.P,t=s.t,H=hlS(),G=HL.sus.gr;if(t<(H.grCD||0)||P.dead)return r;const post=P.hp-r;
-  if(!(post<HPMAX*G.p||r>=HPMAX*G.big))return r;H.grCD=t+G.cd;if(post<1)r=Math.max(0,P.hp-1);
+  if(!(post<HPMAX*G.p||r>=HPMAX*G.big))return r;H.grCD=t+G.cd;if(window.__hlHK)__hlHK.grN=(__hlHK.grN||0)+1;if(post<1)r=Math.max(0,P.hp-1);
   P.invU=Math.max(P.invU||0,t+G.inv);H.hc=0;// 光圈把貼身的小怪推開、打斷出手
   for(const m of s.mobs){if(m.gone||m.dying||m.kind==='boss'||m.kind==='pillar'||m.state==='down'||Math.abs(m.x-P.x)>G.kb||Math.abs(m.y-P.y)>60)continue;const d=m.x>=P.x?1:-1;m.wind=0;if(m.state!=='air'){m.state='stun';m.stun=t+0.5;m.vx=320*d}m.cd=Math.max(m.cd||0,1.2)}
   H.gr={t0:t,n:0,next:t+0.12};hlFx({k:'hl_grace',t0:t});sfx('ready',0.35);return r}
@@ -789,7 +791,7 @@ function hlUltStep(A,dt,jP,kP){const s=S0,P=s.P,t=s.t,H=hlS(),U2=HL.ult,u=A.t,ai
       hlFx({k:'hl_burst',x:P.x,y:P.y,t0:t,f:P.face});hlFx({k:'hl_flash',t0:t});shake(12,0.4);sfx('crit',0.6);s.hitstop=Math.max(s.hitstop,0.08);
       for(const m of s.mobs)if(hlLive(m)&&hlOnScreen(m))hlHit(m,U2.burst,{multi:true})}}
   else if(A.ph==='air'){
-    while(t>=A.pt+A.pil*1&&A.pil<air){A.pil++;let n=0;for(const m of s.mobs){if(!hlLive(m)||hlD(m,P.x,P.y)>U2.pilR+hlBig(m))continue;n++;hlDot(m,U2.pil);hlFx({k:'hl_pillar',m,x:m.x,y:m.y,t0:t})}hlHeal(U2.heal,'u');if(n)shake(3,0.1)}
+    while(t>=A.pt+A.pil*1&&A.pil<air){A.pil++;let n=0;for(const m of s.mobs){if(!hlLive(m)||hlD(m,P.x,P.y)>U2.pilR+hlBig(m))continue;n++;hlDot(m,U2.pil*0.92/HL.dotK);hlFx({k:'hl_pillar',m,x:m.x,y:m.y,t0:t})}hlHeal(U2.heal,'u');if(n)shake(3,0.1)}
     for(const m of s.mobs){if(hlFoe(m)&&Math.abs(m.x-P.x)<U2.sanR+hlBig(m)&&Math.abs(m.y-P.y)<120+hlBig(m)*0.4)m.hlSanU=t+0.2}
     if(jP&&t-A.airJ>=U2.airGap){A.airJ=t;const tg=hlNearest(P.x,P.y,620);hlBolt(P.x+5*P.face,P.y,P.h+120,tg,HL.atk[1].v,{k:0})}
     if(kP&&H.lkCD<=0){H.lkCD=HL.link.cd*hlMvcd();const tg=hlNearest(P.x,P.y,HL.link.rng+80);if(tg){hlLinkTo(tg,1);s.callout={t0:t,txt:'生命連結'}}
@@ -863,25 +865,27 @@ function hlActStep(A,dt){const s=S0,P=s.P,t=s.t,H=hlS();
   default:if(A.t>=(A.dur||0))P.act=null}}
 // ---------- 受傷 ----------
 function hlAttacker(x){const s=S0;let b=null,bd=1e9;if(x==null)return null;for(const m of s.mobs){if(!hlFoe(m))continue;const d=Math.abs(m.x-x);if(d<bd){bd=d;b=m}}return bd<260?b:null}
-function hHurt(o,v,x){const s=S0,P=s.P,t=s.t,H=hlS();if(t<(P.invU||0))return 0;if(P.hlIF>t){proc('閃避',[150,230,190],'閃');return 0}
+function hHurt(o,v,x){const s=S0,P=s.P,t=s.t,H=hlS();if(t<(P.invU||0))return 0;if(P.hlIF>t){proc('閃避',[150,230,190],'閃');if(t>=(H.dgHT||0)){H.dgHT=t+HL.mercy.dodgeCD;H.woundU=0;hlHeal(HL.mercy.dodge,'s')}return 0}
   const a=P.act;if(a&&a.type==='hu'&&a.ph==='in')return 0;
   const am=hlAttacker(x);if(am){if(am.hlSanU>t)v*=HL.ult.sanAtk;if(am.hlWeakU>t)v*=HL.pr.weak}
   P.act=a||{type:'_'};let r;try{r=o(v,x)}finally{P.act=a}if(!r)return r;
   if(a&&a.type==='hu')r=Math.round(r*(1-HL.ult.dr));
   // W3.1 痛苦分擔：每條生命連結替她承擔 8%（最多 4 條），光點從她身上沿著線流向被連結的敵人（不轉成傷害）
-  {const L=H.links.filter(l=>l.st!=='break'&&hlLive(l.m));if(L.length){r=Math.round(r*(1-HL.sus.share*Math.min(4,L.length)));for(const l of L)hlFx({k:'hl_mote',x:l.m.x,y:l.m.y,h:hlChest(l.m),t0:t,rv:1})}}
+  {const L=H.links.filter(l=>l.st!=='break'&&hlLive(l.m));if(L.length){const r0=r;r=Math.round(r*(1-HL.sus.share*Math.min(4,L.length)));if(window.__hlHK)__hlHK.share=(__hlHK.share||0)+r0-r;for(const l of L)hlFx({k:'hl_mote',x:l.m.x,y:l.m.y,h:hlChest(l.m),t0:t,rv:1})}}
   if(r>=HPMAX*HL.heavy.p)H.heavyU=t+HL.heavy.t;
-  const sh=H.sh;if(sh&&r>0){const ab=Math.min(sh.hp,r);sh.hp-=ab;r-=ab;hlFx({k:'hl_shh',t0:t});
+  const sh=H.sh;if(sh&&r>0){const ab=Math.min(sh.hp,r);if(window.__hlHK)__hlHK.shield=(__hlHK.shield||0)+ab;sh.hp-=ab;r-=ab;hlFx({k:'hl_shh',t0:t});
     if(am&&t>=sh.ctr){sh.ctr=t+HL.pr.ctrCD;hlHit(am,HL.pr.ctr,{soft:1});if(hlLive(am)){if(am.kind!=='boss'&&am.kind!=='pillar'){am.x=clamp(am.x+Math.sign(am.x-P.x||1)*40,30,WW-30);am.cd=(am.cd||0)+0.6}else if(s.boss&&s.boss.nextAtk!=null)s.boss.nextAtk+=0.6}}
     if(sh.hp<=0){H.sh=null;hlFx({k:'hl_shb',t0:t,x:P.x,y:P.y,f:P.face});sfx('clank',0.4)}
     if(r<=0){P.flashT=t+0.05;return 0}}
   if(window.hlCandy)r=hlCandy(r);r=hlGrace(r);if(r<=0){P.flashT=t+0.05;return 0}
-  const armor=a&&(a.type==='hu'||a.type==='hpu');P.flashT=t+0.08;
+  H.hurtT=t;if(HLF.tele){H.woundU=t+HL.mercy.woundT;proc('重創',[200,60,60],'創')}const armor=a&&(a.type==='hu'||a.type==='hpu');P.flashT=t+0.08;
   if(!armor){const d=(x!=null&&x>P.x)?-1:1;P.x=clamp(P.x+14*d,30,WW-30);P.hurtT=t;if(a&&a.type!=='hd')P.act=null;
     if(t-(H.lastH||-9)>2.0)H.hc=0;H.hc++;H.lastH=t;
     if(H.hc>=4){H.hc=0;if(GS.kdr&&rnd()<GS.kdr)proc('抗倒地',[200,160,90],'穩');else{P.downU=t+0.7;P.downT0=t;P.invU=P.downU+0.8;P.h=0;P.vh=0;P.act=null;proc('倒地',[110,110,130],'倒')}}}
   return r}
 window.m2Hurt=(o=>function(v,x){if(hlOn())return hHurt(o,v,x);return o.apply(this,arguments)})(window.m2Hurt);
+// W3.2 紅圈（預警大招）打中：4 秒「重創」— 慈悲／回流／技能治療只剩 15%，不閃就補不回來
+if(typeof teleHurtP==='function')window.teleHurtP=(o=>function(){if(!hlOn())return o.apply(this,arguments);HLF.tele=1;try{return o.apply(this,arguments)}finally{HLF.tele=0}})(teleHurtP);
 // 聖域／連結：敵人攻擊變慢
 window.m2Step=(o=>dt=>{o(dt);const s=S0;if(!s||!hlOn())return;const t=s.t;
   for(const m of s.mobs){if(!hlFoe(m))continue;if(m.hlSanU>t){if(m.kind!=='boss'&&m.cd!=null)m.cd+=dt*HL.ult.sanSpd}}
@@ -913,12 +917,14 @@ window.aiThink=(o=>()=>{o();if(!hlOn())return;const s=S0,P=s.P,t=s.t,H=hlS();Obj
   const onS=m=>hlLive(m)&&Math.abs(m.x-s.cam-640)<640;let ms=s.mobs.filter(m=>onS(m)&&(m.kind!=='pillar'||shd||(typeof b4Prot==='function'&&b4Prot())));if(!ms.length)ms=s.mobs.filter(onS);if(P.dead)return;
   // W3.1 閃紅圈：站在快爆的紅圈裡 → 往圈外走（圈心附近可衝刺穿出去）
   const A0=P.act;const tl=(s.tele||[]).find(c=>!c.done&&t>=c.t0-0.1&&t<c.t1+0.05&&Math.hypot(P.x-c.x,(P.y-c.y)*2.2)<c.r+30);
-  if(tl&&!(A0&&A0.type==='hu')){let ex=P.x>=tl.x?1:-1;if((ex>0&&P.x>Math.min(WW,s.cam+W)-70)||(ex<0&&P.x<Math.max(0,s.cam)+70))ex=-ex;AI.mx=ex;AI.my=P.y>tl.y?1:-1;if(P.y<=YMIN+2)AI.my=1;if(P.y>=YMAX-2)AI.my=-1;
+  // 測試用：window.__hlNoDodge＝站樁不閃（只有模擬會設，正式遊戲沒有入口）
+  const ND=AUTO&&window.__hlNoDodge;
+  if(tl&&!ND&&!(A0&&A0.type==='hu')){let ex=P.x>=tl.x?1:-1;if((ex>0&&P.x>Math.min(WW,s.cam+W)-70)||(ex<0&&P.x<Math.max(0,s.cam)+70))ex=-ex;AI.mx=ex;AI.my=P.y>tl.y?1:-1;if(P.y<=YMIN+2)AI.my=1;if(P.y>=YMAX-2)AI.my=-1;
     if(H.dCD<=0&&Math.abs(P.x-tl.x)<tl.r+10)AI.dodge=1;return}
   if(!ms.length)return;
   // W3.1 看刀光閃：劍兵舉刀（0.6 秒前搖）快砍下來時，有六成機會衝刺躲開
   const sw=ms.find(m=>m.kind==='sword'&&m.wind>0&&m.wind<0.38&&Math.abs(m.x-P.x)<120&&Math.abs(m.y-P.y)<30&&(P.x-m.x)*m.face>0);
-  if(sw&&H.dCD<=0&&!(P.act&&P.act.type==='hu')&&t>(H.aiSw||0)){H.aiSw=t+0.7;if(rnd()<0.6){let d=P.x>=sw.x?1:-1;if((d>0&&P.x>s.cam+W-170)||(d<0&&P.x<s.cam+170))d=-d;AI.mx=d;AI.my=0;AI.dodge=1;return}}
+  if(sw&&!ND&&H.dCD<=0&&!(P.act&&P.act.type==='hu')&&t>(H.aiSw||0)){H.aiSw=t+0.7;if(rnd()<0.6){let d=P.x>=sw.x?1:-1;if((d>0&&P.x>s.cam+W-170)||(d<0&&P.x<s.cam+170))d=-d;AI.mx=d;AI.my=0;AI.dodge=1;return}}
   const pr=m=>(m.kind==='pillar'?-300:0);
   const tg=ms.slice().sort((a,b)=>Math.abs(a.x-P.x)+2*Math.abs(a.y-P.y)+pr(a)-Math.abs(b.x-P.x)-2*Math.abs(b.y-P.y)-pr(b))[0];
   const dx=tg.x-P.x,dy=tg.y-P.y,adx=Math.abs(dx),sg=Math.sign(dx)||1,big=hlBig(tg);AI.my=Math.abs(dy)>18?Math.sign(dy):0;const a=P.act;
@@ -927,7 +933,7 @@ window.aiThink=(o=>()=>{o();if(!hlOn())return;const s=S0,P=s.P,t=s.t,H=hlS();Obj
   // W3.1 拉開距離：貼身 2 隻以上 → 防護好了先開，否則衝刺／走出包圍（血量健康時照打）
   const pk=ms.filter(m=>m.kind!=='pillar'&&m.kind!=='boss'&&Math.abs(m.x-P.x)<125&&Math.abs(m.y-P.y)<50);
   if(pk.length>=2&&!(a&&(a.type==='hpu'||a.type==='hpr'))&&!H.sh&&H.prCD<=0){if(!a){AI.skill=1;AI.down=1}AI.mx=0;return}
-  if(pk.length>=3&&P.hp<HPMAX*0.6&&H.dCD<=0&&t>(H.aiEsc||0)){H.aiEsc=t+3;const cx=pk.reduce((q,m)=>q+m.x,0)/pk.length;let d=P.x>=cx?1:-1;if((d>0&&P.x>s.cam+W-170)||(d<0&&P.x<s.cam+170))d=-d;AI.mx=d;AI.my=0;AI.dodge=1;return}
+  if(pk.length>=3&&!ND&&P.hp<HPMAX*0.6&&H.dCD<=0&&t>(H.aiEsc||0)){H.aiEsc=t+3;const cx=pk.reduce((q,m)=>q+m.x,0)/pk.length;let d=P.x>=cx?1:-1;if((d>0&&P.x>s.cam+W-170)||(d<0&&P.x<s.cam+170))d=-d;AI.mx=d;AI.my=0;AI.dodge=1;return}
   if(H.ug>=100&&near>=1){if(!a)AI.ult=1;AI.mx=0;return}
   if(!H.sh&&H.prCD<=0&&(P.hp<HPMAX*0.7||near>=3)){if(!a){AI.skill=1;AI.down=1}AI.mx=0;return}
   const nl=H.links.filter(l=>l.st!=='break').length;
@@ -936,8 +942,8 @@ window.aiThink=(o=>()=>{o();if(!hlOn())return;const s=S0,P=s.P,t=s.t,H=hlS();Obj
   if(nl<3&&H.lkCD<=0&&adx<HL.link.rng-20+big&&Math.abs(dy)<100&&tg.kind!=='pillar'){if(P.face!==sg){AI.mx=sg;return}if(!a)AI.stab=1;AI.mx=0;return}
   if(H.puCD<=0&&nl>0&&near>=2){if(!a){AI.stab=1;AI.down=1}AI.mx=0;return}
   if(H.phCD<=0&&adx<HL.ph.rng){if(P.face!==sg){AI.mx=sg;return}if(!a)AI.skill=1;AI.mx=0;return}
-  if(adx<90+big&&Math.abs(dy)<60&&H.dCD<=0&&rnd()<0.15){AI.dodge=1;AI.mx=-sg;return}
-  if(adx>420+big)AI.mx=sg;else if(adx<85+big){AI.mx=-sg;if(P.x<s.cam+120||P.x>s.cam+W-120)AI.mx=0}else AI.mx=0;
+  if(!ND&&adx<90+big&&Math.abs(dy)<60&&H.dCD<=0&&rnd()<0.15){AI.dodge=1;AI.mx=-sg;return}
+  if(adx>420+big)AI.mx=sg;else if(adx<85+big&&!ND){AI.mx=-sg;if(P.x<s.cam+120||P.x>s.cam+W-120)AI.mx=0}else AI.mx=0;
   if(P.face!==sg&&!AI.mx){AI.mx=sg;return}
   if(Math.abs(dy)<50&&adx<600+big&&rnd()<0.75)AI.atk=1})(window.aiThink);
 
@@ -1246,4 +1252,14 @@ window.hlCandy=function(r){if(HL.wsp!=='SP19'||r<=0)return r;const H=hlS();if(!(
 // 朝聖之路（4 件）：帶負面狀態的敵人倒下 → 信仰 +2、光點飛回 3%
 window.m2Step=(o=>dt=>{o(dt);const s=S0;if(!s||HEROK!=='heal'||(HL.gset||0)<4)return;const t=s.t;
   for(const m of s.mobs){if(m.kind==='pillar'||m.hlPil4)continue;if((m.dying||m.gone)&&hlDebuffed(m,t-0.6)){m.hlPil4=1;hlFaith(2);const v=hlHeal(0.03,'g');hlFx({k:'hl_mote',x:m.x,y:m.y,h:hlChest(m),t0:t,lo:1});if(v>0)hlFx({k:'hl_gpulse',t0:t})}}})(window.m2Step);
+
+// ---- src29/e_bal.js
+// ===== W3.2 全角色平衡：苦達斯「不屈」=====
+// 5深淵 苦達斯 死亡集中在水晶監護者的紅圈＋近身（大劍要貼身打，紅圈難完全躲）。
+// 站樁硬打的大劍士：紅圈（預警大招）打到他只吃 70%；HP 低於 40% 時所有傷害再 ×0.65（咬牙撐住，給復仇回血時間）。
+const W32={kudasTele:0.7,kudasLow:0.4,kudasLowK:0.65,kudasRev:0.12};
+if(typeof teleHurtP==='function')window.teleHurtP=(o=>function(){if(HEROK!=='kudas')return o.apply(this,arguments);W32.tele=1;try{return o.apply(this,arguments)}finally{W32.tele=0}})(teleHurtP);
+window.m2Hurt=(o=>function(v,x){if(HEROK==='kudas'){if(W32.tele)v*=W32.kudasTele;const P=S0&&S0.P;if(P&&P.hp<HPMAX*W32.kudasLow)v*=W32.kudasLowK}return o.call(this,v,x)})(window.m2Hurt);
+// 復仇回血（被打後 3.2 秒內打中敵人回血）每下上限 8% → 12%：被群毆時靠揮劍把血搶回來
+window.m2Step=(o=>dt=>{o(dt);if(HEROK==='kudas'){const c=Math.round(HPMAX*W32.kudasRev);if(HEAL_CAP!==c)HEAL_CAP=c}})(window.m2Step);
 
