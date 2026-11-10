@@ -1,0 +1,27 @@
+// 探險隊畫面規則測試：node pettest/tools/unit_exp.mjs
+import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
+const dir = path.dirname(fileURLToPath(import.meta.url)), root = path.join(dir, '..');
+const store = {}; const ctx = { console, Math, Date, JSON, setTimeout, clearTimeout, localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = String(v), removeItem: k => delete store[k] } };
+ctx.window = ctx; ctx.PET = {}; vm.createContext(ctx);
+for (const f of ['pet/pet_data.js', 'pet/pet_core.js', 'pet/pet_p3.js', 'pet/pet_gen.js', 'pet/pet_p4.js', 'pet/pet_furn.js', 'pet/pet_camp.js', 'pet/pet_exp.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+const P = ctx.PET, C = P.CFG, H = 3600e3; let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; if (process.env.V) console.log('✓', m) } else { fail++; console.log('✗', m) } };
+let NOW = Date.UTC(2026, 10, 3, 2), NIGHT = false; P.now = () => NOW; P.isNight = () => NIGHT;
+P.S = P.newState(); P.migrate(P.S); P.S.unlock = 1; P.S.farm = 1; P.S.gold = 9e6; P.S.fac.board = 1;
+const mk = sp => { const p = P.makeAnimal({ sp, tier: 2, baby: 0, aff: 0, q: 1 }); P.S.pets.push(p); P.famRec(p); return p };
+const ps = ['wolf', 'cat', 'fox', 'bear', 'owl', 'rabbit', 'raccoon', 'pomeranian'].map(mk);
+let cr = P.expDepartCrew(); ok(cr.length === P.EXP_READY_MAX && cr.every(c => c.kind === 'ready'), `待命最多畫 ${P.EXP_READY_MAX} 隻`);
+const r1 = P.expSend('canyon', [ps[0].id, ps[1].id]); ok(r1.ok, '派第 1 隊（峽谷 2 隻）');
+cr = P.expDepartCrew(); ok(!cr.some(c => c.p === ps[0] || c.p === ps[1]), '出發的不在出發口');
+let L = P.expTrail(); ok(L.length === 1 && L[0].pets.length === 2 && L[0].pc === 0 && L[0].st.k === 'canyon', '路上 1 隊、剛出發在起點');
+NOW += (r1.team.until - r1.team.start) / 2; L = P.expTrail(); ok(Math.abs(L[0].pc - 0.5) < 1e-6 && L[0].left > 0, '走一半時間 → 在路中間');
+ok(P.expSend('s2', [ps[2].id, ps[3].id, ps[4].id]).ok && P.expTrail().length === 2, '2 隊同時在路上');
+NOW += 3 * H; P.advance(); ok(P.expTrail().length === 0, '時間到都回來了');
+cr = P.expDepartCrew(); const back = cr.filter(c => c.kind === 'back').map(c => c.p), rest = cr.filter(c => c.kind === 'rest').map(c => c.p);
+const won = P.S.exp.log.filter(l => l.win).flatMap(l => l.ids), lost = P.S.exp.log.filter(l => !l.win).flatMap(l => l.ids);
+ok(won.every(id => back.some(p => p.id === id)), '成功回來的在大門口（🎉）'); ok(lost.every(id => rest.some(p => p.id === id)), '沒成功的在板凳休息（💤）');
+NOW += 1.1 * H; cr = P.expDepartCrew(); ok(!cr.some(c => c.kind === 'back'), '回來 1 小時後不再站大門口');
+NIGHT = true; ok(P.expDepartCrew().every(c => c.kind !== 'ready'), '晚上待命的也去板凳睡'); NIGHT = false;
+const src = fs.readFileSync(path.join(root, 'pet/pet_exp.js'), 'utf8'); ok(!/p\.(away|restU)\s*=[^=]|team\.(until|rate|win|start)\s*=[^=]|S\.gold\s*[-+]?=[^=]/.test(src), '畫面沒有改探險結果、時間或金幣');
+const lay = JSON.parse(fs.readFileSync('/workspace/p4shots/assets_samples/scenes/expedition/exp_layout.json', 'utf8'));
+ok(Object.entries(P.EXP_SPOT).every(([k, s]) => lay.depart.spots[k] && lay.depart.spots[k][0] === s.x) && lay.trail.lanes.join() === P.EXP_LANES.join(), '站點、路線跟背景 layout 一致');
+console.log(`unit_exp: ${pass} pass, ${fail} fail`); process.exit(fail ? 1 : 0);
