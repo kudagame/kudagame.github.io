@@ -623,6 +623,10 @@ const HL={sp:300,spy:150,jv:1250,dash:{cd:0.9,dur:0.22,dist:150,inv:0.2},
 window.HL=HL;
 // 杖頭水晶位置（腳下為原點，由 tools/heal_export 匯出的 s_hl_* 量出）
 const HL_TIP={"atk1_0":[52,-58],"atk1_1":[63,-87],"atk1_2":[63,-102],"atk1_3":[62,-102],"atk1_4":[62,-98],"atk1_5":[62,-76],"atk2_0":[63,-98],"atk2_1":[51,-111],"atk2_2":[33,-115],"atk2_3":[63,-100],"atk2_4":[65,-96],"atk2_5":[64,-90],"atk3_0":[50,-38],"atk3_1":[49,-42],"atk3_2":[50,-44],"atk3_3":[48,-42],"atk3_4":[49,-40],"atk3_5":[49,-37],"depart0":[51,-111],"depart1":[33,-115],"idle0":[42,-31],"idle1":[42,-31],"idle10":[42,-31],"idle11":[42,-31],"idle2":[42,-31],"idle3":[42,-31],"idle4":[42,-31],"idle5":[42,-31],"idle6":[42,-31],"idle7":[42,-31],"idle8":[42,-31],"idle9":[42,-31],"link0":[52,-58],"link1":[63,-98],"link2":[51,-111],"link3":[33,-115],"link4":[63,-100],"link5":[63,-102],"link6":[62,-98],"link7":[62,-76],"link8":[52,-58],"run0":[39,-31],"run1":[40,-31],"run2":[42,-31],"run3":[44,-31],"run4":[45,-31],"run5":[44,-31],"run6":[42,-31],"run7":[40,-31],"walk0":[40,-31],"walk1":[41,-31],"walk2":[42,-31],"walk3":[43,-31],"walk4":[44,-31],"walk5":[43,-31],"walk6":[42,-31],"walk7":[41,-31]};
+Object.assign(HL_TIP,{"dash0":[40,-31],"dash1":[43,-31],"dash2":[46,-30],"dash3":[47,-30],"dash4":[45,-31],"dash5":[42,-31]},{hurt0:[49,-43],hurt1:[49,-43]});
+const HL_ULT_HAND=[[56,-101],[56,-100],[56,-100],[56,-99],[56,-99],[56,-98],[56,-98],[56,-98],[56,-99],[56,-99],[56,-99],[56,-100],[56,-99],[56,-100],[56,-100],[56,-101],[56,-102],[56,-102],[56,-103],[56,-103],[56,-104],[56,-104],[56,-104],[56,-104],[56,-103],[56,-103],[56,-102],[56,-102],[56,-102],[56,-102]];
+const HL_ULT_IN_HAND=[[51,-111],[51,-111],[51,-111],[51,-111],[51,-111],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[38,-60],[38,-60],[38,-60],[40,-60],[43,-62],[45,-64],[47,-68],[50,-72],[51,-75],[53,-79],[54,-83],[55,-87],[56,-90],[56,-95],[56,-97],[56,-98],[56,-100],[56,-101],[56,-101],[56,-101],[56,-101],[56,-101],[56,-101],[56,-101]];
+const HL_ULT_OUT_HAND=[[56,-101],[56,-101],[56,-101],[56,-101],[56,-101],[56,-100],[55,-95],[54,-89],[52,-84],[50,-78],[48,-73],[45,-67],[42,-62],[52,-58],[52,-58],[52,-58],[52,-58],[52,-58],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31],[42,-31]];
 const hlOn=()=>HEROK==='heal';
 const hlLive=m=>m&&!m.gone&&!m.dying;
 const hlFoe=m=>hlLive(m)&&m.kind!=='pillar';
@@ -714,7 +718,7 @@ function hlGrace(r){const s=S0,P=s.P,t=s.t,H=hlS(),G=HL.sus.gr;if(t<(H.grCD||0)|
 function hlGraceStep(){const s=S0,t=s.t,H=hlS(),g=H.gr,G=HL.sus.gr;if(!g)return;while(g&&t>=g.next&&g.n<G.n){g.n++;g.next+=G.gap;hlHeal(G.v,'g');hlFx({k:'hl_gpulse',t0:t})}if(g.n>=G.n)H.gr=null}
 window.hlSus=hlSus;
 function hlBreak(l,quiet){const t=S0.t;if(l.st==='break')return;l.st='break';l.tb=t;if(l.m)l.m.hlLinkU=0}
-function hlLinksStep(dt){const s=S0,P=s.P,t=s.t,H=hlS(),L=HL.link;const tip=hlTip(hlPoseName(P,t));
+function hlLinksStep(dt){const s=S0,P=s.P,t=s.t,H=hlS(),L=HL.link;const tip=hlAttachment(P,t);
   for(const l of H.links){if(l.st==='break'){if(t-l.tb>0.35)l.dead=1;continue}const m=l.m;
     if(!hlLive(m)){// 殉痛爆裂：剩餘 DOT 的 50% 炸給附近 3 隻、連結跳到最近的敵人
       const left=Math.max(0,Math.floor((l.until-t)/L.tick));const v=Math.round(left*L.dot*0.5/3);
@@ -845,6 +849,8 @@ function hlMove(dt,mx,my,mvk){const s=S0,P=s.P,t=s.t;const ox=P.x,oy=P.y,B=P.act
     if(mx&&(!B||B.type==='hu'||(B.type==='hp'&&B.t>HL.ph.out)))P.face=mx>0?1:-1}
   const lo=s.lock?s.cam+40:30,hi=s.lock?s.cam+W-40:WW-30;P.x=clamp(P.x,lo,hi);P.y=clamp(P.y,YMIN,YMAX);
   P.kspd=Math.abs(P.x-ox)/dt;P.mspd=Math.hypot(P.x-ox,P.y-oy)/dt;
+  // Visual phase follows distance, including isometric vertical travel; never changes movement.
+  const ds=Math.hypot(P.x-ox,(P.y-oy)*2);P.hlLoc=(P.hlLoc||0)+ds/24;
   if(!(B&&B.type==='hu')&&(P.h>0||P.vh>0)){P.h+=P.vh*dt;P.vh-=5104*dt;if(P.h<=0){P.h=0;P.vh=0;P.landT=t;puff(P.x,P.y-3,4,[214,170,128],20,0.35,2)}}
   if(B&&B.type==='hu'&&P.h>0){P.h=0;P.vh=0}
   if(P.kspd>120&&P.h===0&&!(B&&B.type==='hu')&&t-(P.lastdust||0)>0.1){P.lastdust=t;puff(P.x-25*P.face,P.y-3,3,[214,170,128],10,0.33,2)}
@@ -860,7 +866,7 @@ function hlActStep(A,dt){const s=S0,P=s.P,t=s.t,H=hlS();
   case 'hpr':if(A.t>=A.dur){P.act=null;hlShieldUp()}break;
   case 'hgl':if(A.t>=A.dur)P.act=null;break;
   case 'hd':{const k=Math.min(1,A.t/A.dur);P.x+=A.dir*HL.dash.dist/A.dur*1.6*Math.max(0,1-k)*dt*1.25;
-    if(t-(P.lastG||0)>0.035){P.lastG=t;(P.ghost=P.ghost||[]).push({x:P.x,y:P.y,h:0,t,nm:'hl_run'+(Math.floor(t/0.07)%8),f:P.face});if(P.ghost.length>6)P.ghost.shift()}
+    if(t-(P.lastG||0)>0.035){P.lastG=t;(P.ghost=P.ghost||[]).push({x:P.x,y:P.y,h:0,t,nm:'hl_dash'+Math.min(5,Math.floor(A.t/A.dur*6)),f:P.face});if(P.ghost.length>6)P.ghost.shift()}
     if(A.t>=A.dur)P.act=null;break}
   default:if(A.t>=(A.dur||0))P.act=null}}
 // ---------- 受傷 ----------
@@ -897,19 +903,44 @@ window.stepPlayer=(o=>function(dt){if(!hlOn())return o.apply(this,arguments);con
 // ---------- 姿勢 ----------
 function hlPoseName(P,t){const s=S0,a=P.act;
   if(m2Down()){return 'hurt1'}
-  if(t-(P.hurtT||-9)<0.3&&!a)return t-(P.hurtT||-9)<0.15?'hurt0':'hurt1';
+  // Short visual reaction only: action/input continues; dodge and transformation always win.
+  if(t-(P.hurtT??-9)<0.18&&(!a||!['hd','hu'].includes(a.type)))return t-(P.hurtT??-9)<0.08?'hurt0':'hurt1';
   if(a){const u=a.t;switch(a.type){
     case 'hj':{const D=HL.atk[a.k];const k=Math.min(5,Math.floor(u/a.dur*6));return D.f+k}
     case 'hk':{const L=[[0.05,0],[0.1,1],[0.15,2],[0.2,3],[0.27,4],[0.5,5],[0.56,6],[0.62,7],[9,8]];for(const [e,f] of L)if(u<e)return 'link'+f;return 'link8'}
     case 'hp':{const k=Math.min(5,Math.floor(u/a.dur*6));return 'atk2_'+k}
-    case 'hpu':return u<HL.pu.fire?(u<0.12?'link2':'link3'):(u<0.5?'link4':'link6');
-    case 'hpr':return u<0.12?'link2':'link3';
-    case 'hgl':return u<0.12?'link2':u<0.3?'link3':'link4';
-    case 'hd':return 'run'+(Math.floor(t/0.07)%8);}}
+    case 'hpu':return hlCastPose(u,a.dur||HL.pu.root,HL.pu.fire);
+    case 'hpr':return hlCastPose(u,a.dur||HL.pr.cast,0.28);
+    case 'hgl':return hlCastPose(u,a.dur||HL.gl.cast,0.22);
+    case 'hd':return 'dash'+Math.min(5,Math.floor(u/a.dur*6));}}
   if(P.h>0)return 'run3';
-  const sp=P.mspd||0;if(sp>200)return 'run'+(Math.floor(t/0.08)%8);if(sp>20)return 'walk'+(Math.floor(t/0.11)%8);
+  const sp=P.mspd||0,phase=Math.floor(P.hlLoc||0)%8;if(sp>200)return 'run'+phase;if(sp>20)return 'walk'+phase;
   return 'idle'+(Math.floor(t/0.12)%12)}
 window.hlPoseName=hlPoseName;
+// One visual body/attachment descriptor, shared by sprite and link renderer.
+// Only frame selection changes: cast locks and all combat/fire times are untouched.
+function hlCastPose(u,dur,release){
+  const q=u/dur;
+  if(q<0.09)return 'link0';if(q<0.19)return 'link1';
+  if(q<0.31)return 'link2';if(u<release)return 'link3';
+  if(q<0.72)return 'link4';if(q<0.84)return 'link6';if(q<0.94)return 'link7';return 'link8';
+}
+function hlVisual(P,t){const A=P.act;
+  if(A&&A.type==='hu'){
+    const sheet=A.ph==='in'?'ult_in':A.ph==='air'?'ult_air':'ult_out';
+    const age=A.ph==='in'?A.t:A.ph==='air'?t-A.pt:t-A.ot;
+    const D=HLX[sheet],raw=Math.max(0,Math.floor(age*15));
+    const frame=D.loop?raw%D.n:Math.min(D.n-1,raw);
+    // Air fist follows the same 15fps atlas frame (lift/bob included in the measurement).
+    const anchors=A.ph==='air'?HL_ULT_HAND:A.ph==='in'?HL_ULT_IN_HAND:HL_ULT_OUT_HAND;
+    const tip=anchors[frame%anchors.length];
+    return {sheet,frame,tip};
+  }
+  const name=hlPoseName(P,t);return {name,tip:HL_TIP[name]||HL_TIP.idle0};
+}
+function hlAttachment(P,t){const V=hlVisual(P,t),o=V.tip;return {x:P.x+o[0]*P.face,y:P.y,h:(P.h||0)-o[1]}}
+window.hlVisual=hlVisual;window.hlAttachment=hlAttachment;
+
 // ---------- AUTO ----------
 window.aiThink=(o=>()=>{o();if(!hlOn())return;const s=S0,P=s.P,t=s.t,H=hlS();Object.assign(AI,{dodge:0,ult:0,snipe:0,down:0,hold:0.04,jump:0,atk:0,stab:0,skill:0});
   AI.sum=s.food>=FOOD_MAX&&!s.ally&&!s.bard&&!s.arA&&t>(s.allyCD||0)?1:0;
@@ -991,7 +1022,7 @@ function hlEnts(ents,SX,shy){const s=S0,P=s.P;if(!P||!P.hl)return;const t=s.t,g=
   const sp=P.hl.spirit;if(sp)ents.push([sp.y+2,()=>hlxDraw('bf_g',Math.floor(t*30/2),SX(sp.x),sp.y-sp.h+shy,sp.x>P.x)])}
 // ---------- 最上層 ----------
 function hlTop(SX,shy){const s=S0,P=s.P;if(!P||!P.hl)return;const t=s.t,H=P.hl,L=LLk(),f=P.face;const put=hlPut();
-  const tip=hlTip(hlPoseName(P,t));const tx=Math.round(SX(tip.x)),ty=Math.round(tip.y-tip.h+shy);
+  const tip=hlAttachment(P,t);const tx=Math.round(SX(tip.x)),ty=Math.round(tip.y-tip.h+shy);
   const A=P.act;
   // 甩鞭＋飛出中的鍊子
   if(A&&A.type==='hk'){const u=A.t;if(u>=0.12&&u<0.27){const q=(u-0.12)/0.15,e=q*q*(3-2*q);const p2=f<0?((x,y,c)=>put(2*tx-x,y,c)):put;L.whipLash(p2,tx,ty,30+16*e,-150+150*e,55*(1-e)+8)}
@@ -1074,9 +1105,9 @@ window.spr=(o=>(n,sx,sy,op={})=>{if(!hlOn()||typeof n!=='string'||!n.startsWith(
       if(im&&y>-sy-320){X.save();X.imageSmoothingEnabled=false;X.globalAlpha=Math.max(0.2,1-sf/70);X.translate(Math.round(sx),Math.round(sy));if(fl)X.scale(-1,1);X.drawImage(im,-200+K.soul_dx,-282+y);X.restore();
         for(let i=0;i<3;i++){const q=(sf+i*5)%14;X.globalAlpha=0.7*(1-q/14);X.fillStyle=i%2?'rgb(255,214,90)':'rgb(255,246,190)';X.fillRect(Math.round(sx+(fl?36:-36)*0+(i-1)*14+Math.sin(sf*0.3+i)*6),Math.round(sy-282+y+150+q*4),2,2)}X.globalAlpha=1}}
     return}
-  const A=P.act;if(A&&A.type==='hu'){const u=A.t;if(A.ph==='in')hlxDraw('ult_in',Math.floor(u*15),sx,sy,fl);else if(A.ph==='air')hlxDraw('ult_air',Math.floor((t-A.pt)*15),sx,sy+(P.h||0),fl);else hlxDraw('ult_out',Math.floor((t-A.ot)*15),sx,sy,fl);return}
+  const A=P.act,V=hlVisual(P,t);if(V.sheet){hlxDraw(V.sheet,V.frame,sx,sy+(A.ph==='air'?(P.h||0):0),fl);return}
   for(const g of P.ghost||[]){const a=0.42*(1-(t-g.t)/0.25);if(a<=0)continue;o(g.nm,SX_(g.x),g.y-g.h+(sy-(P.y-(P.h||0))),{flip:g.f<0,alpha:a,filter:'brightness(1.6) sepia(1) hue-rotate(10deg)',__g:1})}
-  const nm='hl_'+hlPoseName(P,t);const gl=(P.act&&['hpr','hgl','hpu'].includes(P.act.type))?[255,236,160,Math.floor(90+60*Math.sin(t*20))]:op.glow;
+  const nm='hl_'+V.name;const gl=(P.act&&['hpr','hgl','hpu'].includes(P.act.type))?[255,236,160,Math.floor(90+60*Math.sin(t*20))]:op.glow;
   return o(nm,sx,sy,Object.assign({},op,{rot:0,dy:0,glow:gl}))})(window.spr);
 const SX_=x=>x-(S0?S0.cam:0);
 window.koHold=(o=>()=>hlOn()?2.6:o())(window.koHold);

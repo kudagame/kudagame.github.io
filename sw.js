@@ -1,5 +1,5 @@
 // 艾爾琳之旅 網頁版 service worker：殼層預先快取；資源包（pk/*.bin）第一次下載後快取；a/ 底下的檔案從資源包切出來
-const VER='30b6c58e12',SHELL='erinn-shell-'+VER,PACKS='erinn-packs',CFG='erinn-cfg';
+const VER='09de99786d',SHELL='erinn-shell-'+VER,PACKS='erinn-packs',CFG='erinn-cfg';
 const SHELL_FILES=["./", "index.html", "boot.js", "fb.js", "manifest.webmanifest", "pk/idx.json", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "game.js", "m2.js", "ms.js", "sp.js", "mon.js", "m21.js", "m22.js", "m23.js", "m24.js", "m25.js", "m25b.js", "w1.js", "m27.js", "m28.js", "w3cover.js", "m29.js", "mob.js", "firebase-config.js", "cloud.js"];
 const CT={png:'image/png',json:'application/json',otf:'font/otf',ogg:'audio/ogg',m4a:'audio/mp4',js:'text/javascript'};
 self.addEventListener('install',e=>{e.waitUntil(caches.open(SHELL).then(c=>c.addAll(SHELL_FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting()))});
