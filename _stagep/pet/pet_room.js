@@ -14,10 +14,10 @@
   P.medalCount = ms => { const n = [0, 0, 0, 0]; (ms || []).forEach(m => n[m.pl] = (n[m.pl] || 0) + 1); return n };
   P.scenes = P.scenes || {};
   if (!P.ui || typeof Image === 'undefined') return;   // 以下是畫面
-  const UI = P.ui, IM = {}, img = (k, src) => { const i = new Image(); i.src = src; IM[k] = i };
+  const UI = P.ui, IM = {}, img = (k, src) => { const i = P.art.lazyImage(src); IM[k] = i };
   img('bg', 'assets/scenes/room/room_bg.jpg');
   for (const a of Object.values(MK)) for (const b of Object.values(MT)) img(`${a}_${b}`, `assets/scenes/room/medals/medal_${a}_${b}.png`);
-  const ok = i => i && i.complete && i.naturalWidth > 0;
+  const ok = i => P.art.imageOK(i);
   function tag(ctx, t, x, y, col, size) { if (P.art && P.art.tagBox) { P.art.tagBox(ctx, t, x, y, { size: size || 16, pad: 8, h: (size || 16) + 12, col: col || '#fff', s: 2, st: [3, 1] }); return } ctx.font = `bold ${size || 16}px sans-serif`; const w = ctx.measureText(t).width + 16, h = (size || 16) + 12; ctx.fillStyle = 'rgba(26,16,22,.8)'; ctx.fillRect(x - w / 2, y - h + 6, w, h); ctx.fillStyle = col || '#fff'; ctx.fillText(t, x - w / 2 + 8, y) }
   // P5.1 #3：蜜糖媽媽說的話改成泡泡（她不在畫面上 → 左下角小頭像＋泡泡）；獎牌說明還是用框，但改成圓角階梯框
   function box(ctx, who, t) { if (who === '蜜糖媽媽' && P.speak) { if (RM && RM.said !== t) { RM.said = t; P.speak('蜜糖媽媽', t, 6) } return }

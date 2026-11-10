@@ -155,3 +155,15 @@ a.skn{color:#ffe08a;text-decoration:underline dotted #ffe08a88;text-underline-of
 #bar{padding-bottom:max(6px,env(safe-area-inset-bottom))}
 #panel{bottom:calc(64px + env(safe-area-inset-bottom))}
 @media(max-height:500px){#panel{bottom:calc(58px + env(safe-area-inset-bottom))}}
+
+/* boot2: portrait has an explicit orientation guide and reachable wrapped controls. */
+#portraitHint{display:none}
+#bar{overscroll-behavior:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+@media(orientation:portrait){
+ #portraitHint{display:block;position:fixed;top:90px;left:12px;right:12px;text-align:center;color:#ffe7a4;font-size:24px;z-index:2;pointer-events:none}
+ #portraitHint small{font-size:14px;line-height:1.6}
+ #wrap{bottom:34dvh}
+ #bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:34dvh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y}
+ #bar button{min-width:0;min-height:48px;white-space:normal;overflow-wrap:anywhere}
+ #panel{bottom:calc(34dvh + env(safe-area-inset-bottom))}
+}

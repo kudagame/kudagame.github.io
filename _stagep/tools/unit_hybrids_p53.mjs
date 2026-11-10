@@ -5,7 +5,7 @@ class Img{set src(s){this._src=s;const f=path.join(root,s.split('?')[0]);this.co
 function cv(){const c={width:0,height:0,draws:[]};c.getContext=()=>({drawImage:(im,...r)=>c.draws.push({src:im.src,r}),getImageData:()=>({data:new Uint8ClampedArray(c.width*c.height*4)}),putImageData(){}});return c}
 const ctx={console,Math,Date,JSON,setTimeout,clearTimeout,Image:Img,location:{protocol:'file:'},document:{createElement:cv},localStorage:{getItem(){return null},setItem(){},removeItem(){}}};ctx.window=ctx;ctx.PET={};vm.createContext(ctx);
 for(const f of ['assets/pets/manifest.js','assets/portraits/manifest.js','assets/pets/hybrids_p53.js','pet/pet_data.js','pet/pet_core.js','pet/pet_art.js','pet/pet_lines.js','pet/pet_p3.js','pet/pet_gen.js','pet/pet_p4.js','pet/pet_p51.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),ctx,{filename:f});
-const P=ctx.PET,A=P.art;P.S=P.newState();P.migrate(P.S);await A.load();await new Promise(r=>setTimeout(r,1));let checks=0,frames=0;
+const P=ctx.PET,A=P.art;P.S=P.newState();P.migrate(P.S);await A.load();await A.preloadAll();await new Promise(r=>setTimeout(r,1));let checks=0,frames=0;
 function ok(c,m){checks++;if(!c)throw Error(m)}
 for(const sp of Object.keys(P.HYB)){
  ok(A.setFor(sp).sp===sp,'fallback '+sp);ok(!A.setFor(sp).tint,'double tint '+sp);

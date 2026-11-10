@@ -174,12 +174,12 @@
   const UI = P.ui, $ = s => document.querySelector(s), esc = s => UI.esc(s);
   const A = P.art;
   // ---------- 圖 ----------
-  const IMG = {}; const ld = (k, src) => { const i = new Image(); i.src = src; IMG[k] = i };
+  const IMG = {}; const ld = (k, src) => { const i = P.art.lazyImage(src); IMG[k] = i };
   for (const n of ['', '_night']) {
     ld('hutF' + n, `assets/scenes/p51/hut_front${n}.png`); ld('ware' + n, `assets/scenes/p51/ware${n}.png`); ld('wareF' + n, `assets/scenes/p51/ware_front${n}.png`);
     for (const k of ['bed', 'chime', 'feeder', 'toybox', 'bowl_full']) { ld('f_' + k + n, `assets/scenes/farm/furn_${k}${n}.png`); ld('fF_' + k + n, `assets/scenes/p51/furn_${k}_front${n}.png`) }
   }
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const ok = im => P.art.imageOK(im);
   P.p51Img = IMG;
   const night = () => P.isNight ? P.isNight() : false;
   // 依方向畫：L＝原圖、R＝鏡像、F＝正面圖

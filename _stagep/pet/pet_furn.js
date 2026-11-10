@@ -121,7 +121,7 @@
 
   if (!P.ui || !P.scenes) return;   // 以下是畫面（node 測試只載上面的規則）
   // ---------- 農場小屋：畫在草原前景（y 600），跟寵物一起排前後 ----------
-  const HIMG = {}; for (const k of ['hut', 'hut_night']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}.png`; HIMG[k] = im }
+  const HIMG = {}; for (const k of ['hut', 'hut_night']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}.png`); HIMG[k] = im }
   const HS = 1.2, hutSlots = () => { const n = P.farmHuts().length, open = P.farmHutOpen(); return C.farmHut.x.map((x, i) => ({ i, x, y: C.farmHut.y, st: i < n ? 'built' : i === n && i < open ? 'pad' : 'hide' })).filter(h => h.st !== 'hide') };   // 沒開放的位子不畫，只在空地牌子說下一個
   const htag = (ctx, t, x, y, bg, fg) => { ctx.font = 'bold 16px sans-serif'; const w = ctx.measureText(t).width + 16; ctx.fillStyle = '#1A1016'; ctx.fillRect(x - w / 2 - 2, y - 22, w + 4, 28); ctx.fillStyle = bg; ctx.fillRect(x - w / 2, y - 20, w, 24); ctx.fillStyle = fg; ctx.fillText(t, x - w / 2 + 8, y - 3) };
   P.farmHutDraw = (ctx, upto, done) => {
@@ -130,7 +130,7 @@
       if (done[h.i] || h.y > upto) continue; done[h.i] = 1;
       if (h.st === 'pad') { ctx.fillStyle = nt ? 'rgba(90,70,50,.75)' : 'rgba(150,116,74,.8)'; ctx.beginPath(); ctx.ellipse(h.x, h.y - 8, 92, 20, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(h.x - 4, h.y - 70, 8, 62); htag(ctx, '小屋空地（點我蓋）', h.x, h.y - 70, '#f3e2c0', '#3a2418'); continue }
       const w = im.naturalWidth * HS, hh = im.naturalHeight * HS;
-      if (im.complete && im.naturalWidth) { ctx.imageSmoothingEnabled = false; ctx.drawImage(im, h.x - w / 2, h.y - hh + 6, w, hh) } else { ctx.fillStyle = '#e8b878'; ctx.fillRect(h.x - 80, h.y - 120, 160, 120) }
+      if (P.art.imageOK(im)) { ctx.imageSmoothingEnabled = false; ctx.drawImage(im, h.x - w / 2, h.y - hh + 6, w, hh) } else { ctx.fillStyle = '#e8b878'; ctx.fillRect(h.x - 80, h.y - 120, 160, 120) }
       const c = huts[h.i], A = P.byId(c.a), B = P.byId(c.b);
       htag(ctx, `🌾 小屋 ${h.i + 1}${c.basket ? ' 🧺' : ''}${A && B ? ' ♥' : ''}`, h.x, h.y - (hh || 120) - 2, '#ffe9a8', '#3a2418');
     }
@@ -144,10 +144,10 @@
   };
   // =================================== 穀倉畫面 ===================================
   const UI = P.ui, esc = s => UI.esc(String(s == null ? '' : s)), fmt = n => Math.round(n).toLocaleString();
-  const IMG = {}; for (const k of ['barn_day_bg', 'barn_night_bg']) { const im = new Image(); im.src = `assets/scenes/farm/${k}.jpg`; IMG[k] = im }
-  for (const k of ['feeder', 'toybox', 'bed', 'chime', 'bowl_empty', 'bowl_half', 'bowl_full']) for (const n of ['', '_night']) { const im = new Image(); im.src = `assets/scenes/farm/furn_${k}${n}.png`; IMG[k + n] = im }
+  const IMG = {}; for (const k of ['barn_day_bg', 'barn_night_bg']) { const im = P.art.lazyImage(`assets/scenes/farm/${k}.jpg`); IMG[k] = im }
+  for (const k of ['feeder', 'toybox', 'bed', 'chime', 'bowl_empty', 'bowl_half', 'bowl_full']) for (const n of ['', '_night']) { const im = P.art.lazyImage(`assets/scenes/farm/furn_${k}${n}.png`); IMG[k + n] = im }
   P.furnImg = IMG;
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const ok = im => P.art.imageOK(im);
   const night = () => P.isNight ? P.isNight() : false;
   // 家具位置（腳底中心，1 倍畫；寵物 ×2）
   const POS = { feed: { x: 560, y: 470 }, chime: { x: 1040, y: 440 }, toy: { x: 800, y: 600 }, bed: { x: 300, y: 640 } };

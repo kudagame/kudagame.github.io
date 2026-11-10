@@ -10,9 +10,9 @@
   let camX = 0, camTo = 0, held = null;
   const ANX = () => P.S.annex === 1, BLD = () => !!(P.S.annex && P.S.annex.until), WIDE = () => ANX() || BLD(), WW = () => WIDE() ? 2560 : 1280;
   // 背景圖（AI 底稿＋程式修整，見 chars/pets/scenes/build_yard.py）；讀不到就退回原本的程式畫法
-  const IMG = {}; for (const k of ['yard_day_bg', 'yard_night_bg', 'annex_day_bg', 'annex_night_bg', 'annex_build_day_bg', 'annex_build_night_bg']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}${/^annex/.test(k) ? '_s' : ''}.jpg`; IMG[k] = im }   // P5.1 #7：二館背景用接縫修過的版本（tools/build_p51_art.py）
-  for (const k of ['hut', 'hut_night', 'basket_empty', 'basket_empty_night', 'basket_egg', 'basket_egg_night', 'basket_egg_c1', 'basket_egg_c1_night', 'basket_egg_c2', 'basket_egg_c2_night', 'basket_egg_c3', 'basket_egg_c3_night', 'poop', 'poop_night', 'poop_big', 'poop_big_night']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}.png`; IMG[k] = im }
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const IMG = {}; for (const k of ['yard_day_bg', 'yard_night_bg', 'annex_day_bg', 'annex_night_bg', 'annex_build_day_bg', 'annex_build_night_bg']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}${/^annex/.test(k) ? '_s' : ''}.jpg`); IMG[k] = im }   // P5.1 #7：二館背景用接縫修過的版本（tools/build_p51_art.py）
+  for (const k of ['hut', 'hut_night', 'basket_empty', 'basket_empty_night', 'basket_egg', 'basket_egg_night', 'basket_egg_c1', 'basket_egg_c1_night', 'basket_egg_c2', 'basket_egg_c2_night', 'basket_egg_c3', 'basket_egg_c3_night', 'poop', 'poop_night', 'poop_big', 'poop_big_night']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}.png`); IMG[k] = im }
+  const ok = im => P.art.imageOK(im);
   const night = () => { if (P.isNight) return P.isNight(); const h = new Date(P.now() + (C.tz || 8) * 3600e3).getUTCHours(); return h >= 18 || h < 6 };
   // 小屋：底邊中心（前面那間 y 大一點，畫的時候照 y 排序）；小屋 148px 寬
   const COT = [[952, 382], [1076, 404], [1200, 382], [1495, 416], [2016, 398]], HUT_W = 148, HUT_H = 147;
@@ -179,7 +179,7 @@
     q(-6, -1, 12, 3, '#7a4a26'); q(-5, -4, 10, 3, '#8f5a2e'); q(-3, -7, 6, 3, '#a26a38'); q(-1, -9, 2, 2, '#a26a38'); q(-3, -6, 2, 1, '#c98d55'); q(-4, -3, 2, 1, '#c98d55');
   }
   function drawHeap(ctx, n) { // 堆肥坑：數量越多越大
-    const H0 = P.HEAP_AT; if (!ok(IMG.yard_day_bg)) { ctx.fillStyle = '#5b3d22'; ctx.fillRect(H0.x - 40, H0.y - 6, 80, 12) } label(ctx, '堆肥箱', H0.x, H0.y + 52, '#ffd');
+    const H0 = P.HEAP_AT; if (!ok(IMG[night() ? 'yard_night_bg' : 'yard_day_bg'])) { ctx.fillStyle = '#5b3d22'; ctx.fillRect(H0.x - 40, H0.y - 6, 80, 12) } label(ctx, '堆肥箱', H0.x, H0.y + 52, '#ffd');
     if (!n) return; const sc = 1.6 + Math.min(20, n) * 0.18;
     for (let i = 0; i < Math.min(n, 6); i++) drawPoop(ctx, H0.x + (i % 3 - 1) * 9 * sc * 0.6, H0.y - Math.floor(i / 3) * 6 * sc, sc * (i < 3 ? 1 : 0.8));
     label(ctx, `${n} 坨`, H0.x, H0.y - 14 * sc - 6, '#ffd');
@@ -300,7 +300,7 @@
     draw(ctx) {
       ctx.clearRect(0, 0, 1280, 720); ctx.save(); ctx.translate(-Math.round(camX), 0); bg(ctx);
       const S = P.S, n = P.poopN();
-      drawHeap(ctx, S.heap); if (ok(IMG.yard_day_bg)) drawHuts(ctx);
+      drawHeap(ctx, S.heap); if (ok(IMG[night() ? 'yard_night_bg' : 'yard_day_bg'])) drawHuts(ctx);
       S.poop.forEach(q => { drawPoop(ctx, q.x, q.y, q.big ? 3.2 : 2); if (n >= 15) { flies(ctx, q.x, q.y, 2); if (Math.floor(T * 0.7 + q.x) % 3 === 0) stinkLines(ctx, q.x, q.y) } });
       if (n >= 15 && S.heap) { flies(ctx, P.HEAP_AT.x, P.HEAP_AT.y - 20, 5); stinkLines(ctx, P.HEAP_AT.x, P.HEAP_AT.y - 30) }
       const NF = night() && 'filter' in ctx ? 'brightness(.72) saturate(.8)' : '';   // 晚上寵物跟著背景變暗
