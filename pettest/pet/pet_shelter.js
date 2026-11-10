@@ -10,9 +10,9 @@
   let camX = 0, camTo = 0, held = null;
   const ANX = () => P.S.annex === 1, BLD = () => !!(P.S.annex && P.S.annex.until), WIDE = () => ANX() || BLD(), WW = () => WIDE() ? 2560 : 1280;
   // 背景圖（AI 底稿＋程式修整，見 chars/pets/scenes/build_yard.py）；讀不到就退回原本的程式畫法
-  const IMG = {}; for (const k of ['yard_day_bg', 'yard_night_bg', 'annex_day_bg', 'annex_night_bg', 'annex_build_day_bg', 'annex_build_night_bg']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}${/^annex/.test(k) ? '_s' : ''}.jpg`; IMG[k] = im }   // P5.1 #7：二館背景用接縫修過的版本（tools/build_p51_art.py）
-  for (const k of ['hut', 'hut_night', 'basket_empty', 'basket_empty_night', 'basket_egg', 'basket_egg_night', 'basket_egg_c1', 'basket_egg_c1_night', 'basket_egg_c2', 'basket_egg_c2_night', 'basket_egg_c3', 'basket_egg_c3_night', 'poop', 'poop_night', 'poop_big', 'poop_big_night']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}.png`; IMG[k] = im }
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const IMG = {}; for (const k of ['yard_day_bg', 'yard_night_bg', 'annex_day_bg', 'annex_night_bg', 'annex_build_day_bg', 'annex_build_night_bg']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}${/^annex/.test(k) ? '_s' : ''}.jpg`); IMG[k] = im }   // P5.1 #7：二館背景用接縫修過的版本（tools/build_p51_art.py）
+  for (const k of ['hut', 'hut_night', 'basket_empty', 'basket_empty_night', 'basket_egg', 'basket_egg_night', 'basket_egg_c1', 'basket_egg_c1_night', 'basket_egg_c2', 'basket_egg_c2_night', 'basket_egg_c3', 'basket_egg_c3_night', 'poop', 'poop_night', 'poop_big', 'poop_big_night']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}.png`); IMG[k] = im }
+  const ok = im => P.art.imageOK(im);
   const night = () => { if (P.isNight) return P.isNight(); const h = new Date(P.now() + (C.tz || 8) * 3600e3).getUTCHours(); return h >= 18 || h < 6 };
   // 小屋：底邊中心（前面那間 y 大一點，畫的時候照 y 排序）；小屋 148px 寬
   const COT = [[952, 382], [1076, 404], [1200, 382], [1495, 416], [2016, 398]], HUT_W = 148, HUT_H = 147;
@@ -179,7 +179,7 @@
     q(-6, -1, 12, 3, '#7a4a26'); q(-5, -4, 10, 3, '#8f5a2e'); q(-3, -7, 6, 3, '#a26a38'); q(-1, -9, 2, 2, '#a26a38'); q(-3, -6, 2, 1, '#c98d55'); q(-4, -3, 2, 1, '#c98d55');
   }
   function drawHeap(ctx, n) { // 堆肥坑：數量越多越大
-    const H0 = P.HEAP_AT; if (!ok(IMG.yard_day_bg)) { ctx.fillStyle = '#5b3d22'; ctx.fillRect(H0.x - 40, H0.y - 6, 80, 12) } label(ctx, '堆肥箱', H0.x, H0.y + 52, '#ffd');
+    const H0 = P.HEAP_AT; if (!ok(IMG[night() ? 'yard_night_bg' : 'yard_day_bg'])) { ctx.fillStyle = '#5b3d22'; ctx.fillRect(H0.x - 40, H0.y - 6, 80, 12) } label(ctx, '堆肥箱', H0.x, H0.y + 52, '#ffd');
     if (!n) return; const sc = 1.6 + Math.min(20, n) * 0.18;
     for (let i = 0; i < Math.min(n, 6); i++) drawPoop(ctx, H0.x + (i % 3 - 1) * 9 * sc * 0.6, H0.y - Math.floor(i / 3) * 6 * sc, sc * (i < 3 ? 1 : 0.8));
     label(ctx, `${n} 坨`, H0.x, H0.y - 14 * sc - 6, '#ffd');
@@ -300,12 +300,12 @@
     draw(ctx) {
       ctx.clearRect(0, 0, 1280, 720); ctx.save(); ctx.translate(-Math.round(camX), 0); bg(ctx);
       const S = P.S, n = P.poopN();
-      drawHeap(ctx, S.heap); if (ok(IMG.yard_day_bg)) drawHuts(ctx);
+      drawHeap(ctx, S.heap); if (ok(IMG[night() ? 'yard_night_bg' : 'yard_day_bg'])) drawHuts(ctx);
       S.poop.forEach(q => { drawPoop(ctx, q.x, q.y, q.big ? 3.2 : 2); if (n >= 15) { flies(ctx, q.x, q.y, 2); if (Math.floor(T * 0.7 + q.x) % 3 === 0) stinkLines(ctx, q.x, q.y) } });
       if (n >= 15 && S.heap) { flies(ctx, P.HEAP_AT.x, P.HEAP_AT.y - 20, 5); stinkLines(ctx, P.HEAP_AT.x, P.HEAP_AT.y - 30) }
       const NF = night() && 'filter' in ctx ? 'brightness(.72) saturate(.8)' : '';   // 晚上寵物跟著背景變暗
       const list = P.all().filter(p => !P.out(p)).map(p => [p, sOf(p)]).sort((a, b) => a[1].y - b[1].y);
-      const props = P.p51Props ? P.p51Props(ctx, T) : []; let pi_ = 0;   // P5.1：倉庫、院子家具、西施媽媽，跟寵物一起照 y 排前後
+      const props = P.p51Props ? P.p51Props(ctx, T) : []; let pi_ = 0;   // P5.1：收容所倉庫、院子家具、西施媽媽，跟寵物一起照 y 排前後
       for (const [p, s] of list) {
         while (pi_ < props.length && props[pi_].y <= s.y) props[pi_++].draw();
         const sc = p.baby ? 1.4 : 2, up = held && held.p === p && held.on;
@@ -404,7 +404,7 @@
         html += `<h3>技能（${p.sk.length}/${C.slots[p.tier]} 格；金幣 ${C.rerollGold[p.tier].toLocaleString()}＋磁片 ${C.rerollDiskGold}，或麵包 ${C.rerollBread[p.tier]}（不用磁片）；保底 ${p.pity || 0}/${C.rerollPity}）</h3>` + p.sk.map((n, i) => skillLine(n, i, p)).join('');
         html += `<h3>✨ 天性魔法（出戰時幫主人變強）</h3>` + (p.sub || []).map((s, i) => `<div class="sk">${P.skLink ? P.skLink('sub', s[0], p, P.subText(s[0], s[1])) : P.subText(s[0], s[1])}${shy ? ` <span style="color:#ffe36b">→ ${Math.round(s[1] * C.shinyMul * 10) / 10}%（星彩）</span>` : ''} <button class="alt" data-a="rrgo">去洗</button></div>`).join('');
       }
-      if (!p.baby) html += `<h3>⚔️ 出戰（大朋友）</h3><div class="muted">威力是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%${p.tier ? '' : `（綠色再 ×${C.adult.greenMul}）`}｜${P.fightSk(p).length ? `會用：${P.fightSk(p).map(n => L_('sk', n, P.SK[n].name)).join('、')}` : '只會普攻（升到藍色就會用傳家技）'}｜經驗 ×${C.adult.xpMul}｜沒有技能格和天性魔法</div>`;
+      if (!p.baby) html += `<h3>⚔️ 出戰（大朋友）</h3><div class="muted">比同位階寶寶更壯：普攻與招數 ${Math.round(C.adult.atkMul * 100)}%${p.tier ? '' : '（綠色素體也用這個倍率）'}｜${P.fightSk(p).length ? `會用：${P.fightSk(p).map(n => L_('sk', n, P.SK[n].name)).join('、')}` : '只會普攻（升到藍色就會用傳家技）'}｜經驗跟寶寶一樣快｜沒有技能格和天性魔法</div>`;
       { const u = P.upInfo(p);
         if (u) html += `<h3>升階 → ${P.TIER_NAME[p.tier + 1]}${u.adult ? '（大朋友：外觀不變）' : ''}</h3><div class="muted">Lv${u.lv}、♡${u.heart}${u.letter ? `、${P.TIER_NAME[p.tier]}幸福信 ×${u.letter}（有 ${P.S.letters[['', 'b', 'p', 'k'][p.tier]]}）` : ''}、金幣 ${u.gold.toLocaleString()}、麵包 ${u.bread}${u.shard ? '、刻印碎片 ' + u.shard : ''}${u.collar ? '、金色項圈 1' : ''}｜成功率 ${u.rate}%</div><div class="row"><button data-a="up" ${lock ? 'disabled' : ''}>升階</button></div>`;
         html += `<div class="row"><button class="ok" data-a="eq" ${lock || p.away ? 'disabled' : ''}>${P.S.eq === p.id ? '✔ 出戰中' : '帶牠出戰'}</button></div>`; }
@@ -505,8 +505,8 @@
       <div class="card row2 rrcard" data-a="reroll">${P.ficon ? P.ficon('reroll') : UI.npc('西施')}<div class="grow"><b>洗技能／洗天性魔法</b><div class="muted">選一隻寶寶，直接去洗｜麵包洗不用磁片</div></div><button class="ok" data-a="reroll">打開</button></div>
       <div class="card row2" data-a="codex">${P.ficon ? P.ficon('codex') : UI.av({ sp: 'owl', tier: 0 }, 44)}<div class="grow"><b>圖鑑</b><div class="muted">已遇見 ${Object.keys(S.codex).length}/40 個體｜星彩 ${Object.keys(S.codexS).length}/10 種</div></div><button class="alt" data-a="codex">打開</button></div>
       <div class="card row2" data-a="qa">${UI.npc('西施媽媽')}<div class="grow"><b>問西施媽媽</b><div class="muted">住民滿了、怎麼加蓋、出戰、育兒籃……不懂就問</div></div><button class="alt" data-a="qa">問問看</button></div>
-      <div class="card row2" data-a="bmenu">${P.ficon ? P.ficon('expand') : ''}<div class="grow"><b>建造</b><div class="muted">小屋、二館、農場、倉庫：能蓋的、還差什麼都在這裡</div></div><button class="alt" data-a="bmenu">打開</button></div>
-      <div class="card row2" data-a="ware">${P.ficon ? P.ficon('ware') : ''}<div class="grow"><b>倉庫</b><div class="muted">${P.S.ware && P.S.ware.built ? `收著 ${P.wareUsed()}/${P.wareSlots()} 件家具` : '還沒蓋：先蓋倉庫才能收家具'}</div></div><button class="alt" data-a="ware">打開</button></div>
+      <div class="card row2" data-a="bmenu">${P.ficon ? P.ficon('expand') : ''}<div class="grow"><b>建造</b><div class="muted">小屋、二館、農場、收容所倉庫：能蓋的、還差什麼都在這裡</div></div><button class="alt" data-a="bmenu">打開</button></div>
+      <div class="card row2" data-a="ware">${P.ficon ? P.ficon('ware') : ''}<div class="grow"><b>收容所倉庫</b><div class="muted">${P.S.ware && P.S.ware.built ? `收著 ${P.wareUsed()}/${P.wareSlots()} 件家具` : '還沒蓋：先蓋收容所倉庫才能收家具'}</div></div><button class="alt" data-a="ware">打開</button></div>
       ${P.ui3 ? P.ui3.counterCards() : ''}
       <h3>指定認養（金幣 ${C.adoptGold[n].toLocaleString()}＋麵包 ${C.adoptBread[n]}）</h3><div class="row">${P.SPECIES.map(s => `<button class="pbtn" data-a="adopt" data-v="${s.id}">${UI.av({ sp: s.id, tier: 0 }, 36)}${s.name}</button>`).join('')}</div>
       <h3>圍欄外徘徊（${S.wander.length}/3）</h3>${S.wander.map((a, i) => animalCard(a, 'win', i, '收留')).join('') || '<div class="muted">現在沒有</div>'}
@@ -596,7 +596,7 @@
   // ---------- 出戰 ----------
   function fightScreen() {
     const S = P.S; const ok = S.babies.filter(p => P.unlocked(p) && !p.away), okA = S.pets.filter(p => !p.away && !p.walk);
-    UI.panel(`<h2>⚔️ 出戰（測試場）</h2><div class="muted">一次帶 1 隻：西施、1 隻寶寶，或 1 隻大朋友。大朋友威力是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%、只用傳家技；寶寶有技能格和天性魔法，還是最強。救援在「📜 委託」裡。</div>
+    UI.panel(`<h2>⚔️ 出戰（測試場）</h2><div class="muted">一次帶 1 隻：西施、1 隻寶寶，或 1 隻大朋友。大朋友更壯（普攻與招數是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%），藍色以上會用傳家技；寶寶有較多技能格和天性魔法。救援在「📜 委託」裡。</div>
       <h3>同行寵物</h3><div class="row"><button data-a="eq" data-v="xishi" class="pbtn ${S.eq === 'xishi' ? 'ok' : ''}">${UI.npc('西施')}西施</button>${ok.map(p => `<button data-a="eq" data-v="${p.id}" class="pbtn ${S.eq === p.id ? 'ok' : ''}">${UI.av(p, 40)}${UI.esc(P.label(p))} ${P.TIER_NAME[p.tier]}</button>`).join('')}</div><h3>大朋友</h3><div class="row">${okA.map(p => `<button data-a="eq" data-v="${p.id}" class="pbtn ${S.eq === p.id ? 'ok' : ''}">${UI.av(p, 40)}${UI.esc(P.label(p))} ${P.TIER_NAME[p.tier]} Lv${p.lv || 1}</button>`).join('') || '<span class="muted">沒有</span>'}</div>
       <h3>關卡</h3><div class="row"><button class="ok" data-a="go" data-v="normal">小怪 3 波</button><button class="bad" data-a="go" data-v="boss">小怪＋王</button></div>`, (a, v) => {
         if (a === 'eq') { S.eq = v === 'xishi' ? 'xishi' : +v; fightScreen() }

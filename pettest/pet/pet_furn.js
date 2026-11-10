@@ -7,7 +7,7 @@
   C.furn = {
     meals: [7, 17],              // 每天 07:00、17:00 放飯（台灣時間），每隻吃 1 份乾飼料＝跟手餵共用每天 2 次
     bowlCap: 20,                 // 飯碗一次裝 20 份＝20 隻吃一餐
-    breadAt: 12, breadPer: 1,    // 大肚子餵食器：12:00 用倉庫的剩食麵包餵還沒吃過的（現有麵包規則）
+    breadAt: 12, breadPer: 1,    // 大肚子餵食器：12:00 用收容所積下來的剩食麵包餵還沒吃過的（現有麵包規則）
     chimeMin: 30, chimeBase: 1, chimeCap: 12,   // 風鈴：每 30 分鐘全農場每隻好感基本 +1，每隻每天最多 12
     toyBase: 3, toyN: 3,         // 玩具箱：玩一次好感基本 +3，每隻每天 3 次
     bedBase: 5, sleepH: 2, sleepMul: 1.05,      // 小床：每隻每天睡 1 次，好感基本 +5，「睡得好」2 小時內下一次探險戰力 ×1.05
@@ -21,7 +21,7 @@
     { k: 'feeder', slot: 'feed', lv: 2, name: '自動餵食器', cost: 60000, eff: '換掉飯碗。07:00、17:00 自己放飯、自己補滿，不用再倒飼料。', need: S => S.furn.feed >= 1, hint: '先擺一個飯碗用用看，習慣了再升級成自動的。' },
     { k: 'toybox', slot: 'toy', lv: 1, name: '毛線球玩具箱', cost: 45000, eff: `擺了以後穀倉裡的孩子變得好有精神：少打盹、多跑跳。玩一次好感 +${FC.toyBase}，每隻每天 ${FC.toyN} 次。`, need: S => S.furn.feed >= 2, hint: '等你有了自動餵食器，大家吃得安穩，我再給你看會讓孩子們跑跳的東西。' },
     { k: 'bed', slot: 'bed', lv: 1, name: '軟墊小床', cost: 120000, eff: `每隻每天睡一次午覺，好感 +${FC.bedBase}，還會「睡得好」${FC.sleepH} 小時：這段時間出發的下一次探險，戰力 ×${FC.sleepMul}。`, need: S => P.furnTier() >= 1, hint: '這張是給「常客」的。' },
-    { k: 'feeder2', slot: 'feed', lv: 3, name: '大肚子餵食器', cost: 180000, eff: `自動餵食器的升級版。除了兩餐，${FC.breadAt}:00 還會用倉庫的剩食麵包餵還沒吃過的（照麵包規則：每份 ${C.breadPerFeed} 個，好感 +${C.affGain.bread}）。`, need: S => S.furn.feed >= 2 && P.furnTier() >= 2, hint: '這台是給「熟客」的。' },
+    { k: 'feeder2', slot: 'feed', lv: 3, name: '大肚子餵食器', cost: 180000, eff: `自動餵食器的升級版。除了兩餐，${FC.breadAt}:00 還會用收容所積下來的剩食麵包餵還沒吃過的（照麵包規則：每份 ${C.breadPerFeed} 個，好感 +${C.affGain.bread}）。`, need: S => S.furn.feed >= 2 && P.furnTier() >= 2, hint: '這台是給「熟客」的。' },
   ];
   P.FURN_K = {}; for (const f of P.FURN) P.FURN_K[f.k] = f;
   const st = () => { const S = P.S; if (!S.furn) S.furn = { feed: 0, chime: 0, toy: 0, bed: 0, spent: 0, bowl: 0, fd: -1, meal: 0, ch: 0, seen: {} }; return S.furn };
@@ -121,7 +121,7 @@
 
   if (!P.ui || !P.scenes) return;   // 以下是畫面（node 測試只載上面的規則）
   // ---------- 農場小屋：畫在草原前景（y 600），跟寵物一起排前後 ----------
-  const HIMG = {}; for (const k of ['hut', 'hut_night']) { const im = new Image(); im.src = `assets/scenes/shelter/${k}.png`; HIMG[k] = im }
+  const HIMG = {}; for (const k of ['hut', 'hut_night']) { const im = P.art.lazyImage(`assets/scenes/shelter/${k}.png`); HIMG[k] = im }
   const HS = 1.2, hutSlots = () => { const n = P.farmHuts().length, open = P.farmHutOpen(); return C.farmHut.x.map((x, i) => ({ i, x, y: C.farmHut.y, st: i < n ? 'built' : i === n && i < open ? 'pad' : 'hide' })).filter(h => h.st !== 'hide') };   // 沒開放的位子不畫，只在空地牌子說下一個
   const htag = (ctx, t, x, y, bg, fg) => { ctx.font = 'bold 16px sans-serif'; const w = ctx.measureText(t).width + 16; ctx.fillStyle = '#1A1016'; ctx.fillRect(x - w / 2 - 2, y - 22, w + 4, 28); ctx.fillStyle = bg; ctx.fillRect(x - w / 2, y - 20, w, 24); ctx.fillStyle = fg; ctx.fillText(t, x - w / 2 + 8, y - 3) };
   P.farmHutDraw = (ctx, upto, done) => {
@@ -130,7 +130,7 @@
       if (done[h.i] || h.y > upto) continue; done[h.i] = 1;
       if (h.st === 'pad') { ctx.fillStyle = nt ? 'rgba(90,70,50,.75)' : 'rgba(150,116,74,.8)'; ctx.beginPath(); ctx.ellipse(h.x, h.y - 8, 92, 20, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(h.x - 4, h.y - 70, 8, 62); htag(ctx, '小屋空地（點我蓋）', h.x, h.y - 70, '#f3e2c0', '#3a2418'); continue }
       const w = im.naturalWidth * HS, hh = im.naturalHeight * HS;
-      if (im.complete && im.naturalWidth) { ctx.imageSmoothingEnabled = false; ctx.drawImage(im, h.x - w / 2, h.y - hh + 6, w, hh) } else { ctx.fillStyle = '#e8b878'; ctx.fillRect(h.x - 80, h.y - 120, 160, 120) }
+      if (P.art.imageOK(im)) { ctx.imageSmoothingEnabled = false; ctx.drawImage(im, h.x - w / 2, h.y - hh + 6, w, hh) } else { ctx.fillStyle = '#e8b878'; ctx.fillRect(h.x - 80, h.y - 120, 160, 120) }
       const c = huts[h.i], A = P.byId(c.a), B = P.byId(c.b);
       htag(ctx, `🌾 小屋 ${h.i + 1}${c.basket ? ' 🧺' : ''}${A && B ? ' ♥' : ''}`, h.x, h.y - (hh || 120) - 2, '#ffe9a8', '#3a2418');
     }
@@ -144,10 +144,10 @@
   };
   // =================================== 穀倉畫面 ===================================
   const UI = P.ui, esc = s => UI.esc(String(s == null ? '' : s)), fmt = n => Math.round(n).toLocaleString();
-  const IMG = {}; for (const k of ['barn_day_bg', 'barn_night_bg']) { const im = new Image(); im.src = `assets/scenes/farm/${k}.jpg`; IMG[k] = im }
-  for (const k of ['feeder', 'toybox', 'bed', 'chime', 'bowl_empty', 'bowl_half', 'bowl_full']) for (const n of ['', '_night']) { const im = new Image(); im.src = `assets/scenes/farm/furn_${k}${n}.png`; IMG[k + n] = im }
+  const IMG = {}; for (const k of ['barn_day_bg', 'barn_night_bg']) { const im = P.art.lazyImage(`assets/scenes/farm/${k}.jpg`); IMG[k] = im }
+  for (const k of ['feeder', 'toybox', 'bed', 'chime', 'bowl_empty', 'bowl_half', 'bowl_full']) for (const n of ['', '_night']) { const im = P.art.lazyImage(`assets/scenes/farm/furn_${k}${n}.png`); IMG[k + n] = im }
   P.furnImg = IMG;
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const ok = im => P.art.imageOK(im);
   const night = () => P.isNight ? P.isNight() : false;
   // 家具位置（腳底中心，1 倍畫；寵物 ×2）
   const POS = { feed: { x: 560, y: 470 }, chime: { x: 1040, y: 440 }, toy: { x: 800, y: 600 }, bed: { x: 300, y: 640 } };

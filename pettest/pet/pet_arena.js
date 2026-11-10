@@ -2,7 +2,7 @@
 'use strict';
 (function (P) {
   const UI = P.ui || (P.ui = {}), C = P.CFG, SC = P.scenes = P.scenes || {};
-  const IMG = {}; const li = s => { const i = new Image(); i.src = s; return i };
+  const IMG = {}; const li = s => { const i = P.art.lazyImage(s); return i };
   ['idle', 'run0', 'run1', 'run2', 'run3', 'swing', 'windup'].forEach(f => IMG['h_' + f] = li(`assets/hero/s_kudas_${f}.png`));
   const MON = window.PET_MON || {}; for (const k in MON) IMG['m_' + k] = li(`assets/mon/${k}_sheet.png`);
   const KIND = {
@@ -331,7 +331,7 @@
   }
   // ---------- 畫面 ----------
   function sheetDraw(ctx, e, anim, t, sc) {
-    const m = MON[e.K.sheet], img = IMG['m_' + e.K.sheet]; if (!m || !img || !img.complete || !img.naturalWidth) return;
+    const m = MON[e.K.sheet], img = IMG['m_' + e.K.sheet]; if (!m || !P.art.imageOK(img)) return;
     const a = m.anims[anim] || m.anims.idle; const f = a.frames[Math.floor(t * (a.fps || 8)) % a.frames.length];
     const faceL = (m.face || 'L') === 'L'; const flip = faceL ? e.face > 0 : e.face < 0;
     const [ax, ay] = m.anchor || [m.frame_w / 2, m.frame_h];
@@ -372,7 +372,7 @@
   function drawHero(ctx) {
     const h = A.hero; let f = 'idle'; if (h.swing > .22) f = 'windup'; else if (h.swing > 0) f = 'swing'; else if (h.moving) f = 'run' + (Math.floor(A.t * 10) % 4);
     const img = IMG['h_' + f]; ctx.save(); ctx.translate(h.x - A.cam, h.y); if (h.face < 0) ctx.scale(-1, 1); if (h.down) { ctx.rotate(1.4) }
-    if (img && img.complete && img.naturalWidth) ctx.drawImage(img, -200, -284); ctx.restore();
+    if (P.art.imageOK(img)) ctx.drawImage(img, -200, -284); ctx.restore();
     if (h.hidden > now()) P.art.px(ctx, P.art.BOX, h.x - A.cam - 36, h.y - 100, 6);
   }
   function drawPet(ctx) {

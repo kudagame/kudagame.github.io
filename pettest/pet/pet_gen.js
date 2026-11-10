@@ -248,8 +248,8 @@
   // ---------- 畫圖：混血用原物種骨架＋換色＋疊層、毛色、體型值 ----------
   P.genArt = () => {
     const A = P.art; if (!A || A._gen) return; A._gen = 1;
-    const sf0 = A.setFor; A.setFor = sp => { const h = P.HYB[sp]; if (h && A.sets[h.base]) return { sp: h.base, set: A.sets[h.base], tint: true }; return sf0(sp) };
-    for (const fn of ['meta', 'fps', 'headTop']) { const o = A[fn]; if (o) A[fn] = (sp, ...r) => o(P.HYB[sp] ? P.HYB[sp].base : sp, ...r) }
+    const sf0 = A.setFor; A.setFor = sp => { const h = P.HYB[sp]; if (A.sets[sp]) return sf0(sp); if (h && A.sets[h.base]) return { sp: h.base, set: A.sets[h.base], tint: true }; return sf0(sp) };
+    for (const fn of ['meta', 'fps', 'headTop']) { const o = A[fn]; if (o) A[fn] = (sp, ...r) => o(P.HYB[sp] && !A.sets[sp] ? P.HYB[sp].base : sp, ...r) }
     const dr0 = A.draw;
     const FILT = ['', 'brightness(0.72) saturate(1.15)', 'brightness(1.18) saturate(0.7)', 'grayscale(0.9) brightness(1.5)'];
     A.draw = (ctx, p, x, y, o) => {
@@ -257,8 +257,7 @@
       const cs = p.coat ? P.coatShow(p) : 0, shiny = p.star === 2;
       if (cs && cs <= 3 && !shiny) { ctx.save(); ctx.filter = FILT[cs]; dr0(ctx, p, x, y, o); ctx.restore() } else dr0(ctx, p, x, y, o);
       const sc = o.scale || 2, top = y - 40 * sc / 2 - 20;
-      // 混血疊層（暫用）：頭上的小標記
-      const h = P.HYB[p.sp]; if (h) { const mark = { moonhound: ['..YY.', '.Y...', '.Y...', '..YY.'], lanterncat: ['..c..', '.cYc.', '..c..'], honeybear: ['oYYo', 'YbbY', 'oYYo'], featherbun: ['.s.s.', 's.s.s', '.s.s.'], puffdog: ['.PP.', 'PWWP', '.PP.'], frostfox: ['.s.', 'sSs', '.s.'], starwolf: ['Y...Y', '..Y..', 'Y...Y'], liondog: ['cYcYc', 'Y...Y', 'cYcYc'] }[p.sp]; if (mark) A.px(ctx, mark, x - mark[0].length * 2, top - 6, 4) }
+      // P5.2：混種頭上記號已拿掉（專屬外觀下一步再做）
       // 突變花紋（暫用）：身上的小點
       if (cs >= 4) { ctx.save(); ctx.globalAlpha = 0.85; const col = { 4: '#ffe36b', 5: '#ffffff', 6: '#1A1016', 7: '#7a4a22', 8: '#9fe8ff' }[cs]; ctx.fillStyle = col; for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(x - 14 * sc / 2 + i * 8 * sc / 2), Math.round(y - 22 * sc / 2 - (i % 2) * 6), 3 * sc / 2, 3 * sc / 2); ctx.restore() }
     };

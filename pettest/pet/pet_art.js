@@ -2,32 +2,60 @@
 'use strict';
 (function (P) {
   const A = P.art = { sets: {}, cache: {}, imgs: {}, ready: false, src: {} };
-  const ts = Date.now();
-  const loadImg = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src });
-  async function tryLive(dir) {   // 從遊戲資料夾讀最新匯出（本機伺服器開時）
-    if (location.protocol === 'file:') return null;
-    try { const r = await fetch(`../chars/pets/${dir}/out/anchors.json?t=${ts}`, { cache: 'no-store' }); if (!r.ok) return null; return { j: await r.json(), base: `../chars/pets/${dir}/out/`, live: 1 } } catch (e) { return null }
-  }
-  function tryPacked(dir) { const m = window.PET_ART_MANIFEST || {}; return m[dir] ? { j: m[dir], base: `assets/pets/${dir}/`, live: 0 } : null }
-  async function loadSet(sp) {
-    for (const d of P.SP[sp].dirs) { const s = (await tryLive(d)) || tryPacked(d); if (s) return s }
-    return null;
-  }
-  A.load = async () => {
-    for (const s of P.SPECIES) { const set = await loadSet(s.id); if (set) { A.sets[s.id] = set; A.src[s.id] = (set.live ? '最新匯出 ' : '打包 ') + set.base } }
-    if (!A.sets.shihtzu) console.warn('找不到西施犬圖');
-    const jobs = [];
-    for (const sp in A.sets) {
-      const { j, base } = A.sets[sp]; const acts = Object.keys(j.anchors);
-      const furs = new Set(Object.values(j.tiers).map(t => t.fur));
-      for (const a of acts) {
-        for (const f of furs) jobs.push(loadImg(`${base}body_${f}_${a}.png?t=${ts}`).then(i => A.imgs[`${sp}|body_${f}_${a}`] = i));
-        for (const t of Object.keys(j.tiers)) if (t !== 'adult') jobs.push(loadImg(`${base}acc_${t}_${a}.png?t=${ts}`).then(i => A.imgs[`${sp}|acc_${t}_${a}`] = i));
-        // 位階專屬身體（例如盔甲狼）：tiers[t].body 列出的動作改用 body_tier_<t>_<動作>，整張蓋掉毛色身體
-        for (const [t, ti] of Object.entries(j.tiers)) if ((ti.body || []).includes(a)) jobs.push(loadImg(`${base}body_tier_${t}_${a}.png?t=${ts}`).then(i => A.imgs[`${sp}|tbody_${t}_${a}`] = i));
-      }
+  // P5.3 boot2: only request visible assets; never probe the development tree.
+  A.missing = []; const images = new Map(), queue = []; let active = 0;
+  const changed = () => { A.cache = {}; A.ptCache = {}; A.iconCache = {}; if (P.ui && P.ui.refreshPanel) P.ui.refreshPanel() };
+  function pump() {
+    while (active < 6 && queue.length) {
+      const im = queue.shift(); active++; im._petAttempts = (im._petAttempts || 0) + 1; const resolve = im._petResolve; let released = false;
+      const release = () => { if (released) return; released = true; active--; pump() };
+      const failed = () => { if (!A.missing.includes(im._petSrc)) A.missing.push(im._petSrc); resolve(false); release() };
+      // A timeout releases the queue, but DOES NOT remove onload: slow images may recover.
+      const timer = setTimeout(failed, 15000);
+      im.onload = () => { clearTimeout(timer); A.missing = A.missing.filter(s => s !== im._petSrc); im._petErrorAt = 0; resolve(true); release(); changed() };
+      im.onerror = () => { clearTimeout(timer); im._petErrorAt = Date.now(); failed(); changed() };
+      im.src = im._petSrc + (im._petAttempts > 1 ? '?retry=' + im._petAttempts : ''); // stable URL: reuse the HTTP cache on repeat visits
     }
-    await Promise.all(jobs); A.ready = true;
+  }
+  A.lazyImage = src => {
+    if (!images.has(src)) { const im = new Image(); im._petSrc = src; images.set(src, im) }
+    return images.get(src);
+  };
+  A.startImage = im => {
+    if (im && im._petErrorAt && Date.now() - im._petErrorAt > 1500 && im._petAttempts < 3) { im._petReady = null; im._petErrorAt = 0 }
+    if (im && im._petSrc && !im._petReady) {
+      im._petReady = new Promise(r => { im._petResolve = r }); queue.push(im); pump();
+    }
+    return im;
+  };
+  A.imageOK = im => { A.startImage(im); return !!(im && im.complete && im.naturalWidth > 0) };
+  function tryPacked(dir) { const m = window.PET_ART_MANIFEST || {}; return m[dir] ? { j: m[dir], base: `assets/pets/${dir}/`, live: 0 } : null }
+  A.load = async () => {
+    A.missing = [];
+    for (const s of P.SPECIES.concat(Object.keys(P.HYB || {}).map(id => ({id})))) {
+      const dirs = P.HYB && P.HYB[s.id] ? ['hybrid_' + s.id] : P.SP[s.id].dirs;
+      for (const d of dirs) { const set = tryPacked(d); if (set) { A.sets[s.id] = set; A.src[s.id] = '打包 ' + set.base; break } }
+    }
+    if (!A.sets.shihtzu) throw new Error('缺少西施犬打包清單，請重新整理或重新建置素材');
+    A.ready = true;
+    A.ensurePet('shihtzu', 0, 'idle'); // visible NPC only; no network waits in boot
+  };
+  A.ensurePet = (sp, tier, act) => {
+    const fs = A.setFor(sp); if (!fs.set) return [];
+    const {j, base} = fs.set; if (!j.anchors[act]) act = 'idle';
+    const tn = P.TIERS[tier], ti = j.tiers[tn] || j.tiers.adult;
+    const parts = [['body_' + ti.fur + '_' + act, 'body_' + ti.fur + '_' + act]];
+    if ((ti.body || []).includes(act)) parts.push(['tbody_' + tn + '_' + act, 'body_tier_' + tn + '_' + act]);
+    if (tn !== 'adult' && !j.noAccessories) parts.push(['acc_' + tn + '_' + act, 'acc_' + tn + '_' + act]);
+    return parts.map(([key,file]) => { const im = A.imgs[fs.sp + '|' + key] = A.lazyImage(base + file + '.png'); A.startImage(im); return im._petReady });
+  };
+  // Explicit QA/export hook, never called from boot. Tests can verify the full asset set.
+  A.preloadAll = async () => {
+    const jobs = [];
+    for (const sp of Object.keys(A.sets)) for (let tier = 0; tier < P.TIERS.length; tier++)
+      for (const act of Object.keys(A.sets[sp].j.anchors)) jobs.push(...A.ensurePet(sp, tier, act));
+    for (const sp of Object.keys(window.PET_PORTRAITS || {})) for (let t = 0; t < 5; t++) { const ph = A.photoInfo(sp,t); if (ph && ph.img) jobs.push(ph.img._petReady) }
+    await Promise.all(jobs);
   };
   A.setFor = sp => A.sets[sp] ? { sp, set: A.sets[sp], tint: false } : { sp: 'shihtzu', set: A.sets.shihtzu, tint: sp !== 'shihtzu' };
   A.nFrames = (sp, act) => { const s = A.setFor(sp).set; return s && s.j.anchors[act] ? s.j.anchors[act].length : 1 };
@@ -74,6 +102,7 @@
   // 取得一格合成好的圖（快取）
   A.frame = (sp, tier, act, f, rare) => {
     const fs = A.setFor(sp); if (!fs.set) return null;
+    A.ensurePet(sp, tier, act);
     const j = fs.set.j; if (!j.anchors[act]) act = 'idle';
     const n = j.anchors[act].length; f = ((f % n) + n) % n;
     const tn = P.TIERS[tier], key = `${sp}|${tn}|${act}|${f}|${rare ? 1 : 0}`;
@@ -82,6 +111,7 @@
     const fur = (j.tiers[tn] || j.tiers.adult).fur;
     const body = A.imgs[`${fs.sp}|tbody_${tn}_${act}`] || A.imgs[`${fs.sp}|body_${fur}_${act}`], acc = A.imgs[`${fs.sp}|acc_${tn}_${act}`];
     const okIm = im => im && (!('complete' in im) || (im.complete && im.naturalWidth > 0));   // P4.1：還在載／載壞的圖不畫（避免 drawImage broken state）
+    if (!okIm(body)) return null; // do not cache a permanently blank frame while queued/failed
     if (okIm(body)) x.drawImage(body, f * W, 0, W, Hh, 0, 0, W, Hh);
     if (fs.tint) tint(cv, sp);
     if (rare) shinyTint(cv, sp);
@@ -109,7 +139,7 @@
   A.burst = (ctx, x, y, k, s) => { ctx.globalAlpha = 1 - k; for (let i = 0; i < 8; i++) { const an = i / 8 * Math.PI * 2, r = 20 + k * 70 * s / 2; A.px(ctx, STAR4, x + Math.cos(an) * r - 7, y + Math.sin(an) * r * 0.7 - 7, 2) } ctx.globalAlpha = 1 };
   // P4 大頭照：只裁「頭」（用 anchors 的 head_top／neck／mouth 定位），放大成像素頭像，再加稀有度底框（參考瑪奇 M 頭像版型，圖是我們自己的像素）
   A.iconCache = {}; A.ptCache = {};
-  A.HEADMARK = { moonhound: ['..YY.', '.Y...', '.Y...', '..YY.'], lanterncat: ['..c..', '.cYc.', '..c..'], honeybear: ['oYYo', 'YbbY', 'oYYo'], featherbun: ['.s.s.', 's.s.s', '.s.s.'], puffdog: ['.PP.', 'PWWP', '.PP.'], frostfox: ['.s.', 'sSs', '.s.'], starwolf: ['Y...Y', '..Y..', 'Y...Y'], liondog: ['cYcYc', 'Y...Y', 'cYcYc'] };
+  // P5.2：混種頭頂／頭像記號已拿掉（不再用 A.HEADMARK）
   A.headBox = (sp, tier) => {
     const cv = A.frame(sp, tier || 0, 'idle', 0, false); if (!cv) return null;
     const an = A.anchor(sp, 'idle', 0), ht = A.headTop(sp, tier || 0, 'idle', 0) || an.head_top, nk = an.neck || [ht[0], ht[1] + 16], mo = an.mouth || [ht[0] + 6, ht[1] + 12];
@@ -124,22 +154,21 @@
     return { cv, x: cx - side / 2, y: cy - side / 2, s: side };
   };
   // P4v2 大頭照：使用者全寵物影片裁出來的頭像（assets/portraits，tools/sync_portraits.py 產生）
-  // 成年(素體)=綠、藍、紫、粉各一張，名字對得上 40 隻名冊；橘用粉的圖＋橘框光暈；混血用 base 物種的圖換色＋頭頂記號；缺圖才退回像素頭
+  // 成年(素體)=綠、藍、紫、粉各一張，名字對得上 40 隻名冊；橘用粉的圖＋橘框光暈；混血暫時用 base 物種的圖換色（P5.2 先把頭上記號拿掉，專屬頭像下一步再做）；缺圖才退回像素頭
+  // P5.3：混種專屬圖亦由同一 idle 小人裁出，尾／耳／背斑完整入鏡。
+  // P5.2：大頭照改從場上小人的頭裁出來，同一 look 的頭像跟小人同色、同樣子；不再用 PT_REMAP 換檔／改名
   const PM = window.PET_PORTRAITS || {}; A.PHOTO = {}; A.photoMissing = [];
-  // P5.1 #16：大頭照一定要跟場景裡的小人同一個毛色。小人（assets/pets/*_v3）每個位階的毛色是畫死的，
-  // 有幾種跟大頭照順序不一樣 → 這裡把「位階 g 要用哪一張大頭照」對回小人的毛色（tools/p51_variants 對照表），換了圖就重畫位階框
-  // 獵犬：小人 藍＝奶油白、粉＝黑 → 藍用白色那張、粉用黑色那張；小熊：綠＝棕、藍＝灰；貓：綠＝橘白雙色、紫＝棕（橘白那張調深）
-  A.PT_REMAP = { retriever: { 1: [3], 3: [1] }, bear: { 0: [1], 1: [0] }, cat: { 0: [2], 2: [2, 'brightness(0.74) saturate(0.8) sepia(0.25)'] } };
-  A.photoInfo = (sp, tier) => { const h = P.HYB && P.HYB[sp], base = h ? h.base : sp, g = Math.min(3, Math.max(0, tier || 0)), rm = A.PT_REMAP[base] && A.PT_REMAP[base][g], gg = rm ? rm[0] : g, m = PM[base] && PM[base][gg]; if (!m) return null; const o = (tier || 0) >= 4 && !rm && m.o; return { base, g, hyb: h || null, src: 'assets/portraits/' + (o || m.f), name: m.name, img: A.PHOTO[base + '|' + (o ? 4 : gg)], orange: !!o, remap: rm ? (rm[1] || 'none') : null } };
+  A.photoInfo = (sp, tier) => { const h = P.HYB && P.HYB[sp], own = !!PM[sp], base = own ? sp : h ? h.base : sp, g = Math.min(3, Math.max(0, tier || 0)), m = PM[base] && PM[base][g]; if (!m) return null; const o = (tier || 0) >= 4 && m.o; return { base, g, hyb: own ? null : h || null, src: 'assets/portraits/' + (o || m.f), name: m.name, img: portrait(base, o ? 4 : g, o || m.f), orange: !!o, remap: null } };
   // 毛色基因（深／淺／雪）：小人、大頭照、像素頭都用同一組濾鏡
   A.COAT_FILT = ['', 'brightness(0.72) saturate(1.15)', 'brightness(1.18) saturate(0.7)', 'grayscale(0.9) brightness(1.5)'];
   A.COAT_DOT = { 4: '#ffe36b', 5: '#ffffff', 6: '#1A1016', 7: '#7a4a22', 8: '#9fe8ff' };
   // 美術用的位階：寶寶照位階（橘＝粉的身體＋橘配件）；大朋友照「長相」look（P5.1 大朋友升階不換毛色、不換衣服）
   P.artTier = p => !p ? 0 : p.baby ? (p.tier || 0) : (p.look != null ? Math.min(3, p.look) : (p.tier || 0));
-  (() => { if (typeof Image === 'undefined') return; let left = 0; const done = () => { if (--left > 0) return; A.ptCache = {}; A.iconCache = {}; try { if (P.ui && P.ui.refreshPanel) P.ui.refreshPanel() } catch (e) { } };
-    const ld = (sp, g, f) => { left++; const im = new Image(); im.onload = done; im.onerror = () => { A.photoMissing.push(sp + '|' + g); delete A.PHOTO[sp + '|' + g]; done() }; im.src = 'assets/portraits/' + f; A.PHOTO[sp + '|' + g] = im };
-    for (const sp in PM) for (const g in PM[sp]) { ld(sp, g, PM[sp][g].f); if (PM[sp][g].o) ld(sp, 4, PM[sp][g].o) }   // P4.1：橘階有自己的橘框像素圖
-    for (const s of (P.SPECIES || [])) for (let g = 0; g < 4; g++) if (!(PM[s.id] && PM[s.id][g])) A.photoMissing.push(s.id + '|' + g) })();
+  const portrait = (sp, g, file) => {
+    const key = sp + '|' + g;
+    if (!A.PHOTO[key]) A.PHOTO[key] = A.lazyImage('assets/portraits/' + file);
+    return A.startImage(A.PHOTO[key]);
+  };
   const loaded = im => im && im.complete && im.naturalWidth > 0;
   A.photoCv = (sp, tier, shiny, size, o) => {
     const ph = A.photoInfo(sp, tier); if (!ph || !loaded(ph.img)) return null;
@@ -156,7 +185,6 @@
     if (reframe) { const col = P.TIER_COLOR[Math.min(4, tier || 0)]; c.save(); if ((tier || 0) >= 4) { c.shadowColor = '#ffb347'; c.shadowBlur = size * 0.12 } rr(bw / 2 + 0.5, bw / 2 + 0.5, size - bw - 1, size - bw - 1, r - 1); c.lineWidth = bw; c.strokeStyle = col; c.stroke(); c.restore();
       if ((tier || 0) >= 4) { const g = c.createRadialGradient(size / 2, size / 2, size * 0.3, size / 2, size / 2, size * 0.72); g.addColorStop(0, 'rgba(255,140,20,0)'); g.addColorStop(1, 'rgba(255,170,60,.35)'); c.save(); rr(0, 0, size, size, r); c.clip(); c.fillStyle = g; c.fillRect(0, 0, size, size); c.restore() } }
     if (o.coat >= 4 && A.COAT_DOT[o.coat]) { const ps = Math.max(2, Math.round(size / 20)); c.save(); c.globalAlpha = 0.85; c.fillStyle = A.COAT_DOT[o.coat]; for (let i = 0; i < 4; i++) c.fillRect(Math.round(size * 0.22 + i * size * 0.15), Math.round(size * 0.8 - (i % 2) * ps * 2), ps, ps); c.restore() }   // P5.1 #16：突變花紋小點，小人身上有、大頭照也要有
-    const mark = A.HEADMARK[sp]; if (mark) { const ps = Math.max(2, Math.round(size / 26)); c.fillStyle = 'rgba(26,16,22,.55)'; A.px(c, mark, size - mark[0].length * ps - bw - 2, bw + 2, ps) }
     return A.ptCache[key] = out;
   };
   A.portraitCv = (sp, tier, shiny, size, o) => { const p = A.photoCv(sp, tier || 0, shiny, size || 64, o); return p || A.pixelCv(sp, tier, shiny, size, o, !A.photoInfo(sp, tier || 0)) };
@@ -175,7 +203,6 @@
     const pad = size * 0.06, k = (size - pad * 2) / hb.s;
     if (o.coat && o.coat <= 3 && !shiny) c.filter = A.COAT_FILT[o.coat];
     c.drawImage(cvs, hb.x, hb.y, hb.s, hb.s, pad, pad + size * 0.04, hb.s * k, hb.s * k); c.filter = 'none';
-    const mark = A.HEADMARK[sp]; if (mark) { const ps = Math.max(2, Math.round(size / 26)); A.px(c, mark, size - mark[0].length * ps - bw - 3, bw + 3, ps) }
     c.restore();
     rr(bw / 2, bw / 2, size - bw, size - bw, r); c.lineWidth = bw; c.strokeStyle = shiny ? '#ffe36b' : col; c.stroke();
     rr(bw * 1.5, bw * 1.5, size - bw * 3, size - bw * 3, r - 2); c.lineWidth = 1; c.strokeStyle = 'rgba(255,255,255,.55)'; c.stroke();

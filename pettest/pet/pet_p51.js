@@ -3,8 +3,8 @@
 //  · 音量（🔊 一鍵靜音＋BGM／音效兩條），存在存檔裡
 //  · 上方每一格資訊都可以點，跳出「這是什麼、要怎麼做」
 //  · 建造入口永遠在：條件不夠就變灰、寫清楚缺什麼、問誰（P.buildReq）
-//  · 小屋／倉庫／院子設施：左／正面／右三種方向（左右＝原圖鏡像、正面＝原圖半邊鏡像，tools/build_p51_art.py）
-//  · 倉庫：先蓋、可以擴建；收著現成的家具，拿出來擺在院子裡
+//  · 小屋／收容所倉庫／院子設施：左／正面／右三種方向（左右＝原圖鏡像、正面＝原圖半邊鏡像，tools/build_p51_art.py）
+//  · 收容所倉庫：先蓋、可以擴建；收著現成的家具，拿出來擺在院子裡
 //  · 大朋友也能出戰（C.adult）；技能名字都可以點開看詳細（P.skillPop）
 //  · 西施媽媽問答（P.QA，照資料表顯示）
 'use strict';
@@ -12,18 +12,19 @@
   const C = P.CFG;
   // ---------- 設定（數字都在這裡） ----------
   C.adult = {
-    atkMul: 0.85,          // 大朋友普攻／技能威力＝同位階寶寶的 85%（寶寶有技能格、天性魔法、練成，還是比較強）
-    greenMul: 0.7,         // 綠色（素體）大朋友：藍的 70%
-    xpMul: 0.7,            // 經驗 ×0.7（升得比寶寶慢）
+    atkMul: 1.35,          // P5.2：大朋友普攻／技能威力＝同位階寶寶的 135%，要比寶寶壯
+    greenMul: 1.0,         // 綠色（素體）大朋友：用藍階基礎 × atkMul，不再打折
+    xpMul: 1.0,            // 經驗跟寶寶一樣快
     greenCap: 10,          // 綠色大朋友等級上限
-    upMul: 1.5,            // 升階的金幣／麵包 ×1.5（幸福信、碎片、成功率跟寶寶一樣）
+    upMul: 1.0,            // 升階花費跟寶寶一樣（幸福信、碎片、成功率本來就一樣）
     up0: { lv: 5, heart: 2, letter: 0, gold: 10000, bread: 20, rate: 60 },   // 綠 → 藍（只有大朋友有這一步）
   };
+  P.WARE_NAME = '收容所倉庫';
   C.ware = {
-    rep: 2, cost: [100000, 60, 15], hours: 0,           // 蓋倉庫：名聲 Lv2、金幣 10 萬、麵包 60、刻印 15（介於小屋 1、2 間之間）
+    rep: 2, cost: [100000, 60, 15], hours: 0,           // 蓋收容所倉庫：名聲 Lv2、金幣 10 萬、麵包 60、刻印 15（介於小屋 1、2 間之間）
     slots: [6, 10, 15, 21],                               // 每一級能收幾件
     up: [[200000, 120, 30, 3], [450000, 220, 70, 5], [900000, 320, 110, 7]],   // 擴建：金幣、麵包、刻印、名聲 Lv
-    at: { cx: 640, by: 404 },                             // 倉庫的位置（一館院子後排、櫃檯跟小屋中間）
+    at: { cx: 640, by: 404 },                             // 收容所倉庫的位置（一館院子後排、櫃檯跟小屋中間）
     scale: 0.62,                                          // 院子裡的家具縮小成小屋的比例
   };
   C.audio0 = { bgm: 0.35, sfx: 0.35, mute: 0 };
@@ -62,10 +63,10 @@
       if (I.state === 'done') { out.state = 'done'; return out } if (I.state === 'building') { out.state = 'building'; out.until = I.until; return out }
       if (kind === 'farm') pre('先蓋好二館', S.annex === 1); rep(c.rep); money(c.gold, c.bread, c.shard); out.hours = c.hours; out.who = '蜜糖媽媽';
     } else if (kind === 'ware') {
-      out.name = '倉庫'; if (S.ware.built) { out.state = 'done'; return out } rep(C.ware.rep); money(...C.ware.cost);
+      out.name = P.WARE_NAME; if (S.ware.built) { out.state = 'done'; return out } rep(C.ware.rep); money(...C.ware.cost);
     } else if (kind === 'wareUp') {
-      out.name = `倉庫擴建（${S.ware.lv + 2} 級）`; if (!S.ware.built) { pre('先蓋好倉庫', false); out.state = 'need'; out.lack = ['先蓋好倉庫']; return out }
-      const u = C.ware.up[S.ware.lv]; if (!u) { out.state = 'full'; out.note = `倉庫已經是最大（${C.ware.slots[S.ware.lv]} 格）`; return out }
+      out.name = `收容所倉庫擴建（${S.ware.lv + 2} 級）`; if (!S.ware.built) { pre('先蓋好收容所倉庫', false); out.state = 'need'; out.lack = ['先蓋好收容所倉庫']; return out }
+      const u = C.ware.up[S.ware.lv]; if (!u) { out.state = 'full'; out.note = `收容所倉庫已經是最大（${C.ware.slots[S.ware.lv]} 格）`; return out }
       rep(u[3]); money(u[0], u[1], u[2]); out.slots = [C.ware.slots[S.ware.lv], C.ware.slots[S.ware.lv + 1]];
     }
     out.lack = out.items.filter(x => !x.ok).map(x => x.rep ? `${x.t}（現在 Lv${x.have}）` : x.pre ? x.t : `${x.t}（還差 ${fmt(x.need - x.have)}）`);
@@ -73,19 +74,19 @@
     return out;
   };
   P.repHow = '名聲：完成救援委託、育兒籃生寶寶、大會得名、明信片回信都會加。';
-  // ---------- 倉庫 ----------
+  // ---------- 收容所倉庫 ----------
   P.wareSlots = () => S_().ware.built ? C.ware.slots[S_().ware.lv] : 0;
   P.wareUsed = () => Object.values(S_().ware.items).reduce((a, b) => a + b, 0);
   const pay = c => { const S = P.S; S.gold -= c[0]; S.bread -= c[1]; S.shards -= c[2] || 0 };
-  P.buildWare = (face) => { const r = P.buildReq('ware'); if (r.state !== 'can') return { ok: 0, msg: r.state === 'done' ? '倉庫已經蓋好了' : '還差：' + r.lack.join('、') }; pay(r.cost); const W = S_().ware; W.built = 1; W.lv = 0; W.face = 'LFR'.includes(face) ? face : 'L'; P.emit && P.emit('build', '倉庫蓋好了！'); return { ok: 1 } };
+  P.buildWare = (face) => { const r = P.buildReq('ware'); if (r.state !== 'can') return { ok: 0, msg: r.state === 'done' ? '收容所倉庫已經蓋好了' : '還差：' + r.lack.join('、') }; pay(r.cost); const W = S_().ware; W.built = 1; W.lv = 0; W.face = 'LFR'.includes(face) ? face : 'L'; P.emit && P.emit('build', '收容所倉庫蓋好了！'); return { ok: 1 } };
   P.wareUp = () => { const r = P.buildReq('wareUp'); if (r.state !== 'can') return { ok: 0, msg: r.note || ('還差：' + r.lack.join('、')) }; pay(r.cost); S_().ware.lv++; return { ok: 1, slots: P.wareSlots() } };
   P.wareFace = f => { if (!'LFR'.includes(f)) return { ok: 0 }; S_().ware.face = f; return { ok: 1 } };
   // 能收的東西＝現有家具（P.FURN 的名字、圖），不畫新東西
   P.YITEM = { bowl: { img: 'bowl_full', name: '飯碗' }, feeder: { img: 'feeder', name: '自動餵食器' }, feeder2: { img: 'feeder', name: '大肚子餵食器' }, chime: { img: 'chime', name: '安心風鈴架' }, toybox: { img: 'toybox', name: '毛線球玩具箱' }, bed: { img: 'bed', name: '軟墊小床' } };
   P.yItemCost = k => { const f = P.FURN_K && P.FURN_K[k]; return f ? f.cost : 50000 };
-  P.wareAdd = (k, n) => { if (!P.YITEM[k]) return { ok: 0, msg: '沒有這種東西' }; const W = S_().ware; if (!W.built) return { ok: 0, msg: '先蓋倉庫' }; n = n || 1; if (P.wareUsed() + n > P.wareSlots()) return { ok: 0, msg: `倉庫滿了（${P.wareUsed()}/${P.wareSlots()}），可以擴建倉庫` }; W.items[k] = (W.items[k] || 0) + n; return { ok: 1 } };
+  P.wareAdd = (k, n) => { if (!P.YITEM[k]) return { ok: 0, msg: '沒有這種東西' }; const W = S_().ware; if (!W.built) return { ok: 0, msg: '先蓋收容所倉庫' }; n = n || 1; if (P.wareUsed() + n > P.wareSlots()) return { ok: 0, msg: `收容所倉庫滿了（${P.wareUsed()}/${P.wareSlots()}），可以擴建收容所倉庫` }; W.items[k] = (W.items[k] || 0) + n; return { ok: 1 } };
   P.wareBuy = k => { const g = P.yItemCost(k); if (P.S.gold < g) return { ok: 0, msg: `金幣不夠（要 ${fmt(g)}）` }; const r = P.wareAdd(k, 1); if (!r.ok) return r; P.S.gold -= g; return { ok: 1 } };
-  // 院子能擺的地方（一館＋二館院子）、不能擋到櫃檯、小屋、堆肥箱、倉庫、別的設施
+  // 院子能擺的地方（一館＋二館院子）、不能擋到櫃檯、小屋、堆肥箱、收容所倉庫、別的設施
   P.YARD_P = { x0: 280, x1: 1050, x1a: 2360, y0: 430, y1: 660 };
   P.yItemSize = k => ({ bowl: [64, 50], feeder: [88, 110], feeder2: [88, 110], chime: [60, 120], toybox: [106, 99], bed: [144, 80] })[k] || [80, 80];
   P.yardBlocks = (ignore) => {
@@ -102,10 +103,10 @@
     const b = P.yardBlocks(ignore).find(r => x + w / 2 > r[0] && x - w / 2 < r[2] && y + 6 > r[1] && y - h < r[3]); if (b) return { ok: 0, why: '跟別的東西疊在一起了' };
     return { ok: 1 };
   };
-  P.yardPlace = (k, x, y, face) => { const S = S_(); if (!(S.ware.items[k] > 0)) return { ok: 0, msg: '倉庫裡沒有這個' }; const v = P.yardFree(k, x, y); if (!v.ok) return { ok: 0, msg: v.why }; S.ware.items[k]--; if (!S.ware.items[k]) delete S.ware.items[k]; const f = { id: S.yfId++, k, x: Math.round(x), y: Math.round(y), face: 'LFR'.includes(face) ? face : 'L' }; S.yardF.push(f); return { ok: 1, f } };
+  P.yardPlace = (k, x, y, face) => { const S = S_(); if (!(S.ware.items[k] > 0)) return { ok: 0, msg: '收容所倉庫裡沒有這個' }; const v = P.yardFree(k, x, y); if (!v.ok) return { ok: 0, msg: v.why }; S.ware.items[k]--; if (!S.ware.items[k]) delete S.ware.items[k]; const f = { id: S.yfId++, k, x: Math.round(x), y: Math.round(y), face: 'LFR'.includes(face) ? face : 'L' }; S.yardF.push(f); return { ok: 1, f } };
   P.yardMove = (id, x, y) => { const f = S_().yardF.find(q => q.id === id); if (!f) return { ok: 0, msg: '找不到' }; const v = P.yardFree(f.k, x, y, id); if (!v.ok) return { ok: 0, msg: v.why }; f.x = Math.round(x); f.y = Math.round(y); return { ok: 1 } };
   P.yardFace = (id, face) => { const f = S_().yardF.find(q => q.id === id); if (!f || !'LFR'.includes(face)) return { ok: 0 }; f.face = face; return { ok: 1 } };
-  P.yardStore = id => { const S = S_(), i = S.yardF.findIndex(q => q.id === id); if (i < 0) return { ok: 0, msg: '找不到' }; if (P.wareUsed() >= P.wareSlots()) return { ok: 0, msg: `倉庫滿了（${P.wareUsed()}/${P.wareSlots()}）` }; const f = S.yardF.splice(i, 1)[0]; S.ware.items[f.k] = (S.ware.items[f.k] || 0) + 1; return { ok: 1 } };
+  P.yardStore = id => { const S = S_(), i = S.yardF.findIndex(q => q.id === id); if (i < 0) return { ok: 0, msg: '找不到' }; if (P.wareUsed() >= P.wareSlots()) return { ok: 0, msg: `收容所倉庫滿了（${P.wareUsed()}/${P.wareSlots()}）` }; const f = S.yardF.splice(i, 1)[0]; S.ware.items[f.k] = (S.ware.items[f.k] || 0) + 1; return { ok: 1 } };
   // ---------- 第 10b 項：大朋友也能出戰 ----------
   P.isAdult = p => !!p && !p.baby;
   P.fightSk = p => !p ? [] : p.baby ? (p.sk || []).slice() : ((p.tier || 0) >= 1 && P.SK[p.heir] ? [p.heir] : []);   // 大朋友：只有 1 招，就是傳家技（藍以上才會用）
@@ -173,12 +174,12 @@
   const UI = P.ui, $ = s => document.querySelector(s), esc = s => UI.esc(s);
   const A = P.art;
   // ---------- 圖 ----------
-  const IMG = {}; const ld = (k, src) => { const i = new Image(); i.src = src; IMG[k] = i };
+  const IMG = {}; const ld = (k, src) => { const i = P.art.lazyImage(src); IMG[k] = i };
   for (const n of ['', '_night']) {
     ld('hutF' + n, `assets/scenes/p51/hut_front${n}.png`); ld('ware' + n, `assets/scenes/p51/ware${n}.png`); ld('wareF' + n, `assets/scenes/p51/ware_front${n}.png`);
     for (const k of ['bed', 'chime', 'feeder', 'toybox', 'bowl_full']) { ld('f_' + k + n, `assets/scenes/farm/furn_${k}${n}.png`); ld('fF_' + k + n, `assets/scenes/p51/furn_${k}_front${n}.png`) }
   }
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const ok = im => P.art.imageOK(im);
   P.p51Img = IMG;
   const night = () => P.isNight ? P.isNight() : false;
   // 依方向畫：L＝原圖、R＝鏡像、F＝正面圖
@@ -206,7 +207,7 @@
   };
   const fresh = a => a && frameN - a.n <= 2;
   P.petAt = (x, y) => { let best = null, bd = 1e9; for (const k in anc) { const a = anc[k]; if (!fresh(a) || !a.p || a.p.npc) continue; if (Math.abs(x - a.x) < a.w && y > a.top - 10 && y < a.foot + 10) { const d = Math.abs(x - a.x) + Math.abs(y - (a.top + a.foot) / 2) * 0.5; if (d < bd) { bd = d; best = a.p } } } return best };
-  const NPC = { 蜜糖媽媽: { sp: 'shihtzu', tier: 0 }, 西施: { sp: 'shihtzu', tier: 2 }, 西施媽媽: { sp: 'shihtzu', tier: 2 }, 獵犬: { sp: 'retriever', tier: 0 }, 小貓頭鷹: { sp: 'owl', tier: 0 }, 小浣熊: { sp: 'raccoon', tier: 0 }, 浣熊: { sp: 'raccoon', tier: 0 } };
+  const NPC = { 蜜糖媽媽: { sp: 'shihtzu', tier: 0 }, 西施: { sp: 'shihtzu', tier: 2 }, 西施媽媽: { sp: 'shihtzu', tier: 0 }, 獵犬: { sp: 'retriever', tier: 0 }, 小貓頭鷹: { sp: 'owl', tier: 0 }, 小浣熊: { sp: 'raccoon', tier: 0 }, 浣熊: { sp: 'raccoon', tier: 0 } };
   P.NPC_LOOK = NPC;
   const npcO = UI.npc; UI.npc = name => name === '西施媽媽' ? UI.av(NPC.西施媽媽, 44) : npcO(name);
   const speech = []; P._speech = speech;
@@ -304,12 +305,12 @@
   // ---------- 第 9 項：上方資訊都可以點 ----------
   const HINT = {
     '🕐': () => ({ t: '🕐 時間（台北）', b: `遊戲照台灣時間走。每天 <b>05:00</b> 換日：每天的照顧次數重算、小屋門口出現育兒籃、剛出生的寶寶解鎖。晚上 18:00～06:00 是夜景，大家會睏。` }),
-    '💰': () => ({ t: '💰 金幣', b: `現在有 ${fmt(P.S.gold)}。出戰打怪、救援委託、大會、明信片都會拿到。用在：認養、洗技能、升階、蓋小屋／二館／農場／倉庫、訂做家具。`, a: [['fight', '⚔️ 去出戰']] }),
+    '💰': () => ({ t: '💰 金幣', b: `現在有 ${fmt(P.S.gold)}。出戰打怪、救援委託、大會、明信片都會拿到。用在：認養、洗技能、升階、蓋小屋／二館／農場／收容所倉庫、訂做家具。`, a: [['fight', '⚔️ 去出戰']] }),
     '🍞': () => ({ t: '🍞 剩食麵包', b: `現在有 ${P.S.bread}。出戰時撿到的剩食麵包。可以餵寵物（每次 ${C.breadPerFeed} 個）、用麵包洗技能（不用磁片），蓋房子也要用。`, a: [['fight', '⚔️ 去出戰']] }),
     '🍪': () => ({ t: '🍪 零食材料', b: `現在有 ${P.S.snackMat}。做「特製零食」用的，好感加比較多。出戰和探險會撿到。` }),
     '💿': () => ({ t: '💿 技能磁片', b: `現在有 ${P.S.disk}。用金幣洗技能時每次要 ${C.rerollDiskGold} 片；用麵包洗就不用磁片。`, a: [['reroll', '🎲 去洗技能']] }),
-    '🔷': () => ({ t: '🔷 刻印碎片', b: `現在有 ${P.S.shards}。打王、救援會掉。升紫、升粉，還有蓋小屋、二館、農場、倉庫都要用。` }),
-    '⭐': () => { const l = P.repLv(), nx = C.repLv[l]; return { t: '⭐ 名聲', b: `現在 ${P.S.rep}（Lv${l}）${nx != null ? `，再 ${nx - P.S.rep} 到 Lv${l + 1}` : '，已經最高'}。<br>${P.repHow}<br>名聲等級會打開：二館 Lv${C.annex.rep}、倉庫 Lv${C.ware.rep}、農場 Lv${C.farm.rep}。`, a: [['quests', '📜 看委託']] } },
+    '🔷': () => ({ t: '🔷 刻印碎片', b: `現在有 ${P.S.shards}。打王、救援會掉。升紫、升粉，還有蓋小屋、二館、農場、收容所倉庫都要用。` }),
+    '⭐': () => { const l = P.repLv(), nx = C.repLv[l]; return { t: '⭐ 名聲', b: `現在 ${P.S.rep}（Lv${l}）${nx != null ? `，再 ${nx - P.S.rep} 到 Lv${l + 1}` : '，已經最高'}。<br>${P.repHow}<br>名聲等級會打開：二館 Lv${C.annex.rep}、收容所倉庫 Lv${C.ware.rep}、農場 Lv${C.farm.rep}。`, a: [['quests', '📜 看委託']] } },
     '🏠': () => { const S = P.S, full = P.houseFull(), nx = S.annex !== 1 ? 'annex' : S.farm !== 1 ? 'farm' : null, r = nx && P.buildReq(nx);
       return { t: '🏠 住民（大朋友）', b: `現在 ${S.pets.length}/${P.houseCap()}。寶寶不算在這裡，算育兒室。${full ? '<br><b>住滿了！</b>可以：<br>① 擴建' + (r ? `${r.name}（${r.state === 'can' ? '條件都夠了' : r.state === 'building' ? '施工中' : '還差：' + r.lack.join('、')}）<br><span class="needs">目前條件：${r.items.map(x => `<span class="need ${x.ok ? 'ok' : 'no'}">${x.ok ? '✔' : '✖'} ${x.t}</span>`).join(' ')}</span>` : '（都蓋好了）') + '<br>② 把一隻大朋友免費寄放在櫃檯，隨時接回<br>③ 讓一隻「放他出去闖闖」（3 天後可能再相遇）' : ''}`, a: [['build', '🏗️ 建造'], ['stay', '🧺 寄放處'], ['qa', '❓ 問西施媽媽']] } },
     '🍼': () => ({ t: '🍼 育兒室（寶寶）', b: `現在 ${P.nurseryUsed()}/${P.nurseryCap()}。育兒籃生的寶寶住這裡。${P.waitingKids().length ? `有 ${P.waitingKids().length} 隻「等待入住」：要先空出位子（寄放、放出去闖闖、或等寶寶長大）。` : ''}育兒室沒位子時，小屋門口不會出現新的育兒籃。`, a: [['stay', '🧺 寄放處'], ['qa', '❓ 問西施媽媽']] }),
@@ -343,11 +344,11 @@
     const r = P.buildReq(kind);
     if (r.state !== 'can') { const tips = r.items.filter(x => !x.ok).map(x => x.rep ? `名聲 Lv${x.need}（現在 Lv${x.have}）：${P.repHow.replace('名聲：', '')}` : x.pre ? x.t : `${x.t}：還差 ${fmt(x.need - x.have)}${/金幣|麵包/.test(x.t) ? '（出戰、委託會拿到）' : '（打王、救援會掉）'}`);
       return pop(`<h3>🔒 ${r.name}還不能蓋</h3>${r.note ? `<div>${r.note}</div>` : ''}<ul>${tips.map(t => `<li>${t}</li>`).join('')}</ul><div class="card row2">${UI.npc(r.who)}<div class="grow"><b>${r.who}</b>：「${r.who === '西施' ? '材料湊齊了再來找我，我幫你一起蓋！' : '缺的東西慢慢湊，湊齊了這張卡片就會亮起來喔。'}」</div></div><div class="row"><button data-a="qa" class="alt">❓ 問西施媽媽</button></div>`, k => { P.popClose(); if (k === 'qa') P.openQA() }, 'hint') }
-    if (kind === 'cot' || kind === 'ware') return faceAsk(kind === 'cot' ? `蓋${r.name}：門要朝哪邊？` : '蓋倉庫：門要朝哪邊？', f => {
+    if (kind === 'cot' || kind === 'ware') return faceAsk(kind === 'cot' ? `蓋${r.name}：門要朝哪邊？` : '蓋收容所倉庫：門要朝哪邊？', f => {
       let x; if (kind === 'cot') { x = P.buildCot(); if (x.ok) { const c = P.S.cots.filter(c => !c.farm).slice(-1)[0]; if (c) c.face = f } } else x = P.buildWare(f);
       P.toastRaw(x.ok ? `${r.name}蓋好了（${P.faceName(f)}）` : x.msg); P.save(); after && after() });
     let x; if (kind === 'wareUp') x = P.wareUp(); else x = P.buildExpand(kind);
-    P.toastRaw(x.ok ? (kind === 'wareUp' ? `倉庫擴建好了：可以收 ${x.slots} 件` : '開工了！') : x.msg); if (x.ok && P.shelterBar) P.shelterBar(); after && after();
+    P.toastRaw(x.ok ? (kind === 'wareUp' ? `收容所倉庫擴建好了：可以收 ${x.slots} 件` : '開工了！') : x.msg); if (x.ok && P.shelterBar) P.shelterBar(); after && after();
   };
   function faceAsk(title, cb, cur) {
     pop(`<h3>${title}</h3><div class="faces">${P.FACES.map(([f, n]) => `<button data-a="f" data-v="${f}" class="${cur === f ? 'ok' : 'alt'}">${n}</button>`).join('')}</div><div class="muted">左、右是同一張圖鏡像；正面是從原圖做出來的正面樣子。之後在面板裡隨時可以改。</div>`, (k, v) => { if (k === 'f') { P.popClose(); cb(v) } }, 'hint');
@@ -357,20 +358,20 @@
   function buildScreen() {
     const S = P.S;
     UI.panel(`<h2>${ICON('expand')} 建造</h2><div class="card row2">${UI.npc('西施媽媽')}<div class="grow"><b>西施媽媽</b>：「亮著的就可以蓋；灰灰的那張，上面寫著還差什麼。」</div></div>
-      ${P.reqCard('cot')}${P.reqCard('annex', { showDone: 1 })}${P.reqCard('farm', { showDone: 1 })}${P.reqCard('ware', { showDone: 1 })}${S.ware.built ? P.reqCard('wareUp') + `<div class="row"><button data-a="ware" class="ok">📦 打開倉庫</button></div>` : ''}`, (a, v) => { if (a === 'bq') return P.reqAct(v, () => UI._refresh && UI._refresh()); if (a === 'ware') return P.openWare() });
+      ${P.reqCard('cot')}${P.reqCard('annex', { showDone: 1 })}${P.reqCard('farm', { showDone: 1 })}${P.reqCard('ware', { showDone: 1 })}${S.ware.built ? P.reqCard('wareUp') + `<div class="row"><button data-a="ware" class="ok">📦 打開收容所倉庫</button></div>` : ''}`, (a, v) => { if (a === 'bq') return P.reqAct(v, () => UI._refresh && UI._refresh()); if (a === 'ware') return P.openWare() });
     UI._refresh = buildScreen;
   }
   buildScreen.root = buildScreen;
   P.openBuild = () => UI.nav(buildScreen);
-  // ---------- 第 13 項：倉庫面板 ----------
+  // ---------- 第 13 項：收容所倉庫面板 ----------
   function wareScreen() {
     const S = S_(), W = S.ware;
-    if (!W.built) { UI.panel(`<h2>${ICON('ware')} 倉庫</h2>${P.reqCard('ware')}`, (a, v) => { if (a === 'bq') P.reqAct(v, () => wareScreen()) }); return }
+    if (!W.built) { UI.panel(`<h2>${ICON('ware')} 收容所倉庫</h2>${P.reqCard('ware')}`, (a, v) => { if (a === 'bq') P.reqAct(v, () => wareScreen()) }); return }
     const cards = Object.keys(P.YITEM).map(k => { const n = W.items[k] || 0, it = P.YITEM[k]; return `<div class="card row2 witem">${itemThumb(k)}<div class="grow"><b>${it.name}</b> ×${n}<div class="muted">訂做 ${fmt(P.yItemCost(k))} 金幣</div></div><div class="row">${n ? `<button class="ok" data-a="place" data-v="${k}">擺到院子</button>` : ''}<button class="alt" data-a="buy" data-v="${k}">訂做 1 件</button></div></div>` }).join('');
-    UI.panel(`<h2>${ICON('ware')} 倉庫（${W.lv + 1} 級）</h2><div class="muted">收著 ${P.wareUsed()}/${P.wareSlots()} 件｜倉庫的門：${P.faceName(W.face)}｜院子裡擺了 ${S.yardF.length} 件</div>
-      <div class="row">${P.FACES.map(([f, n]) => `<button data-a="wface" data-v="${f}" class="${W.face === f ? 'ok' : 'alt'}">倉庫朝${n}</button>`).join('')}</div>
-      ${P.reqCard('wareUp')}<h3>收在倉庫裡的</h3>${cards}
-      <h3>院子裡的（點院子裡的東西也可以搬／轉／收）</h3>${S.yardF.map(f => `<div class="card row2">${itemThumb(f.k)}<div class="grow"><b>${P.YITEM[f.k].name}</b> <span class="muted">朝${P.faceName(f.face)}</span></div><div class="row"><button data-a="move" data-v="${f.id}" class="alt">搬</button><button data-a="turn" data-v="${f.id}" class="alt">↺ 轉</button><button data-a="store" data-v="${f.id}" class="alt">收回倉庫</button></div></div>`).join('') || '<div class="muted">還沒擺</div>'}
+    UI.panel(`<h2>${ICON('ware')} 收容所倉庫（${W.lv + 1} 級）</h2><div class="muted">收著 ${P.wareUsed()}/${P.wareSlots()} 件｜收容所倉庫的門：${P.faceName(W.face)}｜院子裡擺了 ${S.yardF.length} 件</div>
+      <div class="row">${P.FACES.map(([f, n]) => `<button data-a="wface" data-v="${f}" class="${W.face === f ? 'ok' : 'alt'}">收容所倉庫朝${n}</button>`).join('')}</div>
+      ${P.reqCard('wareUp')}<h3>收在收容所倉庫裡的</h3>${cards}
+      <h3>院子裡的（點院子裡的東西也可以搬／轉／收）</h3>${S.yardF.map(f => `<div class="card row2">${itemThumb(f.k)}<div class="grow"><b>${P.YITEM[f.k].name}</b> <span class="muted">朝${P.faceName(f.face)}</span></div><div class="row"><button data-a="move" data-v="${f.id}" class="alt">搬</button><button data-a="turn" data-v="${f.id}" class="alt">↺ 轉</button><button data-a="store" data-v="${f.id}" class="alt">收回收容所倉庫</button></div></div>`).join('') || '<div class="muted">還沒擺</div>'}
       <div class="muted">家具是現成的那幾樣（飯碗、餵食器、風鈴架、玩具箱、小床），擺在院子裡是好看用的，效果還是在農場穀倉裡算。</div>`, (a, v) => {
       let r;
       if (a === 'bq') return P.reqAct(v, () => wareScreen());
@@ -409,17 +410,17 @@
   P.yardTap = (wx, y) => {
     const S = S_(); if (PL) { P.placeMove(wx, y - 40); return true }
     const f = S.yardF.slice().reverse().find(f => { const [w, h] = P.yItemSize(f.k); return Math.abs(wx - f.x) < w / 2 && y > f.y - h && y < f.y + 10 });
-    if (f) { pop(`<h3>${P.YITEM[f.k].name}</h3><div class="muted">朝${P.faceName(f.face)}</div><div class="faces">${P.FACES.map(([x, n]) => `<button data-a="face" data-v="${x}" class="${f.face === x ? 'ok' : 'alt'}">${n}</button>`).join('')}</div><div class="row"><button data-a="move" class="alt">搬到別的地方</button><button data-a="store" class="alt">收回倉庫</button></div>`, (k, v) => { if (k === 'face') { P.yardFace(f.id, v); P.yardTap(wx, y) } if (k === 'move') { P.popClose(); P.placeStart({ k: f.k, id: f.id, face: f.face }) } if (k === 'store') { const r = P.yardStore(f.id); P.popClose(); if (!r.ok) P.toastRaw(r.msg) } }, 'hint'); return true }
+    if (f) { pop(`<h3>${P.YITEM[f.k].name}</h3><div class="muted">朝${P.faceName(f.face)}</div><div class="faces">${P.FACES.map(([x, n]) => `<button data-a="face" data-v="${x}" class="${f.face === x ? 'ok' : 'alt'}">${n}</button>`).join('')}</div><div class="row"><button data-a="move" class="alt">搬到別的地方</button><button data-a="store" class="alt">收回收容所倉庫</button></div>`, (k, v) => { if (k === 'face') { P.yardFace(f.id, v); P.yardTap(wx, y) } if (k === 'move') { P.popClose(); P.placeStart({ k: f.k, id: f.id, face: f.face }) } if (k === 'store') { const r = P.yardStore(f.id); P.popClose(); if (!r.ok) P.toastRaw(r.msg) } }, 'hint'); return true }
     if (S.ware.built) { const a = C.ware.at; if (Math.abs(wx - a.cx) < 100 && y > a.by - 150 && y < a.by + 14) { P.openWare(); return true } }
     return false;
   };
-  // 一館裡要跟寵物一起排前後的東西（倉庫、院子家具、西施媽媽）
+  // 一館裡要跟寵物一起排前後的東西（收容所倉庫、院子家具、西施媽媽）
   P.XM_AT = { x: 420, y: 335, sc: 2 };
   P.p51Props = (ctx, T) => {
     const S = S_(), out = [];
-    if (S.ware.built) { const a = C.ware.at; out.push({ y: a.by, draw: () => { P.drawWare(ctx, S.ware.face, a.cx, a.by); if (A.tagBox) A.tagBox(ctx, `倉庫 Lv${S.ware.lv + 1}`, a.cx, a.by + 22, { size: 14, pad: 6, h: 21, s: 2, st: [2, 1] }) } }) }
+    if (S.ware.built) { const a = C.ware.at; out.push({ y: a.by, draw: () => { P.drawWare(ctx, S.ware.face, a.cx, a.by); if (A.tagBox) A.tagBox(ctx, `收容所倉庫 Lv${S.ware.lv + 1}`, a.cx, a.by + 22, { size: 14, pad: 6, h: 21, s: 2, st: [2, 1] }) } }) }
     for (const f of S.yardF) out.push({ y: f.y, draw: () => P.drawYItem(ctx, f) });
-    const X = P.XM_AT; out.push({ y: X.y, draw: () => { A.draw(ctx, { npc: '西施媽媽', sp: 'shihtzu', tier: 2 }, X.x, X.y, { act: 'idle', t: T, scale: X.sc, flip: true }); if (A.tagBox) A.tagBox(ctx, '西施媽媽 ❓', X.x, X.y + 22, { size: 14, pad: 6, h: 21, col: '#ffe9a8', s: 2, st: [2, 1] }) } });
+    const X = P.XM_AT; out.push({ y: X.y, draw: () => { A.draw(ctx, { npc: '西施媽媽', sp: 'shihtzu', tier: 0 }, X.x, X.y, { act: 'idle', t: T, scale: X.sc, flip: true }); if (A.tagBox) A.tagBox(ctx, '西施媽媽 ❓', X.x, X.y + 22, { size: 14, pad: 6, h: 21, col: '#ffe9a8', s: 2, st: [2, 1] }) } });
     return out.sort((a, b) => a.y - b.y);
   };
   P.p51Tap = (wx, y) => { const X = P.XM_AT; if (Math.abs(wx - X.x) < 46 && y > X.y - 96 && y < X.y + 30) { P.openQA(); return true } return false };
@@ -428,13 +429,13 @@
   P.QA = [
     q('full', '住民滿了怎麼辦？', () => { const r = P.buildReq(P.S.annex !== 1 ? 'annex' : 'farm'); return `住民（大朋友）現在 ${P.S.pets.length}/${P.houseCap()}。有三個辦法：<br>① <b>擴建</b>：${r.state === 'done' ? '都蓋好了' : r.state === 'building' ? `${r.name}正在蓋` : `${r.name}${r.state === 'can' ? '條件都夠了，去「🏗️ 建造」就能蓋' : '還差 ' + r.lack.join('、')}`}。<br>② <b>寄放</b>：櫃檯的「寄放處」免費，隨時接回來。<br>③ <b>放他出去闖闖</b>：在寵物面板最下面，3 天後可能再相遇，還會寄明信片回來。` }),
     q('build', '怎麼加蓋？農場怎麼蓋？', () => `先蓋<b>二館</b>（名聲 Lv${C.annex.rep}、金幣 ${fmt(C.annex.gold)}、麵包 ${C.annex.bread}、刻印 ${C.annex.shard}，${C.annex.hours} 小時），蓋好住民上限變 ${C.houseStep[1]}、小屋多 ${C.annex.cots} 間。再蓋<b>農場</b>（名聲 Lv${C.farm.rep}、金幣 ${fmt(C.farm.gold)}、麵包 ${C.farm.bread}、刻印 ${C.farm.shard}，${C.farm.hours} 小時），住民上限 ${C.houseStep[2]}。下方「🏗️ 建造」可以看到每一樣還差什麼。`),
-    q('ware', '倉庫是做什麼的？', () => `倉庫收家具（飯碗、餵食器、風鈴架、玩具箱、小床），拿出來就能擺在院子裡，可以選朝左、正面、朝右，之後也能搬、轉、收回去。先要蓋倉庫（名聲 Lv${C.ware.rep}、金幣 ${fmt(C.ware.cost[0])}、麵包 ${C.ware.cost[1]}、刻印 ${C.ware.cost[2]}），一開始收 ${C.ware.slots[0]} 件，擴建最多 ${C.ware.slots[C.ware.slots.length - 1]} 件。`),
-    q('fight', '寵物要怎麼出戰？', () => `按下方「⚔️ 出戰」挑一隻同行。<b>寶寶</b>有技能格、天性魔法，練到滿級還能「練成」，是最強的夥伴；<b>大朋友</b>現在也能出戰：威力是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%，只會傳家技那一招（藍色以上），升級比較慢。剛出生的寶寶要等隔天 05:00 才能出戰。`),
+    q('ware', '收容所倉庫是做什麼的？', () => `收容所倉庫收家具（飯碗、餵食器、風鈴架、玩具箱、小床），拿出來就能擺在院子裡，可以選朝左、正面、朝右，之後也能搬、轉、收回去。先要蓋收容所倉庫（名聲 Lv${C.ware.rep}、金幣 ${fmt(C.ware.cost[0])}、麵包 ${C.ware.cost[1]}、刻印 ${C.ware.cost[2]}），一開始收 ${C.ware.slots[0]} 件，擴建最多 ${C.ware.slots[C.ware.slots.length - 1]} 件。`),
+    q('fight', '寵物要怎麼出戰？', () => `按下方「⚔️ 出戰」挑一隻同行。<b>寶寶</b>和<b>大朋友</b>都能跟主人出戰。大朋友更壯：普攻和招數是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%，藍色以上會用傳家技；寶寶有較多技能格和天性魔法，養成、傳承還是很值得。剛出生的寶寶要等隔天 05:00 才能出戰。`),
     q('basket', '育兒籃怎麼來的？', () => `兩隻同物種、都 ♡3 以上的大朋友住同一間小屋，每天 05:00 有機會在門口出現育兒籃，隔天孵出寶寶。小屋裡「一起玩」默契會變好。育兒室要有空位，育兒籃才會出現。`),
-    q('up', '升階要什麼？', () => `寶寶：藍→紫 Lv${C.up[1].lv}、♡${C.up[1].heart}、藍色幸福信 ×${C.up[1].letter}、金幣 ${fmt(C.up[1].gold)}、麵包 ${C.up[1].bread}（成功率 ${C.up[1].rate}%，失敗 ${C.up[1].pity} 次保底）；紫→粉、粉→橘還要刻印碎片。大朋友也能升階：綠→藍 Lv${C.adult.up0.lv}、♡${C.adult.up0.heart}、金幣 ${fmt(C.adult.up0.gold)}、麵包 ${C.adult.up0.bread}；之後跟寶寶一樣，金幣、麵包 ×${C.adult.upMul}。大朋友升階不會換毛色。`),
+    q('up', '升階要什麼？', () => `寶寶：藍→紫 Lv${C.up[1].lv}、♡${C.up[1].heart}、藍色幸福信 ×${C.up[1].letter}、金幣 ${fmt(C.up[1].gold)}、麵包 ${C.up[1].bread}（成功率 ${C.up[1].rate}%，失敗 ${C.up[1].pity} 次保底）；紫→粉、粉→橘還要刻印碎片。大朋友也能升階：綠→藍 Lv${C.adult.up0.lv}、♡${C.adult.up0.heart}、金幣 ${fmt(C.adult.up0.gold)}、麵包 ${C.adult.up0.bread}；之後跟寶寶一樣的花費。大朋友升階不會換毛色。`),
     q('stay', '寄放是什麼？', () => `櫃檯的「寄放處」：家裡住不下的時候，把孩子免費寄放在蜜糖媽媽這裡，隨時可以接回來。寄放中的不算住民、也不算育兒室。`),
     q('send', '「放他出去闖闖」會怎樣？', () => `牠會背著小包袱出門，10 秒內可以反悔叫回來。之後會寄明信片回來（有小禮物），3 天後可能在路上再相遇、重新收留。`),
-    q('rep', '名聲怎麼升？', () => `${P.repHow}現在 ${P.S.rep}（Lv${P.repLv()}）。名聲等級會打開二館、倉庫、農場。`),
+    q('rep', '名聲怎麼升？', () => `${P.repHow}現在 ${P.S.rep}（Lv${P.repLv()}）。名聲等級會打開二館、收容所倉庫、農場。`),
     q('vol', '聲音太大／想關掉？', () => `右上角 🔊 按一下就靜音，再按一下打開；🎚️ 可以分開調背景音樂和音效。設定會存在存檔裡。`),
     q('skill', '技能的說明在哪裡看？', () => `寵物面板裡，技能的名字（固有技能、傳家技、學到的技能、天性魔法）都可以點，會跳出：做什麼、每個位階的數字、冷卻、種類、怎麼學／洗、怎麼遺傳。`),
   ];
@@ -460,6 +461,6 @@
   P.skLink = (kind, ref, p, txt) => `<a class="skn" data-skd="${kind}:${ref}" data-pid="${p ? p.id : ''}">${txt}</a>`;
 
   // ---------- 啟動 ----------
-  const boot0 = P.boot; if (boot0) P.boot = async (...a) => { const r = await boot0(...a); fixS(P.S); sysbar(); P.audioApply(); return r };
+  const boot0 = P.boot; if (boot0) P.boot = async (...a) => { const r = await boot0(...a); if (r === false) return false; fixS(P.S); sysbar(); P.audioApply(); return r };
   setTimeout(() => { if (P.S) { fixS(P.S); sysbar() } }, 0);
 })(window.PET);

@@ -16,9 +16,9 @@ window.PET = window.PET || {};
   P.QUAL_MUL = [0.97, 1.0, 1.02, 1.03];
   // 物種（dirs：美術資料夾候選名；hue/sat：還沒有自己的圖時，用西施犬圖換色當暫用圖）
   P.SPECIES = [
-    { id: 'cat', name: '貓', emo: '🐱', shiny: { h: 200, s: 0.9, gh: 215, gs: 0.30, l: 0.02, nm: '月影星彩' }, dirs: ['cat_v3', 'cat', 'kitty'], hue: 25, sat: 1.1, looks: ['橘白雙色貓', '三色貓', '棕色貓', '燕尾服貓'], inh: ['招財貓步', '金幣 +3/4/5%'] },
-    { id: 'retriever', name: '獵犬', emo: '🐕', shiny: { h: -38, s: 0.75, gh: 30, gs: 0.18, l: 0.10, nm: '霜白星彩' }, dirs: ['hound_v3', 'retriever', 'hound', 'dog'], hue: 40, sat: 1.3, looks: ['黃金獵犬', '奶油白獵犬', '深棕色獵犬', '黑色獵犬'], inh: ['追蹤', '追擊機率 +2/3/4%'] },
-    { id: 'bear', name: '小熊', emo: '🐻', shiny: { h: 165, s: 0.8, gh: 180, gs: 0.25, l: 0.04, nm: '苔綠星彩' }, dirs: ['bear_v3', 'bear', 'cub'], hue: -10, sat: 0.7, looks: ['棕色小熊', '灰色小熊', '黑色小熊', '白色小熊'], inh: ['熊抱', 'HP<50% 受到傷害 −3/4/5%'] },
+    { id: 'cat', name: '貓', emo: '🐱', shiny: { h: 200, s: 0.9, gh: 215, gs: 0.30, l: 0.02, nm: '月影星彩' }, dirs: ['cat_v3', 'cat', 'kitty'], hue: 25, sat: 1.1, looks: ['雙色毛貓', '三色貓', '棕色貓', '燕尾服貓'], inh: ['招財貓步', '金幣 +3/4/5%'] },
+    { id: 'retriever', name: '獵犬', emo: '🐕', shiny: { h: -38, s: 0.75, gh: 30, gs: 0.18, l: 0.10, nm: '霜白星彩' }, dirs: ['hound_v3', 'retriever', 'hound', 'dog'], hue: 40, sat: 1.3, looks: ['黃金獵犬', '黑色獵犬', '深棕色獵犬', '白色獵犬'], inh: ['追蹤', '追擊機率 +2/3/4%'] },
+    { id: 'bear', name: '小熊', emo: '🐻', shiny: { h: 165, s: 0.8, gh: 180, gs: 0.25, l: 0.04, nm: '苔綠星彩' }, dirs: ['bear_v3', 'bear', 'cub'], hue: -10, sat: 0.7, looks: ['灰色小熊', '棕色小熊', '黑色小熊', '白色小熊'], inh: ['熊抱', 'HP<50% 受到傷害 −3/4/5%'] },
     { id: 'fox', name: '小狐狸', emo: '🦊', shiny: { h: 185, s: 0.8, gh: 200, gs: 0.30, l: 0.04, nm: '夜藍星彩' }, dirs: ['fox_v3', 'fox'], hue: 15, sat: 1.6, looks: ['淺棕色小狐狸', '棕色小狐狸', '白色小狐狸', '黑色小狐狸'], inh: ['狐火', '普攻附帶灼傷 20/25/30%'] },
     { id: 'pomeranian', name: '博美犬', emo: '🐶', shiny: { h: 300, s: 1.2, gh: 320, gs: 0.35, l: 0.04, nm: '櫻粉星彩' }, dirs: ['pomeranian_v3', 'pomeranian', 'pom'], hue: 30, sat: 0.4, looks: ['銀灰色博美犬', '黑色博美犬', '黑棕博美犬', '棕色博美犬'], inh: ['究極的應援', '絕招量表 +4/5/6%'] },
     { id: 'rabbit', name: '兔子', emo: '🐰', shiny: { h: 230, s: 1.0, gh: 260, gs: 0.30, l: 0.02, nm: '紫藤星彩' }, dirs: ['rabbit_v3', 'rabbit', 'bunny'], hue: -30, sat: 0.6, looks: ['棕色兔子', '灰色兔子', '斑點兔子', '白兔子'], inh: ['跳跳', '閃避 +1/1.5/2%'] },

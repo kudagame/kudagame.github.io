@@ -21,9 +21,9 @@
   P.expTrail = () => { const S = P.S, t = P.now(); return ((S.exp && S.exp.teams) || []).map(team => ({ team, st: P.ST[team.sk], pets: team.ids.map(P.byId).filter(Boolean), pc: Math.max(0, Math.min(1, (t - team.start) / Math.max(1, team.until - team.start))), left: Math.max(0, team.until - t) })) };
   P.scenes = P.scenes || {};
   if (!P.ui || typeof Image === 'undefined') return;   // 以下是畫面（node 測試只載上面的規則）
-  const UI = P.ui, IMG = {}; for (const k of ['depart_day_bg', 'depart_night_bg', 'trail_day_bg', 'trail_night_bg']) { const im = new Image(); im.src = `assets/scenes/expedition/${k}.jpg`; IMG[k] = im }
-  const STI = {}; const stImg = k => STI[k] || (STI[k] = Object.assign(new Image(), { src: `assets/stages/${k}_bg.jpg` }));
-  const ok = im => im && im.complete && im.naturalWidth > 0, night = () => !!(P.isNight && P.isNight());
+  const UI = P.ui, IMG = {}; for (const k of ['depart_day_bg', 'depart_night_bg', 'trail_day_bg', 'trail_night_bg']) { const im = P.art.lazyImage(`assets/scenes/expedition/${k}.jpg`); IMG[k] = im }
+  const STI = {}; const stImg = k => STI[k] || (STI[k] = P.art.lazyImage(`assets/stages/${k}_bg.jpg`));
+  const ok = im => P.art.imageOK(im), night = () => !!(P.isNight && P.isNight());
   const left = ms => { const h = Math.floor(ms / H), m = Math.ceil(ms % H / 60000); return h ? `${h} 小時 ${m} 分` : `${m} 分` };
   function tag(ctx, t, x, y, col) { if (P.art && P.art.tagBox) { P.art.tagBox(ctx, t, x, y, { size: 15, pad: 6, h: 22, col: col || '#fff', s: 2, st: [2, 1] }); return } ctx.font = 'bold 15px sans-serif'; const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(26,16,22,.78)'; ctx.fillRect(x - w / 2, y - 17, w, 22); ctx.fillStyle = col || '#fff'; ctx.fillText(t, x - w / 2 + 6, y) }
   const NF = () => night() && 'filter' in CanvasRenderingContext2D.prototype ? 'brightness(.72) saturate(.8)' : '';
@@ -54,7 +54,7 @@
     draw(ctx) {
       if (!E) return; const N = night(), bg = IMG[N ? 'depart_night_bg' : 'depart_day_bg']; if (ok(bg)) ctx.drawImage(bg, 0, 0, 1280, 720); else { ctx.fillStyle = '#8cc46a'; ctx.fillRect(0, 0, 1280, 720) }
       tag(ctx, '🗺️ 地圖桌', P.EXP_SPOT.table.x, 300, '#ffe36b');
-      const HD = { sp: 'retriever', tier: P.TIERS.indexOf('pink'), star: 0 };   // 黑色獵犬（偵探大衣）：守在地圖桌旁，派遣交給牠
+      const HD = { sp: 'retriever', tier: P.TIERS.indexOf('blue'), star: 0 };   // 黑色獵犬（偵探大衣）：守在地圖桌旁，派遣交給牠
       const items = [{ y: 445, f: () => pet(ctx, HD, 300, 440, N ? 'sleep' : 'idle', E.t, false), lab: () => tag(ctx, '獵犬（派遣）', 300, 466, '#ffe36b') }]; tag(ctx, '🚩 大門（往路上）', 1060, 250, '#ffe36b');
       for (const c of P.expDepartCrew()) { const s = pos[c.p.id]; if (!s) continue; const act = c.kind === 'back' ? 'happy' : c.kind === 'rest' ? 'sleep' : s.mv ? 'walk' : 'idle';
         items.push({ y: s.y, f: () => pet(ctx, c.p, s.x, s.y, act, s.t, s.flip), lab: () => tag(ctx, c.kind === 'back' ? `🎉 ${P.label(c.p)}` : c.kind === 'rest' ? `💤 ${P.label(c.p)}` : P.label(c.p), s.x, s.y + 26, c.kind === 'back' ? '#ffe36b' : c.kind === 'rest' ? '#cfe3ff' : '#fff') }) }

@@ -23,8 +23,8 @@
   };
   P.scenes = P.scenes || {};
   if (!P.ui || typeof Image === 'undefined') return;   // 以下是畫面（node 測試只載上面的規則）
-  const UI = P.ui, IMG = {}; for (const k of ['camp_day_bg', 'camp_night_bg']) { const im = new Image(); im.src = `assets/scenes/camp/${k}.jpg`; IMG[k] = im }
-  const ok = im => im && im.complete && im.naturalWidth > 0;
+  const UI = P.ui, IMG = {}; for (const k of ['camp_day_bg', 'camp_night_bg']) { const im = P.art.lazyImage(`assets/scenes/camp/${k}.jpg`); IMG[k] = im }
+  const ok = im => P.art.imageOK(im);
   let T = null; const pos = {};
   function bar() { UI.bar([['⬅ 回農場', () => P.go('farm')], ['📋 訓練／集訓', () => P.ui3.camp()]]) }
   function tag(ctx, t, x, y, col) { if (P.art && P.art.tagBox) { P.art.tagBox(ctx, t, x, y, { size: 15, pad: 6, h: 22, col: col || '#fff', s: 2, st: [2, 1] }); return } ctx.font = 'bold 15px sans-serif'; const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(26,16,22,.78)'; ctx.fillRect(x - w / 2, y - 17, w, 22); ctx.fillStyle = col || '#fff'; ctx.fillText(t, x - w / 2 + 6, y) }

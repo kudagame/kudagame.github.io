@@ -32,8 +32,8 @@
       fin: r.place <= 3 ? say('pl' + r.place, v) : say('out', v), rank: r.rankUp ? say('rank', Object.assign({ rank: P.RANK[r.rankUp] }, v)) : '' } };
   P.scenes = P.scenes || {};
   if (!P.ui || typeof Image === 'undefined') return;   // 以下是畫面
-  const UI = P.ui, IMG = {}; for (const k of ['village', 'town', 'royal', 'royal_night']) { const im = new Image(); im.src = `assets/scenes/contest/${k}_bg.jpg`; IMG[k] = im }
-  const ok = im => im && im.complete && im.naturalWidth > 0, PL = ['', '🥇 冠軍', '🥈 亞軍', '🥉 季軍', '', '第一輪落敗'];
+  const UI = P.ui, IMG = {}; for (const k of ['village', 'town', 'royal', 'royal_night']) { const im = P.art.lazyImage(`assets/scenes/contest/${k}_bg.jpg`); IMG[k] = im }
+  const ok = im => P.art.imageOK(im), PL = ['', '🥇 冠軍', '🥈 亞軍', '🥉 季軍', '', '第一輪落敗'];
   function tag(ctx, t, x, y, col, big) { if (P.art && P.art.tagBox) { P.art.tagBox(ctx, t, x, y, { size: big ? 22 : 15, pad: 7, h: big ? 30 : 22, col: col || '#fff', s: 2, st: [2, 1] }); return } ctx.font = `bold ${big ? 22 : 15}px sans-serif`; const w = ctx.measureText(t).width + 14, h = big ? 30 : 22; ctx.fillStyle = 'rgba(26,16,22,.8)'; ctx.fillRect(x - w / 2, y - h + 5, w, h); ctx.fillStyle = col || '#fff'; ctx.fillText(t, x - w / 2 + 7, y) }
   function medal(ctx, x, y, col) { ctx.fillStyle = '#c82832'; ctx.fillRect(x - 9, y - 26, 7, 18); ctx.fillStyle = '#2850c8'; ctx.fillRect(x + 2, y - 26, 7, 18); ctx.fillStyle = '#28180f'; ctx.fillRect(x - 12, y - 10, 24, 24); ctx.fillStyle = col; ctx.fillRect(x - 9, y - 7, 18, 18); ctx.fillStyle = '#fffbe6'; ctx.fillRect(x - 6, y - 4, 4, 4) }
   function wrap(ctx, t, w) { const out = []; let cur = ''; for (const ch of t) { if (ctx.measureText(cur + ch).width > w && cur) { out.push(cur); cur = ch } else cur += ch } if (cur) out.push(cur); return out }

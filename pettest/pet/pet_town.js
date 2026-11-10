@@ -48,7 +48,7 @@
     const cap = P.bloodCap(p), done = P.done(p);
     const lmax = G.lineMax + (p.lineX ? 1 : 0), ln = Math.min(lmax, p.line || 0), stp = Math.round(G.lineStep * 100);
     const owl = `「傳承」是這一家一代一代認真養大的紀錄，現在是 <b>${ln} 級</b>（最高 ${lmax} 級）。每 1 級，能力上限多 ${stp}%${ln ? `，所以牠每一項能力最多可以長到 <b>${Math.round(cap)}</b>` : `；牠現在每一項能力最多長到 <b>${Math.round(cap)}</b>`}。`
-      + (p.baby ? (done ? `牠已經「練成」（練到 Lv${C.lvCap[p.tier]} 滿級）了！只要另一半也練成，生下的寶寶傳承會比爸媽多 1 級。` : `把牠練到 Lv${C.lvCap[p.tier]} 滿級就算「練成」。爸媽兩隻都練成，生下的寶寶傳承會多 1 級，能力上限就更高。`) : '大朋友也可以出戰練級（經驗比寶寶少一點），但「練成」只算寶寶時期：牠的孩子傳承會跟爸媽差不多，不會多 1 級。')
+      + (p.baby ? (done ? `牠已經「練成」（練到 Lv${C.lvCap[p.tier]} 滿級）了！只要另一半也練成，生下的寶寶傳承會比爸媽多 1 級。` : `把牠練到 Lv${C.lvCap[p.tier]} 滿級就算「練成」。爸媽兩隻都練成，生下的寶寶傳承會多 1 級，能力上限就更高。`) : '大朋友也可以出戰練級（經驗跟寶寶一樣快，而且比寶寶壯），但「練成」只算寶寶時期：牠的孩子傳承會跟爸媽差不多，不會多 1 級。')
       + `寶寶出生時，會拿到爸媽能力的大約 ${Math.round(G.ablInherit * 100)}%。`;
     h += `<h3>🌳 血統</h3>${say('小貓頭鷹', '咕。' + owl)}${p.coi >= G.coiNear || P.noble(p.id) ? `<div class="muted">${p.coi >= G.coiNear ? '⚠ 爸媽是親戚：能力遺傳少一點，比較容易突變' : ''}${p.coi >= G.coiNear && P.noble(p.id) ? '｜' : ''}${P.noble(p.id) ? '👑 名門：祖先裡出了好多冠軍' : ''}</div>` : ''}`;
     h += `<div class="row"><button class="alt" data-a="tree">🌳 看家譜</button></div>`;

@@ -6,8 +6,8 @@
   const say = (who, t) => `<div class="card row2">${UI.npc(who)}<div class="grow"><b>${who}</b>：「${t}」</div></div>`;
   const fmt = n => Math.round(n).toLocaleString();
   let F = null;
-  const IMG = {}; for (const k of ['farm_day_bg', 'farm_night_bg']) { const im = new Image(); im.src = `assets/scenes/farm/${k}.jpg`; IMG[k] = im }   // P5：畫好的農場背景（chars/pets/scenes/build_farm.py）
-  const bgOk = () => { const im = IMG[P.isNight && P.isNight() ? 'farm_night_bg' : 'farm_day_bg']; return im.complete && im.naturalWidth > 0 };
+  const IMG = {}; for (const k of ['farm_day_bg', 'farm_night_bg']) { const im = P.art.lazyImage(`assets/scenes/farm/${k}.jpg`); IMG[k] = im }   // P5：畫好的農場背景（chars/pets/scenes/build_farm.py）
+  const bgOk = () => { const im = IMG[P.isNight && P.isNight() ? 'farm_night_bg' : 'farm_day_bg']; return P.art.imageOK(im) };
   const here = p => !P.out(p) && !(P.inBarn && P.inBarn(p));   // P5：在戶外草原（不在穀倉）
   const pos = {};   // 寵物在農場的位置
   const pOf = p => pos[p.id] || (pos[p.id] = { x: 300 + Math.random() * 3300, y: GY0 + 40 + Math.random() * 200, tx: null, t: Math.random() * 9, flip: false, until: 0 });
@@ -45,7 +45,7 @@
       ctx.save(); ctx.translate(-Math.round(F.cam), 0);
       // 天空、山、草地（P5：有畫好的背景就用圖，3840 寬，白天／晚上）
       const bgi = IMG[P.isNight && P.isNight() ? 'farm_night_bg' : 'farm_day_bg'];
-      if (bgi.complete && bgi.naturalWidth) ctx.drawImage(bgi, 0, 0, WW, 720); else {
+      if (P.art.imageOK(bgi)) ctx.drawImage(bgi, 0, 0, WW, 720); else {
       const g = ctx.createLinearGradient(0, 0, 0, 400); g.addColorStop(0, '#9fd8ff'); g.addColorStop(1, '#e8f7ff'); ctx.fillStyle = g; ctx.fillRect(0, 0, WW, 420);
       ctx.fillStyle = '#9cc58a'; for (let i = 0; i < WW; i += 420) { ctx.beginPath(); ctx.moveTo(i - 60, 420); ctx.lineTo(i + 180, 230 + (i % 3) * 30); ctx.lineTo(i + 440, 420); ctx.fill() }
       ctx.fillStyle = '#7fc46a'; ctx.fillRect(0, 400, WW, 320); ctx.fillStyle = '#6fb45a'; for (let i = 0; i < WW; i += 36) ctx.fillRect(i + (i % 72 ? 8 : 0), 420 + (i * 7 % 260), 6, 4);

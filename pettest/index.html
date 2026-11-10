@@ -5,14 +5,17 @@
 <link rel="stylesheet" href="pet/pet.css">
 </head><body>
 <div id="wrap"><canvas id="cv" width="1280" height="720"></canvas></div>
+<div id="bootStatus" role="status" aria-live="polite">蜜糖之家準備中…</div>
 <div id="hud"></div>
-<div id="bar"></div>
+<div id="bar" role="navigation" aria-label="收容所功能，可捲動" tabindex="0"></div>
+<div id="portraitHint" role="note">↻ 請橫向遊玩<br><small>橫向可完整看見院子與戰鬥；下方功能仍可使用。</small></div>
 <div id="panel" class="hide"></div>
 <div id="toast"></div>
 <div id="pad" class="hide"><div id="stick"><div id="knob"></div></div><button id="atkBtn">攻擊</button></div>
 <script src="assets/pets/manifest.js"></script>
 <script src="assets/mon/mon.js"></script>
 <script src="assets/portraits/manifest.js"></script>
+<script src="assets/pets/hybrids_p53.js"></script>
 <script src="pet/pet_data.js"></script>
 <script src="pet/pet_core.js"></script>
 <script src="pet/pet_art.js"></script>

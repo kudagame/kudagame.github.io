@@ -71,11 +71,27 @@
   }
   window.addEventListener('error', e => P.emit('err', 'JS 錯誤：' + e.message + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno));
   P.boot = async () => {
-    P.load(); P.open();
-    await P.art.load();
-    P.go(P.S.unlock ? 'shelter' : 'shelter');
-    requestAnimationFrame(loop);
-    P.booted = 1;
+    const status = $('#bootStatus');
+    if (status) { status.classList.remove('hide'); status.textContent = '蜜糖之家準備中…' }
+    try {
+      P.load(); P.open();
+      await P.art.load();
+      P.go('shelter');   // 新存檔也顯示院子及一次性 r1 救援入口，不先送寵物。
+      last = performance.now();
+      requestAnimationFrame(loop);
+      P.booted = 1;
+      if (status) status.classList.add('hide');
+      if (P.art.missing.length) UI.toast('部分寵物圖載入失敗，請稍後重新整理。', 5000);
+    } catch (e) {
+      console.error(e); P.emit('err', '啟動失敗：' + e.message);
+      if (status) {
+        status.textContent = '蜜糖之家無法啟動：' + e.message + ' ';
+        const retry = document.createElement('button'); retry.textContent = '重新整理';
+        retry.onclick = () => location.reload(); status.appendChild(retry);
+      }
+      return false;
+    }
+    return true;
   };
   window.addEventListener('load', () => P.boot());
 })(window.PET);
