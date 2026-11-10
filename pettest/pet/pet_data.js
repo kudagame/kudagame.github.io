@@ -145,11 +145,11 @@ window.PET = window.PET || {};
   P.QUESTS = [
     { id: 'r1', name: '蜜糖之家保衛戰', giver: '蜜糖媽媽', main: 1, req: {}, cages: 'all', tier: 0, waves: [['minion', 'minion', 'axe'], ['minion', 'archer', 'axe', 'minion'], ['axe', 'axe', 'archer', 'minion', 'minion']],
       desc: '「孩子們被城堡的軍隊關進籠子裡了……拜託你。」打開 10 個籠子、打退 3 波追兵。完成後開放蜜糖之家。', reward: '開放收容所＋蜜糖媽媽送 1 隻寶寶' },
-    { id: 'r2', name: '山谷舊路的輪子痕', giver: '獵犬', req: { done: 'r1', rep: 3 }, cages: 3, tier: -1, carrier: 1, waves: [['minion', 'minion', 'archer'], ['axe', 'minion', 'minion', 'archer']],
+    { id: 'r2', name: '山谷舊路的輪子痕', giver: '獵犬', req: { done: 'r1', rep: 2 }, cages: 3, tier: -1, carrier: 1, waves: [['minion', 'minion', 'archer'], ['axe', 'minion', 'minion', 'archer']],
       desc: '獵犬在舊驛站的路上聞到籠車的味道，叼回一塊碎布。「汪。」（跟我來。）', reward: '救下 3 隻（其中 1 隻帶星痕）' },
-    { id: 'r3', name: '礦坑口的哭聲', giver: '小貓頭鷹', req: { done: 'r2', rep: 5 }, cages: 2, tier: -1, purple: 1, waves: [['minion', 'archer', 'archer'], ['axe!', 'minion', 'minion', 'axe']],
+    { id: 'r3', name: '礦坑口的哭聲', giver: '小貓頭鷹', req: { done: 'r2', rep: 4 }, cages: 2, tier: -1, purple: 1, waves: [['minion', 'archer', 'archer'], ['axe!', 'minion', 'minion', 'axe']],
       desc: '貓頭鷹半夜飛回來，一直往礦坑的方向叫。那裡好像有東西被鎖起來了。', reward: '救下 2 隻（其中 1 隻至少紫）＋幸運石 1 顆', stone: 1 },
-    { id: 'r4', name: '黑羽毛與最後的籠車', giver: '蜜糖媽媽', req: { done: 'r3', rep: 7 }, cages: 3, tier: -1, shinyOne: 16, waves: [['minion', 'minion', 'archer', 'axe'], ['boss', 'minion', 'minion']],
+    { id: 'r4', name: '黑羽毛與最後的籠車', giver: '蜜糖媽媽', req: { done: 'r3', rep: 6 }, cages: 3, tier: -1, shinyOne: 16, waves: [['minion', 'minion', 'archer', 'axe'], ['boss', 'minion', 'minion']],
       desc: '圍欄邊撿到一根黑羽毛。「那輛畫著城堡的馬車……這次要把最後一批孩子載走了。」', reward: '救下 3 隻（其中 1 隻有機會是星彩）＋幸運石 1 顆', stone: 1 },
   ];
   P.QU = {}; P.QUESTS.forEach(q => P.QU[q.id] = q);
