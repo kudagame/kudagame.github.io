@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>蜜糖之家 寵物系統 測試版</title>
+<link rel="stylesheet" href="pet/pet.css">
+</head><body>
+<div id="wrap"><canvas id="cv" width="1280" height="720"></canvas></div>
+<div id="hud"></div>
+<div id="bar"></div>
+<div id="panel" class="hide"></div>
+<div id="toast"></div>
+<div id="pad" class="hide"><div id="stick"><div id="knob"></div></div><button id="atkBtn">攻擊</button></div>
+<script src="assets/pets/manifest.js"></script>
+<script src="assets/mon/mon.js"></script>
+<script src="assets/portraits/manifest.js"></script>
+<script src="assets/pets/hybrids_p53.js"></script>
+<script src="pet/pet_data.js"></script>
+<script src="pet/pet_core.js"></script>
+<script src="pet/pet_art.js"></script>
+<script src="pet/pet_lines.js"></script>
+<script src="pet/pet_p3.js"></script>
+<script src="pet/pet_gen.js"></script>
+<script src="pet/pet_shelter.js"></script>
+<script src="pet/pet_town.js"></script>
+<script src="pet/pet_farm.js"></script>
+<script src="pet/pet_arena.js"></script>
+<script src="pet/pet_main.js"></script>
+<script src="pet/pet_p4.js"></script>
+<script src="pet/pet_p4ui.js"></script>
+<script src="pet/pet_egg.js"></script>
+<script src="pet/pet_furn.js"></script>
+<script src="pet/pet_camp.js"></script>
+<script src="pet/pet_exp.js"></script>
+<script src="pet/pet_cup.js"></script>
+<script src="pet/pet_room.js"></script>
+<script src="pet/pet_bgm.js"></script>
+<script src="pet/pet_sfx.js"></script>
+<script src="pet/pet_p51.js"></script>
+<script>// Local render-only regression fixture, never shipped.
+addEventListener('error', e => {document.documentElement.dataset.qaerror=String(e.message)});
+const qaTimer=setInterval(()=>{const P=window.PET;if(!P?.booted||!P.art?.ready)return;clearInterval(qaTimer);
+try {
+const ids=Object.keys(P.HYB),A=P.art;let count=0;
+for(const sp of ids){if(A.setFor(sp).sp!==sp)throw Error('fallback '+sp);for(let look=0;look<4;look++){
+const ph=A.photoInfo(sp,look);if(ph.base!==sp||ph.hyb||!ph.img?.naturalWidth)throw Error('portrait '+sp+look);
+for(const [act,ans] of Object.entries(A.meta(sp).anchors))for(let f=0;f<ans.length;f++){
+const cv=A.frame(sp,look,act,f,false);if(!cv||!cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data.some((x,i)=>i%4===3&&x))throw Error('empty '+sp+act+f);count++;
+}
+}
+const p=P.makeAnimal({sp,tier:0,look:0,baby:0,coat:[0,0]});if(P.artTier(p)!==0)throw Error('look0');p.tier=4;if(P.artTier(p)!==0)throw Error('rank alters coat');}
+P.S=P.newState();Object.assign(P.S,{unlock:1,gift0:1,gold:40000,bread:1000,rep:350,annex:0});P.S.hybSeen={};P.S.pets=ids.map(sp=>{const p=P.makeAnimal({sp,tier:1,look:0,baby:0,aff:300,coat:[0,0],size:50});P.S.hybSeen[sp]=1;P.codexSee(sp,0,0);return p});P.S.eq=P.S.pets[0].id;
+P.ui.close();P.go('shelter');P.S.pets.forEach(p=>P.shelterAct(p,'idle',100));P.ui.hud();
+setTimeout(()=>{document.getElementById('toast').innerHTML='';if(location.search.includes('roster'))[...document.querySelectorAll('#bar button')].find(b=>b.textContent.includes('名冊'))?.click();document.documentElement.dataset.qa='PASS '+count+' animation frames, 32 portraits, 8 adult rank/coat invariants';},700);
+}catch(e){document.documentElement.dataset.qa='FAIL '+e.stack;}
+},100);
+</script></body></html>
