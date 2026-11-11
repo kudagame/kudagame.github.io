@@ -1,0 +1,767 @@
+{
+  "sources": {
+    "original": {
+      "path": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/19249e5afc92fce63003f48f82a0ae1e69b7b49d9ba204fe32291502ed8bf84f.png",
+      "size": [
+        1983,
+        793
+      ],
+      "grid": 4.55,
+      "partial_alpha": 543104
+    },
+    "idle": {
+      "path": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/3b67eaaf2c60bb90920b00083a27aa306484c03568705cab28c8e17172f70001.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "grid": 6.62,
+      "partial_alpha": 407977
+    },
+    "walk": {
+      "path": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/60b1746168026622b098e0105c7428cd7a67e224b7d44fc575a428758ed3e880.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "grid": 6.7,
+      "partial_alpha": 503677
+    },
+    "attack": {
+      "path": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/cbc95f5ce6f2f06ce4c8b8691126215e3f4e1beecd9c65b400ad74f07b493233.png",
+      "size": [
+        1536,
+        1024
+      ],
+      "grid": 5.1,
+      "partial_alpha": 427167
+    }
+  },
+  "palette": [
+    [
+      179,
+      134,
+      160
+    ],
+    [
+      170,
+      124,
+      158
+    ],
+    [
+      170,
+      124,
+      158
+    ],
+    [
+      160,
+      120,
+      153
+    ],
+    [
+      160,
+      120,
+      153
+    ],
+    [
+      160,
+      120,
+      153
+    ],
+    [
+      160,
+      120,
+      153
+    ],
+    [
+      154,
+      116,
+      149
+    ],
+    [
+      154,
+      116,
+      149
+    ],
+    [
+      154,
+      116,
+      149
+    ],
+    [
+      152,
+      108,
+      145
+    ],
+    [
+      149,
+      103,
+      139
+    ],
+    [
+      149,
+      103,
+      139
+    ],
+    [
+      139,
+      102,
+      133
+    ],
+    [
+      139,
+      102,
+      133
+    ],
+    [
+      132,
+      96,
+      126
+    ],
+    [
+      133,
+      91,
+      121
+    ],
+    [
+      133,
+      91,
+      121
+    ],
+    [
+      122,
+      87,
+      115
+    ],
+    [
+      122,
+      87,
+      115
+    ],
+    [
+      119,
+      81,
+      108
+    ],
+    [
+      112,
+      79,
+      105
+    ],
+    [
+      112,
+      79,
+      105
+    ],
+    [
+      109,
+      73,
+      97
+    ],
+    [
+      109,
+      73,
+      97
+    ],
+    [
+      102,
+      69,
+      93
+    ],
+    [
+      102,
+      69,
+      93
+    ],
+    [
+      84,
+      68,
+      80
+    ],
+    [
+      95,
+      64,
+      85
+    ],
+    [
+      95,
+      64,
+      85
+    ],
+    [
+      86,
+      61,
+      79
+    ],
+    [
+      70,
+      61,
+      67
+    ],
+    [
+      86,
+      61,
+      79
+    ],
+    [
+      79,
+      55,
+      71
+    ],
+    [
+      79,
+      55,
+      71
+    ],
+    [
+      62,
+      53,
+      58
+    ],
+    [
+      69,
+      47,
+      62
+    ],
+    [
+      62,
+      46,
+      56
+    ],
+    [
+      62,
+      46,
+      56
+    ],
+    [
+      55,
+      37,
+      47
+    ],
+    [
+      47,
+      42,
+      44
+    ],
+    [
+      45,
+      33,
+      39
+    ],
+    [
+      45,
+      33,
+      39
+    ],
+    [
+      35,
+      28,
+      31
+    ],
+    [
+      35,
+      28,
+      31
+    ],
+    [
+      30,
+      21,
+      25
+    ],
+    [
+      30,
+      21,
+      25
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      26,
+      16,
+      22
+    ]
+  ],
+  "canvas": [
+    136,
+    88
+  ],
+  "anchor": [
+    72,
+    82
+  ],
+  "scale": 1,
+  "body_height_first": 67,
+  "old_body_height": 67,
+  "frames": [
+    {
+      "frame": 0,
+      "action": "idle1",
+      "sheet": "idle",
+      "source_frame": 1,
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "integer_shift": [
+        26,
+        1
+      ],
+      "bbox": [
+        54,
+        15,
+        101,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 1,
+      "action": "idle2",
+      "sheet": "idle",
+      "source_frame": 2,
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "integer_shift": [
+        27,
+        1
+      ],
+      "bbox": [
+        52,
+        14,
+        101,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 2,
+      "action": "idle3",
+      "sheet": "idle",
+      "source_frame": 3,
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "integer_shift": [
+        27,
+        1
+      ],
+      "bbox": [
+        53,
+        12,
+        102,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 3,
+      "action": "idle4",
+      "sheet": "idle",
+      "source_frame": 4,
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "integer_shift": [
+        27,
+        1
+      ],
+      "bbox": [
+        53,
+        15,
+        101,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 4,
+      "action": "walk1",
+      "sheet": "walk",
+      "source_frame": 1,
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "integer_shift": [
+        27,
+        -2
+      ],
+      "bbox": [
+        54,
+        14,
+        104,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 5,
+      "action": "walk2",
+      "sheet": "walk",
+      "source_frame": 2,
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "integer_shift": [
+        24,
+        -2
+      ],
+      "bbox": [
+        45,
+        15,
+        99,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 6,
+      "action": "walk3",
+      "sheet": "walk",
+      "source_frame": 3,
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "integer_shift": [
+        27,
+        -1
+      ],
+      "bbox": [
+        54,
+        14,
+        102,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 7,
+      "action": "walk4",
+      "sheet": "walk",
+      "source_frame": 4,
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "integer_shift": [
+        24,
+        -1
+      ],
+      "bbox": [
+        42,
+        14,
+        99,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 8,
+      "action": "crouch",
+      "sheet": "attack",
+      "source_frame": 2,
+      "source_box": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "integer_shift": [
+        19,
+        -4
+      ],
+      "bbox": [
+        47,
+        17,
+        97,
+        82
+      ],
+      "colours": 28
+    },
+    {
+      "frame": 9,
+      "action": "reach",
+      "sheet": "attack",
+      "source_frame": 3,
+      "source_box": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "integer_shift": [
+        23,
+        -4
+      ],
+      "bbox": [
+        45,
+        18,
+        106,
+        82
+      ],
+      "colours": 28
+    },
+    {
+      "frame": 10,
+      "action": "throw",
+      "sheet": "attack",
+      "source_frame": 4,
+      "source_box": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "integer_shift": [
+        14,
+        -1
+      ],
+      "bbox": [
+        24,
+        21,
+        96,
+        82
+      ],
+      "colours": 28
+    },
+    {
+      "frame": 11,
+      "action": "extend",
+      "sheet": "attack",
+      "source_frame": 5,
+      "source_box": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "integer_shift": [
+        9,
+        -1
+      ],
+      "bbox": [
+        10,
+        22,
+        98,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 12,
+      "action": "recover",
+      "sheet": "attack",
+      "source_frame": 6,
+      "source_box": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "integer_shift": [
+        19,
+        -1
+      ],
+      "bbox": [
+        43,
+        22,
+        96,
+        82
+      ],
+      "colours": 28
+    },
+    {
+      "frame": 13,
+      "action": "hurt",
+      "sheet": "original",
+      "source_frame": 9,
+      "source_box": [
+        1190,
+        396,
+        1586,
+        793
+      ],
+      "integer_shift": [
+        28,
+        4
+      ],
+      "bbox": [
+        48,
+        18,
+        101,
+        82
+      ],
+      "colours": 27
+    },
+    {
+      "frame": 14,
+      "action": "down",
+      "sheet": "original",
+      "source_frame": 10,
+      "source_box": [
+        1586,
+        396,
+        1983,
+        793
+      ],
+      "integer_shift": [
+        24,
+        4
+      ],
+      "bbox": [
+        32,
+        46,
+        102,
+        82
+      ],
+      "colours": 27
+    }
+  ],
+  "mapping": {
+    "idle": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "walk": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "windup": [
+      8,
+      9
+    ],
+    "strike": [
+      10,
+      11
+    ],
+    "recover": [
+      12
+    ],
+    "hurt": [
+      13
+    ],
+    "down": [
+      14
+    ]
+  },
+  "rejected": {
+    "original": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "attack": [
+      1
+    ]
+  },
+  "note": "RGBA soft/nonuniform upscaled input; approximate sheet-local mode lattice, not an exact native-grid recovery. Rejected originals superseded by complete breathing/walk/attack groups; attack frame1 duplicates idle."
+}

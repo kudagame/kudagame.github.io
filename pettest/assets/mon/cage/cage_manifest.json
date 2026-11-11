@@ -1,0 +1,450 @@
+{
+  "canvas": [
+    104,
+    88
+  ],
+  "anchor": [
+    52,
+    82
+  ],
+  "source_stats": {
+    "b6d9f4a3": {
+      "file": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/b6d9f4a346d1341fdf507fb04674152e1b433580eb91392e2fd789aa113ab0f2.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "partial_alpha": 363497
+    },
+    "1676600f": {
+      "file": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/1676600f3fdc9705ed6e218b2df60312d0ec3a50809beedd460e7a780fe0131a.png",
+      "size": [
+        1774,
+        887
+      ],
+      "partial_alpha": 468974
+    },
+    "5d0fd67d": {
+      "file": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/5d0fd67d162f03820714e017785f92ff04ac1dd199e5cf97c3adea8740392957.png",
+      "size": [
+        1536,
+        1024
+      ],
+      "partial_alpha": 497407
+    },
+    "f4919032": {
+      "file": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/f491903242d237e937e3a9118c7d81ad1ea73b6d91fad54ef30d30bcb94daafe.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "partial_alpha": 451845
+    },
+    "7d2f086b": {
+      "file": "/home/box/agent-data/agents/b3d2e4f2-e50a-4bad-9c11-88b6aa87db9b/attachments/7d2f086b207cadf238ef4b10016b75b06b647f2b246d0a6214eb996cae42b455.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "partial_alpha": 362141
+    }
+  },
+  "order": [
+    "idle0",
+    "idle1",
+    "walk0",
+    "walk1",
+    "walk2",
+    "walk3",
+    "windup0",
+    "windup1",
+    "strike",
+    "recover",
+    "hurt",
+    "kneel",
+    "crawl",
+    "lie"
+  ],
+  "frames": {
+    "walk0": {
+      "source": "f4919032",
+      "frame": 1,
+      "source_box": [
+        155,
+        114,
+        465,
+        568
+      ],
+      "sampling_cell": 6.676470588235294,
+      "integer_shift": [
+        24,
+        14
+      ],
+      "bbox": [
+        24,
+        14,
+        71,
+        82
+      ],
+      "asset_id": 2,
+      "opaque_colours": 24
+    },
+    "walk1": {
+      "source": "f4919032",
+      "frame": 2,
+      "source_box": [
+        732,
+        121,
+        1080,
+        568
+      ],
+      "sampling_cell": 6.676470588235294,
+      "integer_shift": [
+        24,
+        15
+      ],
+      "bbox": [
+        24,
+        15,
+        77,
+        82
+      ],
+      "asset_id": 3,
+      "opaque_colours": 24
+    },
+    "walk2": {
+      "source": "f4919032",
+      "frame": 3,
+      "source_box": [
+        118,
+        744,
+        515,
+        1178
+      ],
+      "sampling_cell": 6.676470588235294,
+      "integer_shift": [
+        19,
+        17
+      ],
+      "bbox": [
+        19,
+        17,
+        79,
+        82
+      ],
+      "asset_id": 4,
+      "opaque_colours": 24
+    },
+    "walk3": {
+      "source": "f4919032",
+      "frame": 4,
+      "source_box": [
+        748,
+        728,
+        1051,
+        1178
+      ],
+      "sampling_cell": 6.676470588235294,
+      "integer_shift": [
+        25,
+        14
+      ],
+      "bbox": [
+        25,
+        14,
+        71,
+        82
+      ],
+      "asset_id": 5,
+      "opaque_colours": 24
+    },
+    "windup0": {
+      "source": "1676600f",
+      "frame": 1,
+      "source_box": [
+        169,
+        141,
+        771,
+        805
+      ],
+      "sampling_cell": 9.764705882352942,
+      "integer_shift": [
+        16,
+        14
+      ],
+      "bbox": [
+        16,
+        14,
+        78,
+        82
+      ],
+      "asset_id": 6,
+      "opaque_colours": 25
+    },
+    "windup1": {
+      "source": "1676600f",
+      "frame": 2,
+      "source_box": [
+        1005,
+        176,
+        1547,
+        805
+      ],
+      "sampling_cell": 9.764705882352942,
+      "integer_shift": [
+        18,
+        17
+      ],
+      "bbox": [
+        18,
+        17,
+        74,
+        82
+      ],
+      "asset_id": 7,
+      "opaque_colours": 25
+    },
+    "kneel": {
+      "source": "b6d9f4a3",
+      "frame": 2,
+      "source_box": [
+        698,
+        187,
+        1057,
+        560
+      ],
+      "sampling_cell": 6.235294117647059,
+      "integer_shift": [
+        12,
+        22
+      ],
+      "bbox": [
+        12,
+        22,
+        70,
+        82
+      ],
+      "asset_id": 11,
+      "opaque_colours": 25
+    },
+    "crawl": {
+      "source": "b6d9f4a3",
+      "frame": 3,
+      "source_box": [
+        61,
+        860,
+        576,
+        1134
+      ],
+      "sampling_cell": 6.235294117647059,
+      "integer_shift": [
+        11,
+        38
+      ],
+      "bbox": [
+        11,
+        38,
+        94,
+        82
+      ],
+      "asset_id": 12,
+      "opaque_colours": 25
+    },
+    "lie": {
+      "source": "b6d9f4a3",
+      "frame": 4,
+      "source_box": [
+        645,
+        940,
+        1203,
+        1115
+      ],
+      "sampling_cell": 6.235294117647059,
+      "integer_shift": [
+        6,
+        54
+      ],
+      "bbox": [
+        6,
+        54,
+        96,
+        82
+      ],
+      "asset_id": 13,
+      "opaque_colours": 25
+    },
+    "idle0": {
+      "source": "333c9b71",
+      "frame": 1,
+      "bbox": [
+        24,
+        14,
+        71,
+        82
+      ],
+      "sampling_cell": 4.6,
+      "asset_id": 0,
+      "opaque_colours": 20
+    },
+    "idle1": {
+      "source": "333c9b71",
+      "frame": 2,
+      "bbox": [
+        24,
+        13,
+        68,
+        82
+      ],
+      "sampling_cell": 4.6,
+      "asset_id": 1,
+      "opaque_colours": 20
+    },
+    "strike": {
+      "source": "333c9b71",
+      "frame": 8,
+      "bbox": [
+        5,
+        20,
+        76,
+        82
+      ],
+      "sampling_cell": 4.6,
+      "asset_id": 8,
+      "opaque_colours": 20
+    },
+    "recover": {
+      "source": "333c9b71",
+      "frame": 7,
+      "bbox": [
+        28,
+        18,
+        71,
+        82
+      ],
+      "sampling_cell": 4.6,
+      "asset_id": 9,
+      "opaque_colours": 20
+    },
+    "hurt": {
+      "source": "333c9b71",
+      "frame": 9,
+      "bbox": [
+        18,
+        18,
+        75,
+        82
+      ],
+      "sampling_cell": 4.6,
+      "asset_id": 10,
+      "opaque_colours": 20
+    }
+  },
+  "shared_opaque_colours": 25,
+  "mapping": {
+    "idle": [
+      0,
+      1
+    ],
+    "walk": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "windup": [
+      6,
+      7
+    ],
+    "strike": [
+      8
+    ],
+    "recover": [
+      9
+    ],
+    "hurt": [
+      10
+    ],
+    "death": [
+      10,
+      11,
+      12,
+      13
+    ]
+  },
+  "timing": {
+    "walk_ms": 150,
+    "windup_ms": [
+      320,
+      300
+    ],
+    "strike_anticipation_ms": 80,
+    "hit_at_ms": 700,
+    "post_hit_strike_ms": 160,
+    "recover_ms": 180,
+    "death_ms": [
+      180,
+      220,
+      240,
+      500
+    ],
+    "death_fade_ms": 350,
+    "death_total_ms": 1490
+  },
+  "rejected": {
+    "333c9b71": [
+      {
+        "frames": [
+          3,
+          4,
+          5
+        ],
+        "reason": "原走路僅3個姿勢，改採新同張四格的完整節奏，避免混用不同擺臂／步距。"
+      },
+      {
+        "frames": [
+          6
+        ],
+        "reason": "原單格蓄力被新兩格蓄力取代。"
+      },
+      {
+        "frames": [
+          10
+        ],
+        "reason": "原單格倒地被新跪地→爬伏→落籠倒地取代。"
+      }
+    ],
+    "b6d9f4a3": [
+      {
+        "frames": [
+          1
+        ],
+        "reason": "這格是向前跨步，不是失衡倒下；保留作同張比例基準，但不插入倒地或另一組走路。"
+      }
+    ],
+    "5d0fd67d": [
+      {
+        "frames": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "reason": "含站姿、壓低蹲步與伸臂突進，並非同一速度的左右換腳循環；4、5近似突進姿，插入一般步行會突然前衝。原有站姿／突擊較一致，不重複加入。"
+      }
+    ],
+    "7d2f086b": [
+      {
+        "frames": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "reason": "全組偏潛行蹲走；同張最高431px、最低403px，頭肩／下蹲高度差換算約4.5原生px，比新一般步行的3px範圍大，混入會有明顯蹲起，不用拉伸各格硬湊。"
+      }
+    ]
+  },
+  "note": "每張稿用同一全域取樣格；不同姿勢不另縮放。都是RGBA軟邊放大稿，不能宣稱精確還原唯一原始點陣。"
+}

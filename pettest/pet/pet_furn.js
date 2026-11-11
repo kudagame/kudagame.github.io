@@ -128,7 +128,13 @@
     const nt = P.isNight && P.isNight(), im = HIMG[nt ? 'hut_night' : 'hut'], huts = P.farmHuts();
     for (const h of hutSlots()) {
       if (done[h.i] || h.y > upto) continue; done[h.i] = 1;
-      if (h.st === 'pad') { ctx.fillStyle = nt ? 'rgba(90,70,50,.75)' : 'rgba(150,116,74,.8)'; ctx.beginPath(); ctx.ellipse(h.x, h.y - 8, 92, 20, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(h.x - 4, h.y - 70, 8, 62); htag(ctx, '小屋空地（點我蓋）', h.x, h.y - 70, '#f3e2c0', '#3a2418'); continue }
+      if (h.st === 'pad') {
+        if (!(P.drawPlotSlab && P.drawPlotSlab(ctx, h.x, h.y))) {
+          ctx.fillStyle = nt ? 'rgba(90,70,50,.75)' : 'rgba(150,116,74,.8)'; ctx.beginPath(); ctx.ellipse(h.x, h.y - 8, 92, 20, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(h.x - 4, h.y - 70, 8, 62);
+        }
+        const top = h.y - ((P.FAC_ART && P.FAC_ART.slab && P.FAC_ART.slab.naturalHeight) || 48);
+        htag(ctx, '小屋空地（點我蓋）', h.x, top - 4, '#f3e2c0', '#3a2418'); continue
+      }
       const w = im.naturalWidth * HS, hh = im.naturalHeight * HS;
       if (P.art.imageOK(im)) { ctx.imageSmoothingEnabled = false; ctx.drawImage(im, h.x - w / 2, h.y - hh + 6, w, hh) } else { ctx.fillStyle = '#e8b878'; ctx.fillRect(h.x - 80, h.y - 120, 160, 120) }
       const c = huts[h.i], A = P.byId(c.a), B = P.byId(c.b);
@@ -146,6 +152,7 @@
   const UI = P.ui, esc = s => UI.esc(String(s == null ? '' : s)), fmt = n => Math.round(n).toLocaleString();
   const IMG = {}; for (const k of ['barn_day_bg', 'barn_night_bg']) { const im = P.art.lazyImage(`assets/scenes/farm/${k}.jpg`); IMG[k] = im }
   for (const k of ['feeder', 'toybox', 'bed', 'chime', 'bowl_empty', 'bowl_half', 'bowl_full']) for (const n of ['', '_night']) { const im = P.art.lazyImage(`assets/scenes/farm/furn_${k}${n}.png`); IMG[k + n] = im }
+  IMG.feeder2 = P.art.lazyImage('assets/scenes/farm/furn_feeder2.png');
   P.furnImg = IMG;
   const ok = im => P.art.imageOK(im);
   const night = () => P.isNight ? P.isNight() : false;
@@ -155,7 +162,7 @@
     feed: [[-100, 30, 0], [100, 30, 1], [-60, 75, 0], [60, 75, 1], [-150, 70, 0], [150, 70, 1]],
     toy: [[-130, 25, 0], [130, 25, 1], [0, 60, 0]], bed: [[0, -26, 0]], chime: [[-75, 45, 0]],
   };
-  const sprite = k => { const F = st(); if (k === 'feed') return F.feed >= 2 ? 'feeder' : F.bowl <= 0 ? 'bowl_empty' : F.bowl <= FC.bowlCap / 2 ? 'bowl_half' : 'bowl_full'; return { chime: 'chime', toy: 'toybox', bed: 'bed' }[k] };
+  const sprite = k => { const F = st(); if (k === 'feed') return F.feed >= 3 ? 'feeder2' : F.feed >= 2 ? 'feeder' : F.bowl <= 0 ? 'bowl_empty' : F.bowl <= FC.bowlCap / 2 ? 'bowl_half' : 'bowl_full'; return { chime: 'chime', toy: 'toybox', bed: 'bed' }[k] };
   const has = k => { const F = st(); return k === 'feed' ? F.feed >= 1 : !!F[k] };
   const rect = k => { const im = IMG[sprite(k)], w = ok(im) ? im.naturalWidth : 120, h = ok(im) ? im.naturalHeight : 120, p = POS[k]; return { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - h, y1: p.y, w, h } };
   // 台詞（同一組不連續重複）
@@ -274,10 +281,14 @@
     hud() { const S = P.S, n = inside().length; return `<span>🏠 穀倉</span><span>室內 ${n}／室外 ${P.all().filter(p => !P.out(p)).length - n}</span>${P.furnHud()}` },
   };
   function drawFurn(ctx, k, sfx) {
-    const im = IMG[sprite(k) + sfx], p = POS[k]; if (!ok(im)) return; ctx.imageSmoothingEnabled = false;
+    const key = sprite(k), im = IMG[key + sfx] || IMG[key], p = POS[k]; if (!ok(im)) return;
+    const tint = sfx && !ok(IMG[key + sfx]) && 'filter' in ctx;
+    if (tint) ctx.filter = 'brightness(.72) saturate(.8)';
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(im, Math.round(p.x - im.naturalWidth / 2), Math.round(p.y - im.naturalHeight));
+    if (tint) ctx.filter = 'none';
     const F = st();
-    if (k === 'feed' && F.feed >= 3) tag(ctx, 'Ⅱ', p.x + 52, p.y - 120, '#ffe36b');
+    if (k === 'feed' && F.feed >= 3 && !(IMG.feeder2 && P.art.imageOK(IMG.feeder2))) tag(ctx, 'Ⅱ', p.x + 52, p.y - 120, '#ffe36b');
     if (k === 'feed' && F.feed === 1 && F.bowl <= 0) tag(ctx, '空了！點我倒飼料', p.x, p.y - 86, '#ffb0a0');
   }
   const say = (who, t) => `<div class="card row2">${UI.npc(who)}<div class="grow"><b>${who}</b>：「${t}」</div></div>`;
@@ -295,10 +306,9 @@
       const S = P.S, F = st(), ti = P.furnTier(), nx = FC.tiers[ti + 1];
       const rows = P.FURN.map(f => ({ f, s: P.furnState(f) }));
       const vis = rows.filter(r => r.s !== 'lock'), lock = rows.find(r => r.s === 'lock');
-      let hint = '目錄上的東西你都有了，謝謝照顧！';
-      if (lock) { const f = lock.f; const gate = f.k === 'bed' ? 1 : f.k === 'feeder2' ? 2 : 0; hint = gate && ti < gate ? `${f.hint}在我這裡再買 ${fmt(FC.tiers[gate][0] - F.spent)} 金幣的東西，你就是「${FC.tiers[gate][1]}」了，到時候拿出來給你看。` : f.hint }
+      const hint = '今天能訂做的都在目錄裡，慢慢挑就好。';
       UI.panel(`<h2>🛒 家具目錄</h2>${say('蜜糖媽媽', `你現在是我這裡的「${FC.tiers[ti][1]}」，累積買了 ${fmt(F.spent)} 金幣。${hint}`)}
-        <div class="muted">💰 ${fmt(S.gold)}｜${nx ? `離「${nx[1]}」還差 ${fmt(nx[0] - F.spent)}` : '已經是最高等的老主顧'}</div>
+        <div class="muted">💰 ${fmt(S.gold)}｜${FC.tiers[ti][1]}</div>
         ${vis.map(({ f, s }) => `<div class="card"><b>${f.name}</b>　${s === 'own' ? '✔ 已經擺好' : `金幣 ${fmt(f.cost)}`}<div class="muted">${f.eff}</div>${s === 'buy' ? `<div class="row"><button class="ok" data-a="buy" data-v="${f.k}" ${S.gold < f.cost ? 'disabled' : ''}>買下來擺進穀倉</button></div>` : ''}</div>`).join('')}`, (a, v) => {
         if (a === 'buy') { const t0 = P.furnTier(), r = P.furnBuy(v); if (!r.ok) UI.toast(r.msg); else { P.save(); UI.toast(`蜜糖媽媽：「${r.f.name}擺好囉！${r.f.eff}」`, 6000); if (P.furnTier() > t0) setTimeout(() => UI.toast(`蜜糖媽媽：「從今天起你就是「${FC.tiers[P.furnTier()][1]}」了！」`, 4500), 600) } UI.hud() }
         draw();

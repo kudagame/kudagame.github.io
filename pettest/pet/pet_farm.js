@@ -23,6 +23,7 @@
     enter() {
       if (P.S.farm !== 1) { UI.toast('農場還沒成立'); return P.go('shelter') }
       F = { cam: 0, hx: 300, hy: 560, tx: null, face: 1, t: 0 }; bar();
+      P.farmLook = (x, y) => { if (!F) return; F.hx = Math.max(40, Math.min(WW - 40, x)); if (y != null) F.hy = Math.max(GY0, Math.min(GY1, y)); F.cam = Math.max(0, Math.min(WW - 1280, F.hx - 640)); F.tx = null; };
       const S = P.S; S.hint3 = S.hint3 || {}; if (!S.hint3.farm) { S.hint3.farm = 1; const l = P.NPC_LINES.farmHi[0]; setTimeout(() => UI.toast(`${l[0]}：「${l[1]}」`, 5000), 400) }
     },
     leave() { F = null },
@@ -51,7 +52,7 @@
       ctx.fillStyle = '#7fc46a'; ctx.fillRect(0, 400, WW, 320); ctx.fillStyle = '#6fb45a'; for (let i = 0; i < WW; i += 36) ctx.fillRect(i + (i % 72 ? 8 : 0), 420 + (i * 7 % 260), 6, 4);
       ctx.fillStyle = '#d8b07a'; ctx.fillRect(0, 640, WW, 18); }
       // 設施
-      for (const f of P.FAC) drawFac(ctx, f, !!S.fac[f.k]);
+      for (const f of P.FAC.filter(f => f.real)) drawFac(ctx, f, !!S.fac[f.k]);
       // 寵物＋主人（照 y 排序）
       const list = P.all().filter(here).map(p => ({ p, s: pOf(p) })).sort((a, b) => a.s.y - b.s.y);
       let heroDone = false; const hd = {};   // hd：農場小屋已經畫過的（跟寵物一起照 y 排前後）
@@ -70,15 +71,25 @@
       if (best) return P.openPet(best);
       if (P.farmHutTap && P.farmHutTap(wx, y)) return;   // 點農場小屋／小屋空地
       // 點設施
-      const f = P.FAC.find(f => Math.abs(wx - f.x) < 110 && y < 440 && y > 200); if (f) return facScreen(f);
+      const f = P.FAC.find(f => f.real && (P.facHit ? P.facHit(f, wx, y) : (Math.abs(wx - f.x) < 110 && y < 440 && y > 200))); if (f) return facScreen(f);
       F.tx = { x: wx, y: Math.max(GY0, Math.min(GY1, y)) };
     },
     hud() { const S = P.S; return `<span>🌾 農場</span><span>🏠 住民 ${S.pets.length}/${P.houseCap()}</span><span>🐾 跟著走 ${(S.follow || []).length}/3</span>${P.furnHud ? P.furnHud() : ''}` },
   };
   function hero(ctx) { const x = F.hx, y = F.hy, b = F.moving ? Math.sin(F.t * 12) * 3 : 0; ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x, y, 22, 7, 0, 0, 7); ctx.fill(); const s = 4; P.art.px(ctx, ['..bbbb..', '.bbbbbb.', '.bCCCCb.', '.CeCCeC.', '..CCCC..', '.RRRRRR.', 'RRRRRRRR', 'CRRRRRRC', '.RRRRRR.', '.bb..bb.', '.bb..bb.'], x - 16, y - 44 + b, s) }
   function drawFac(ctx, f, built) {
+    if (P.drawFacArt && P.drawFacArt(ctx, f, built, F && F.t)) return;
     const x = f.x, y = 400;
-    if (!built) { ctx.fillStyle = '#c9a77a'; ctx.fillRect(x - 90, y - 10, 180, 30); ctx.fillStyle = '#8a6a44'; ctx.fillRect(x - 4, y - 90, 8, 80); ctx.fillStyle = '#f3e2c0'; ctx.fillRect(x - 70, y - 120, 140, 36); ctx.fillStyle = '#3a2418'; ctx.font = 'bold 15px sans-serif'; const t = f.real ? `空地：${f.name}` : `${f.name}（準備中）`; ctx.fillText(t, x - ctx.measureText(t).width / 2, y - 96); return }
+    if (!built) {
+      const label = f.real ? `空地：${f.name}` : `${f.name}（準備中）`;
+      if (!(P.drawPlotSlab && P.drawPlotSlab(ctx, x, y))) {
+        ctx.fillStyle = '#c9a77a'; ctx.fillRect(x - 90, y - 10, 180, 30); ctx.fillStyle = '#8a6a44'; ctx.fillRect(x - 4, y - 90, 8, 80); ctx.fillStyle = '#f3e2c0'; ctx.fillRect(x - 70, y - 120, 140, 36);
+      }
+      const top = y - ((P.FAC_ART && P.FAC_ART.slab && P.FAC_ART.slab.naturalHeight) || 48);
+      if (P.art && P.art.tagBox && typeof Path2D === 'function') P.art.tagBox(ctx, label, x, top - 2, { size: 14, pad: 6, h: 21, s: 2, st: [2, 1] });
+      else { ctx.fillStyle = '#3a2418'; ctx.font = 'bold 15px sans-serif'; ctx.fillText(label, x - ctx.measureText(label).width / 2, top - 8) }
+      return
+    }
     const col = { grass: '#5fa84a', pond: '#4aa3d8', garden: '#8a5a30', bath: '#d86a6a', fire: '#e8803a', nursery: '#f0b0c0', board: '#a07040', camp: '#7a7ad0' }[f.k] || '#aaa';
     if (f.k === 'pond' && bgOk()) { ctx.fillStyle = 'rgba(26,16,22,.8)'; ctx.font = 'bold 16px sans-serif'; const w = ctx.measureText('🎣 ' + f.name).width + 14; ctx.fillRect(x - w / 2, 282, w, 24); ctx.fillStyle = '#fff'; ctx.fillText('🎣 ' + f.name, x - w / 2 + 7, 300); return }   // 池塘就是背景畫的那一個，不再另外畫藍色橢圓
     if (f.k === 'pond') { ctx.fillStyle = '#4aa3d8'; ctx.beginPath(); ctx.ellipse(x, y + 10, 120, 34, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#bfe6ff'; ctx.fillRect(x - 40, y + 4, 30, 4) }
@@ -118,12 +129,15 @@
   }
   // ---------- 探險隊 ----------
   function expScreen() {
-    let sk = 's1', sel = [];
+    const stagesOf = () => P.visibleStages ? P.visibleStages() : P.STAGES;
+    let sk = (stagesOf()[0] && stagesOf()[0].k) || 'canyon', sel = [];
     const draw = () => {
-      const S = P.S, st = P.ST[sk], [a, b] = P.partySize(st), pets = sel.map(P.byId).filter(Boolean), r = pets.length ? P.expRate(st, pets) : null;
+      const S = P.S, stages = stagesOf();
+      if (!stages.some(s => s.k === sk)) sk = (stages[0] && stages[0].k) || 'canyon';
+      const st = P.ST[sk], [a, b] = P.partySize(st), pets = sel.map(P.byId).filter(Boolean), r = pets.length ? P.expRate(st, pets) : null;
       UI.panel(`<h2>🗺️ 探險隊派遣板</h2>${say('獵犬', `汪！（同時最多派 ${C.expTeams} 隊。不會受傷；沒成功也會帶安慰獎回來，連續失敗下次成功率 +${C.expStreak}%。）`)}
         ${S.exp.teams.map(t => `<div class="card">🚶 ${P.ST[t.sk].name}：${t.ids.map(i => P.byId(i) ? esc(P.label(P.byId(i))) : '').join('、')}｜${UI.fmtTime(t.until)} 回來</div>`).join('')}
-        <div class="row">${P.STAGES.map(s => `<button class="${s.k === sk ? 'ok' : 'alt'}" data-a="s" data-v="${s.k}">${'★'.repeat(s.star)} ${s.name}</button>`).join('')}</div>
+        <div class="row">${stages.map(s => `<button class="${s.k === sk ? 'ok' : 'alt'}" data-a="s" data-v="${s.k}">${'★'.repeat(s.star)} ${s.name}</button>`).join('')}</div>
         <div class="card"><b>${st.name}</b>｜要 ${a === b ? a + ' 隻' : a + '～' + b + ' 隻'}｜需要戰力 ${st.req}｜${st.h} 小時<div class="muted">帶回：金幣 ${fmt(st.loot.gold)}、剩食麵包 ${st.loot.bread}${st.disk ? `、技能磁片（${st.disk}%）` : ''}${st.shards ? `、刻印碎片 ${st.shards[0]}～${st.shards[1]}` : ''}${st.chest ? `、寶箱（${st.chest}%，每天最多 ${C.expChestDay} 個）` : ''}</div></div>
         <div class="row">${S.babies.concat(S.pets).map(p => { const ok = P.expFree(p); return `<button class="${sel.includes(p.id) ? 'ok' : 'alt'}" data-a="p" data-v="${p.id}" ${ok ? '' : 'disabled'}>${sel.includes(p.id) ? '✔ ' : ''}${esc(P.label(p))} 戰力 ${P.expPow(p)}${ok ? '' : p.restU > P.now() ? '（休息中）' : '（不在）'}</button>` }).join('')}</div>
         <div class="muted">${r ? `隊伍戰力 ${r.pow}／需要 ${st.req} → 成功率 ${r.rate}%${r.bonus ? `（含連敗加成 +${r.bonus}%）` : ''}` : '選幾隻組隊'}</div>

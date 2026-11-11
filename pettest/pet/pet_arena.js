@@ -5,16 +5,137 @@
   const IMG = {}; const li = s => { const i = P.art.lazyImage(s); return i };
   ['idle', 'run0', 'run1', 'run2', 'run3', 'swing', 'windup'].forEach(f => IMG['h_' + f] = li(`assets/hero/s_kudas_${f}.png`));
   const MON = window.PET_MON || {}; for (const k in MON) IMG['m_' + k] = li(`assets/mon/${k}_sheet.png`);
+  // 正式遊戲同款像素小兵（1x 原圖、畫面 2 倍最近鄰、腳底橢圓陰影）。r1 主打鐵籠三兵，並混入泥魔像。
+  const PIX = {
+    golem: { cw: 140, ch: 110, cx: 70, cy: 100, top: 36, face: 'R' },
+    gbow: { cw: 140, ch: 110, cx: 70, cy: 100, top: 36, face: 'R', bow: 1 },
+    cage: { key: 'cg_cage', cw: 104, ch: 88, cx: 52, cy: 82, top: 14, face: 'L', motion: 1 },
+    net: { key: 'cg_net', cw: 136, ch: 88, cx: 72, cy: 82, top: 14, face: 'L', motion: 'net' },
+    drag: { key: 'cg_drag', cw: 104, ch: 96, cx: 36, cy: 82, top: 14, face: 'L', motion: 'drag' },
+  };
   const KIND = {
-    minion: { sheet: 'spider_minion', hp: 20000, atk: 350, spd: 70, rng: 100, sc: 1, atkA: 'attack', gold: 67, xp: 1 },
-    axe: { sheet: 'ether_axe', hp: 35000, atk: 600, spd: 55, rng: 110, sc: 1.25, atkA: 'chop', gold: 67, xp: 1 },
-    archer: { sheet: 'ether_archer', hp: 18000, atk: 300, spd: 50, rng: 520, sc: 1.25, atkA: 'shoot', gold: 67, xp: 1, ranged: 1 },
+    minion: { pix: 'golem', hp: 20000, atk: 350, spd: 70, rng: 100, atkA: 'attack', gold: 67, xp: 1 },
+    axe: { pix: 'golem', hp: 35000, atk: 600, spd: 55, rng: 110, atkA: 'attack', gold: 67, xp: 1 },
+    archer: { pix: 'gbow', hp: 18000, atk: 300, spd: 50, rng: 520, atkA: 'bdraw', gold: 67, xp: 1, ranged: 1 },
+    cage: { pix: 'cage', hp: 22000, atk: 380, spd: 65, rng: 100, atkA: 'attack', gold: 67, xp: 1 },
+    net: { pix: 'net', hp: 18000, atk: 300, spd: 50, rng: 520, atkA: 'attack', gold: 67, xp: 1, ranged: 1 },
+    drag: { pix: 'drag', hp: 45000, atk: 500, spd: 35, rng: 110, atkA: 'attack', gold: 67, xp: 1 },
     boss: { sheet: 'gem_looter', hp: 900000, atk: 1800, spd: 45, rng: 170, sc: 1.15, atkA: 'cleave', gold: 3000, xp: 20, boss: 1 },
   };
+  ['walk0', 'walk1', 'attack', 'hit', 'down', 'bwalk', 'bdraw', 'bhit'].forEach(f => {
+    IMG['s_golem_' + f] = li('assets/mon/golem/s_golem_' + f + '.png');
+    IMG['f_golem_' + f] = li('assets/mon/golem/f_golem_' + f + '.png');
+    IMG['g_golem_' + f] = li('assets/mon/golem/g_golem_' + f + '.png');
+  });
+  ['cage', 'net', 'drag'].forEach(k => IMG['cg_' + k] = li('assets/mon/cage/cg_' + k + '.png'));
+  // 提籠兵：使用者原圖14姿勢；每張稿只取一個原生尺度，共用腳點 (52,82)。
+  for (let i = 0; i < 14; i++) for (const k of ['s', 'f', 'g']) {
+    const key = k + '_cage_' + String(i).padStart(2, '0'); IMG[key] = li('assets/mon/cage/' + key + '.png');
+  }
+  const CAGE_DEATH = 1.49; // 失衡180ms→跪220ms→爬240ms→倒地停500ms→淡出350ms
+  function cagePose(e) {
+    if (e.dead) {
+      const t = now() - e.cageDownAt;
+      return t < .18 ? 10 : t < .40 ? 11 : t < .64 ? 12 : 13;
+    }
+    if (e.act === 'hit') return 10;
+    if (e.act === 'atk') return e.wind <= .08 ? 8 : e.wind > .38 ? 6 : 7;
+    if (e.cageStrikeAt != null && now() < e.cageStrikeAt + .34) return now() < e.cageStrikeAt + .16 ? 8 : 9;
+    if (e.act === 'walk') return [2, 3, 4, 5][Math.floor(e.t / .15) % 4];
+    return Math.floor(e.t / .32) % 2;
+  }
+  function cageExiting(e) { return e.kind === 'cage' && e.dead && e.cageDownAt != null && now() < e.cageDownAt + CAGE_DEATH; }
+  // 撒網兵：四格呼吸＋四格步行＋蹲身／取網／投網／伸展／收招；原十格稿保留受擊與倒地。
+  for (let i = 0; i < 15; i++) for (const k of ['s', 'f', 'g']) {
+    const key = k + '_net_' + String(i).padStart(2, '0'); IMG[key] = li('assets/mon/cage/' + key + '.png');
+  }
+  IMG.net_projectile = li('assets/mon/cage/net_projectile.png');
+  function netPose(e) {
+    if (e.dead) return 14;
+    if (e.act === 'hit') return 13;
+    if (e.act === 'atk') return e.wind > .38 ? 8 : e.wind > .08 ? 9 : 10;
+    if (e.netStrikeAt != null && now() < e.netStrikeAt + .40) {
+      const t = now() - e.netStrikeAt; return t < .08 ? 10 : t < .18 ? 11 : 12;
+    }
+    if (e.act === 'walk') return [4, 5, 6, 7][Math.floor(e.t / .16) % 4];
+    return Math.floor(e.t / .26) % 4;
+  }
+  function netExiting(e) { return e.kind === 'net' && e.dead && e.netDownAt != null && now() < e.netDownAt + 1; }
+  // 拖籠兵：全部20格沿用同一無甲暮紫泥身稿，空籠不混鐵甲版本。
+  for (let i = 0; i < 20; i++) for (const k of ['s', 'f', 'g']) {
+    const key = k + '_drag_' + String(i).padStart(2, '0'); IMG[key] = li('assets/mon/cage/' + key + '.png');
+  }
+  const DRAG_DEATH = 1.49;
+  function dragPose(e) {
+    if (e.dead) {
+      const t = now() - e.dragDownAt;
+      return t < .18 ? 16 : t < .40 ? 17 : t < .64 ? 18 : 19;
+    }
+    if (e.act === 'hit') return e.actU - now() > .125 ? 14 : 15;
+    // 拉繩00→01→02；第03格扯籠在原0.7秒命中點前80ms進入。
+    if (e.act === 'atk') return e.wind > .48 ? 8 : e.wind > .26 ? 9 : e.wind > .08 ? 10 : 11;
+    if (e.dragStrikeAt != null && now() < e.dragStrikeAt + .40) {
+      const t = now() - e.dragStrikeAt; return t < .08 ? 11 : t < .22 ? 12 : 13;
+    }
+    if (e.act === 'walk') return [4, 5, 6, 7][Math.floor(e.t / .16) % 4];
+    return Math.floor(e.t / .26) % 4;
+  }
+  function dragExiting(e) { return e.kind === 'drag' && e.dead && e.dragDownAt != null && now() < e.dragDownAt + DRAG_DEATH; }
   let A = null;  // 這一場的狀態
   const now = () => A.t;
   const rnd = Math.random, ri = P.ri;
   const W = 2600, GY0 = 430, GY1 = 680;
+  const worldW = () => (A && A.stageW) || W;
+  const MON_SS = 2; // 與正式遊戲 spr() 相同：畫面倍率 SS=2、最近鄰、不平滑
+  function monVis(e) {
+    const shrink = (e.st && e.st.shrink && e.st.shrink.u > now()) ? e.st.shrink.s : 1;
+    // 正式主軸小兵不因菁英放大（改用紅色光圈）；舊圖表王怪仍用 1.15
+    if (e.K && e.K.pix) return MON_SS * shrink;
+    return MON_SS * shrink * (e.elite ? 1.15 : 1);
+  }
+  function monHead(e) {
+    if (e.K && e.K.pix && PIX[e.K.pix]) {
+      const p = PIX[e.K.pix];
+      return (p.cy - (p.top || 0)) * monVis(e);
+    }
+    const m = MON[e.K && e.K.sheet];
+    const ay = (m && m.anchor && m.anchor[1]) || 100;
+    return ay * monVis(e);
+  }
+  function shadowE(ctx, sx, sy, w, h) {
+    const k = Math.max(0.4, 1 - (h || 0) / 260), ww = Math.floor(w * k);
+    ctx.fillStyle = 'rgba(60,24,10,0.372)';
+    ctx.beginPath(); ctx.ellipse(sx, sy, ww, ww * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  const ringC = {};
+  function ringImg(img, col, key) {
+    const k = key + col.join(','); if (ringC[k]) return ringC[k];
+    if (!img || !P.art.imageOK(img)) return null;
+    const c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(img, 0, 0);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')'; x.fillRect(0, 0, c.width, c.height);
+    ringC[k] = c; return c;
+  }
+  // 對齊 game.js spr()：translate 到腳點、drawImage 到 (cw*SS, ch*SS)，預設圖朝右則 face<0 時翻轉
+  function pixSpr(ctx, img, sx, sy, meta, o) {
+    if (!img || !P.art.imageOK(img)) return;
+    const SS = MON_SS; o = o || {};
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+    ctx.translate(Math.round(sx), Math.round(sy));
+    if (o.filter) ctx.filter = o.filter;
+    if (o.flip) ctx.scale(-1, 1);
+    if (o.rot) { ctx.translate(0, -30 * SS); ctx.rotate(-o.rot * Math.PI / 180); ctx.translate(0, 30 * SS) }
+    const dx = -meta.cx * SS, dy = -meta.cy * SS + (o.dy || 0) * SS, dw = meta.cw * SS, dh = meta.ch * SS;
+    if (o.glow && o.ring) { ctx.globalAlpha *= o.glow[3] / 255; ctx.drawImage(o.ring, dx, dy, dw, dh); ctx.globalAlpha = o.alpha == null ? 1 : o.alpha }
+    ctx.drawImage(img, dx, dy, dw, dh); ctx.restore();
+  }
+  function golemPose(e) {
+    const bow = !!(PIX[e.K.pix] && PIX[e.K.pix].bow);
+    if (e.act === 'atk') return bow ? 'bdraw' : 'attack';
+    if (e.act === 'hit') return bow ? 'bhit' : 'hit';
+    if (e.act === 'walk') return bow ? 'bwalk' : ('walk' + (Math.floor(e.t / 0.14) % 2));
+    return bow ? 'bwalk' : 'walk0';
+  }
   const dist = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * 2);
   const TM = [0, 0.9, 1, 1.06, 1.12];
 
@@ -30,7 +151,7 @@
     for (const [k, v] of pi.sub) { if (k === 'atk') s.atk += v / 100; if (k === 'crit') s.crit += v; if (k === 'cdmg') s.cdmg += v; if (k === 'dr') s.dr += v; if (k === 'dodge') s.dodge += v; if (k === 'spd') s.spd += v / 100; if (k === 'gold') s.gold += v; if (k === 'food') s.food += v; if (k === 'exp') s.exp += v }
     const lv = pi.xishi ? 0 : [0, 0, 1, 2, 3][pi.tier]; // 固有：紫 1、粉 S 2、橘 SS 3
     if (lv) { const i = lv - 1; s.gold += [3, 4, 5][i] * spm('cat'); s.crit += [1.5, 2, 2.5][i] * spm('owl'); s.dodge += [1, 1.5, 2][i] * spm('rabbit'); if (h.hp < h.max / 2) s.dr += [3, 4, 5][i] * spm('bear') }
-    { const ow = pi.ow || {}; s.spd += (ow.spd || 0) / 100; s.dr += ow.dr || 0; s.exp += ow.exp || 0; s.gold += ow.gold || 0 }   // 主人分到的寵物能力（不加傷害）
+    { const ow = pi.ow || {}; s.atk += (ow.atk || 0) / 100; s.spd += (ow.spd || 0) / 100; s.dr += ow.dr || 0; s.exp += ow.exp || 0; s.gold += ow.gold || 0 }   // 主人分到的寵物能力；返魂額外力量按通常分享比例加攻擊（上限2.5%）
     const tierI = Math.max(1, pi.tier) - 1;
     if (has(64)) s.food += [3, 5, 7, 9][tierI]; if (has(67)) s.gold += [4, 6, 8, 10][tierI]; if (has(68)) s.spd += [2, 3, 4, 5][tierI] / 100; if (has(69)) s.exp += [3, 4, 6, 8][tierI];
     if (has(24)) s.pick = 300; if (has(71)) s.pick = Math.max(s.pick, 0) + [60, 90, 120, 150][tierI]; if (has(25)) s.food += 5.5;
@@ -47,6 +168,9 @@
   function log(m) { P.emit('arena', m) }
   function spawn(kind, x, y, elite) {
     const K = KIND[kind]; const e = { id: ++A.nid, kind, K, x, y: y || ri(GY0, GY1), hp: K.hp * (elite ? 3 : 1), max: K.hp * (elite ? 3 : 1), elite: !!elite, face: -1, st: {}, t: rnd() * 2, act: 'walk', at: 0, wind: 0, polyN: 0, dots: [] };
+    if (kind === 'cage') for (const key in IMG) if (key.includes('_cage_')) P.art.startImage(IMG[key]);
+    if (kind === 'net') for (const key in IMG) if (key.includes('_net_') || key === 'net_projectile') P.art.startImage(IMG[key]);
+    if (kind === 'drag') for (const key in IMG) if (key.includes('_drag_')) P.art.startImage(IMG[key]);
     A.en.push(e); return e;
   }
   const disabled = e => { const s = e.st, t = now(); return e.poly || s.stun > t || s.sleep > t || s.dance > t || s.glue > t || s.float > t || s.slip > t || s.spin > t };
@@ -66,16 +190,19 @@
     if (src === 'hero' && e.st.float > now()) { d *= 1.6; crit = 1; e.st.float = 0; txt(e.x, e.y - 120, '啵！', '#bdf') }
     if (e.st.sleep > now()) { d *= 1.2; e.st.sleep = 0; txt(e.x, e.y - 120, '醒了', '#ccc') }
     d = Math.round(d); e.hp -= d; A.dmg[src] = (A.dmg[src] || 0) + d;
-    txt(e.x + ri(-20, 20), e.y - 100 * e.K.sc, (crit ? '暴擊 ' : '') + d.toLocaleString(), crit ? '#ffd54a' : (col || '#fff'), crit);
+    txt(e.x + ri(-20, 20), e.y - monHead(e) - 8, (crit ? '暴擊 ' : '') + d.toLocaleString(), crit ? '#ffd54a' : (col || '#fff'), crit);
     if (src !== 'link' && e.st.bound && e.st.bound.u > now() && !e.st.bound.o.dead) hit(e.st.bound.o, d * 0.3, 'link', '', '#f99');
     if (e.poly && !isBoss(e) && (e.poly.perm || e.elite)) e.hp = 0;   // 變成老鼠／小豬：打 1 下就倒（菁英照血量，這裡也一下）
-    if (!disabled(e) && e.act !== 'atk') { e.act = 'hit'; e.actU = now() + 0.25 }
+    e.flash = now() + 0.12; if (!disabled(e) && e.act !== 'atk') { e.act = 'hit'; e.actU = now() + 0.25 }
     if (e.hp <= 0) kill(e, src, crit);
     return d;
   }
   function drop(kind, x, y, n) { A.drops.push({ kind, x: x + ri(-30, 30), y: y + ri(-10, 10), n, z: 0, vz: 220, t: 0 }) }
   function petFood(n) { if (A.extra >= A.extraCap) return 0; n = Math.min(n, A.extraCap - A.extra); n = P.extraFoodOk(n); A.extra += n; return n }
   function kill(e, src, crit) {
+    if (e.kind === 'cage') e.cageDownAt = now();
+    if (e.kind === 'net') e.netDownAt = now();
+    if (e.kind === 'drag') e.dragDownAt = now();
     e.dead = 1; A.kills++; poof(e.x, e.y - 40); const hs = heroStat();
     const gm = 1 + hs.gold / 100; let gold = e.K.gold * gm;
     if (e.poly && e.poly.skin === 'pig') gold *= 2;
@@ -150,7 +277,7 @@
     46: { trig: () => A.en.filter(e => !e.dead).length >= 3, run: () => { const e = nearest(A.pet.x, A.pet.y, x => !x.elite && !isBoss(x) && !x.poly, 500); const ex = () => { const t = nearest(A.pet.x, A.pet.y, null, 600); if (!t) return; inRange(t.x, t.y, 150).forEach(x => { pdmg(x, isBoss(x) ? 1 : 2, '咕咕雞'); if (!isBoss(x)) x.st.stun = now() + .6 }); poof(t.x, t.y) }; if (!e) return ex(); e.poly = { skin: 'chick', u: now() + 2, perm: 0 }; e.chick = 1; setTimeout(() => { if (!A || e.dead) return; const g = A.en.filter(x => !x.dead && x !== e).sort((a, b) => dist(a, e) - dist(b, e))[0]; if (g) { e.x = g.x; e.y = g.y } inRange(e.x, e.y, 150).forEach(x => { if (x !== e) { pdmg(x, isBoss(x) ? 1 : 2, '咕咕雞'); if (!isBoss(x)) x.st.stun = now() + .6 } }); poof(e.x, e.y); txt(e.x, e.y - 80, '咕咕—碰！', '#fc6', 1); e.hp = 0; e.dead = 1; A.kills++ }, 2000) } },
     47: { trig: () => A.en.filter(e => !e.dead && !isBoss(e)).length >= 3, run: () => { const x = A.hero.x + A.hero.face * 220, y = A.hero.y; A.zones.push({ k: 'bone', x, y, r: 20, u: now() + 3 }); A.en.forEach(e => { if (!e.dead && !isBoss(e)) e.st.lure = { x, y, u: now() + 3 } }) } },
     48: { trig: () => nearest(A.pet.x, A.pet.y, null, 450), run: (n, e) => { if (isBoss(e)) { e.st.atkDown = { u: now() + 4, v: .04 }; buff(48, 'atk', .03, 4, '順手牽羊') } else if (e.elite) buff(48, 'atk', .05, 8, '順手牽羊'); else drop('gold', e.x, e.y, 1); txt(e.x, e.y - 120, '?', '#fff', 1) } },
-    49: { trig: () => nearest(A.pet.x, A.pet.y, null, 500), run: (n, e) => { pdmg(e, 1.2, '平底鍋'); if (!isBoss(e)) e.st.stun = now() + (e.elite ? .8 : 2); A.fx.push({ k: 'pan', x: e.x, y: e.y - 130 * e.K.sc, t: 0, life: .6 }); txt(e.x, e.y - 150, '噹！', '#fff', 1) } },
+    49: { trig: () => nearest(A.pet.x, A.pet.y, null, 500), run: (n, e) => { pdmg(e, 1.2, '平底鍋'); if (!isBoss(e)) e.st.stun = now() + (e.elite ? .8 : 2); A.fx.push({ k: 'pan', x: e.x, y: e.y - monHead(e), t: 0, life: .6 }); txt(e.x, e.y - monHead(e) - 20, '噹！', '#fff', 1) } },
     50: { trig: () => front(900).length >= 2, run: () => { A.pr.push({ x: A.pet.x, y: A.pet.y - 20, vx: 600 * A.hero.face, from: 'pet', snow: 1, r: 24, life: 2.2, hitIds: {} }) } },
     51: { trig: () => A.en.filter(e => !e.dead && !isBoss(e)).length >= 4, run: () => { A.pet.giantU = now() + 6; A.pet.stompT = 0 } },
     52: { trig: () => A.bento < 2, cd: 60, run: () => { if (rnd() < .4) { A.bento++; const k = petFood(1); if (k) { addFood(1, true); txt(A.hero.x, A.hero.y - 170, '加油便當！叼來麵包', '#ffd') } } } },
@@ -197,6 +324,7 @@
       A.pet = { x: 140, y: 580, t: 0, face: 1, atkT: 2, cast: 0, hurt: 0, giantU: 0 };
       A.quest = mode === 'rescue' ? P.QU[(o && o.quest) || 'r1'] : null;
       if (A.quest) P.questCages(A.quest).forEach((c, i) => A.cages.push({ x: 520 + i * 200, y: 470 + (i % 3) * 70, hp: 3, sp: c.sp, tier: c.tier, star: c.star }));
+      if (P.rescueStagePrepare) P.rescueStagePrepare(A);
       A.waves = A.quest ? A.quest.waves.map(w => w.slice()) : mode === 'boss' ? [['minion', 'minion', 'archer', 'axe'], ['boss', 'minion', 'minion']] : [['minion', 'minion', 'minion', 'archer'], ['axe', 'minion', 'archer', 'minion', 'minion'], ['axe', 'axe!', 'archer', 'minion', 'minion', 'minion']];
       nextWave();
       UI.bar([['🏳️ 回收容所', () => end(false), 'bad'], ['🤖 自動戰鬥', () => { A.auto ^= 1; UI.toast(A.auto ? '自動戰鬥：開' : '自動戰鬥：關') }], [P.aidLabel ? P.aidLabel(0, C.foodSlot) : '🍞 叫援助', () => { if (A.food >= C.foodSlot) { A.food = 0; A.hero.hp = Math.min(A.hero.max, A.hero.hp + A.hero.max * .3); txt(A.hero.x, A.hero.y - 170, '援助角色來了！', '#ffd', 1) } else UI.toast('食物槽還沒滿') }]]);
@@ -213,8 +341,9 @@
   };
   function nextWave() {
     const w = A.waves[A.wave]; if (!w) return false; A.wave++;
-    const bx = A.mode === 'rescue' ? 500 + A.wave * 600 : A.hero.x + 500;
-    w.forEach((k, i) => { const el = k.endsWith('!'); spawn(el ? k.slice(0, -1) : k, Math.min(W - 80, bx + i * 70 + ri(0, 60)), null, el) });
+    const world = worldW();
+    const bx = A.mode === 'rescue' ? (A.stageW ? Math.min(world - 160, 820 + A.wave * 80) : 500 + A.wave * 600) : A.hero.x + 500;
+    w.forEach((k, i) => { const el = k.endsWith('!'); spawn(el ? k.slice(0, -1) : k, Math.min(world - 80, bx + i * 70 + ri(0, 60)), null, el) });
     txt(A.hero.x, A.hero.y - 200, `第 ${A.wave} 波`, '#fff', 1); return true;
   }
   function attack() { const h = A.hero; if (h.swing > 0 || h.down) return; h.swing = .38; h.hitDone = 0 }
@@ -231,11 +360,11 @@
       else if (A.mode === 'rescue' && A.cages.some(c => c.hp > 0)) mx = 1;
     }
     if (h.swing <= 0 && !h.down) { const sp = 260 * hs.spd; h.x += mx * sp * dt; h.y += my * sp * .6 * dt; if (mx) h.face = Math.sign(mx) }
-    h.x = Math.max(40, Math.min(W - 40, h.x)); h.y = Math.max(GY0, Math.min(GY1, h.y)); h.moving = !!(mx || my);
+    h.x = Math.max(40, Math.min(worldW() - 40, h.x)); h.y = Math.max(GY0, Math.min(GY1, h.y)); h.moving = !!(mx || my);
     if (h.swing > 0) { h.swing -= dt; if (h.swing < .22 && !h.hitDone) { h.hitDone = 1; heroHit(hs) } }
     if (h.regen && h.regen.u > now()) h.hp = Math.min(h.max, h.hp + h.regen.v * dt);
     if (h.shield && h.shield.u < now()) h.shield = null;
-    A.cam += ((h.x - 640) - A.cam) * Math.min(1, dt * 5); A.cam = Math.max(0, Math.min(W - 1280, A.cam));
+    A.cam += ((h.x - 640) - A.cam) * Math.min(1, dt * 5); A.cam = Math.max(0, Math.min(worldW() - 1280, A.cam));
     // 西施／小泡泡（固有）
     const inhLv = A.pi.xishi ? 4 : spm('shihtzu') ? A.pi.tier : 0, inhM = A.pi.xishi ? 1 : spm('shihtzu');
     if (inhLv >= 2 && h.hp <= h.max / 2 && (A.inhCd || 0) < now()) { const v = A.pi.xishi ? .5 : [0, 0, .3, .4, .5][inhLv] * inhM; A.inhCd = now() + (A.pi.xishi ? 30 : [0, 0, 40, 35, 30][inhLv]); h.regen = { u: now() + 10, v: h.max * v / 10 }; txt(pet.x, pet.y - 90, '小泡泡', '#bdf', 1); log(`固有 小泡泡：10 秒回 ${v * 100}% HP`) }
@@ -259,13 +388,16 @@
       if (e.poly) { e.wx = e.wx || e.x; if (!e.ptgt || rnd() < dt * .8) e.ptgt = { x: e.x + ri(-200, 200), y: ri(GY0, GY1) }; mv(e, e.ptgt.x, e.ptgt.y, 140 * dt); continue }
       if (disabled(e)) { e.act = 'idle'; if (e.wind) e.wind = 0; continue }
       if (e.act === 'hit' && e.actU > now()) continue;
+      if (e.kind === 'cage' && e.cageStrikeAt != null && now() < e.cageStrikeAt + .34) { e.act = 'idle'; continue; }
+      if (e.kind === 'net' && e.netStrikeAt != null && now() < e.netStrikeAt + .40) { e.act = 'idle'; continue; }
+      if (e.kind === 'drag' && e.dragStrikeAt != null && now() < e.dragStrikeAt + .40) { e.act = 'idle'; continue; }
       for (const z of A.zones) if (z.k === 'star' && z.u > now() && Math.hypot(z.x - e.x, (z.y - e.y) * 2) < z.r) { if (!(e.st.slow && e.st.slow.u > now() && e.st.slow.v > (isBoss(e) ? .05 : .15))) e.st.slow = { u: now() + 2, v: isBoss(e) ? .05 : .15 }; if (!z.hit) { z.hit = 1; A.starHits = (A.starHits || 0) + 1 } }
       for (const z of A.zones) if (z.k === 'banana' && z.u > now() && Math.hypot(z.x - e.x, z.y - e.y) < 40 && !z.used) { z.used = 1; if (isBoss(e)) txt(e.x, e.y - 220, '差點滑倒', '#ffd'); else { e.st.slip = now() + (e.elite ? .6 : 1.2); txt(e.x, e.y - 100, '滑倒！', '#ffd') } }
       if (e.st.fear > now()) { mv(e, e.x + Math.sign(e.x - h.x || 1) * 100, e.y, spd * 1.5 * dt); continue }
       if (e.st.lure && e.st.lure.u > now()) { mv(e, e.st.lure.x + ri(-30, 30), e.st.lure.y, spd * 1.4 * dt); e.act = 'walk'; continue }
       const tgt = e.st.taunt > now() ? pet : h;
       if (h.hidden > now() && tgt === h) { e.act = 'idle'; if (rnd() < dt) e.face *= -1; continue }
-      if (e.act === 'atk') { e.wind -= dt; if (e.wind <= 0) { e.act = 'walk'; e.at = now() + (isBoss(e) ? 2.2 : 1.6); enemyStrike(e, tgt) } continue }
+      if (e.act === 'atk') { e.wind -= dt; if (e.wind <= 0) { e.act = 'walk'; e.at = now() + (isBoss(e) ? 2.2 : 1.6); if (e.kind === 'cage') { e.cageStrikeAt = now(); e.act = 'idle'; } if (e.kind === 'net') { e.netStrikeAt = now(); e.act = 'idle'; } if (e.kind === 'drag') { e.dragStrikeAt = now(); e.act = 'idle'; } enemyStrike(e, tgt) } continue }
       const ddx = tgt.x - e.x, ddy = tgt.y - e.y; e.face = Math.sign(ddx) || e.face;
       const rng = e.K.rng * (e.st.shrink && e.st.shrink.u > now() ? e.st.shrink.s : 1);
       if (Math.abs(ddx) < rng && Math.abs(ddy) < (e.K.ranged ? 200 : 30)) { if (now() > e.at) { e.act = 'atk'; e.wind = isBoss(e) ? 1.0 : .7; e.atkName = isBoss(e) && rnd() < .35 ? 'slam' : e.K.atkA } else e.act = 'idle' }
@@ -289,10 +421,11 @@
     // 籠子
     // 波次與結束
     const alive = A.en.filter(e => !e.dead).length;
-    if (!alive) { if (!nextWave()) { if (A.mode !== 'rescue' || A.cages.every(c => c.hp <= 0)) end(true) } }
+    const exiting = A.en.some(e => cageExiting(e) || netExiting(e) || dragExiting(e));
+    if (!alive && !exiting) { if (!nextWave()) { if (A.mode !== 'rescue' || A.cages.every(c => c.hp <= 0)) end(true) } }
     if (alive && A.mode === 'rescue' && A.wave < A.waves.length && A.cages.filter(c => c.hp <= 0).length >= Math.ceil(A.cages.length * A.wave / A.waves.length)) nextWave();
   }
-  function mv(e, x, y, v) { const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 2) return; e.x += dx / d * Math.min(v, d); e.y += dy / d * Math.min(v, d) * .7; e.y = Math.max(GY0, Math.min(GY1, e.y)); e.x = Math.max(20, Math.min(W - 20, e.x)) }
+  function mv(e, x, y, v) { const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 2) return; e.x += dx / d * Math.min(v, d); e.y += dy / d * Math.min(v, d) * .7; e.y = Math.max(GY0, Math.min(GY1, e.y)); e.x = Math.max(20, Math.min(worldW() - 20, e.x)) }
   function heroHit(hs) {
     const h = A.hero; let any = 0;
     for (const e of A.en) { if (e.dead) continue; const dx = (e.x - h.x) * h.face; if (dx > -20 && dx < 150 * (isBoss(e) ? 1.3 : 1) && Math.abs(e.y - h.y) < 45) { const crit = rnd() * 100 < hs.crit; let d = C.heroAtk * hs.atk * (crit ? 1 + hs.cdmg / 100 : 1) * (.9 + rnd() * .2); hit(e, d, 'hero', '', '#fff', crit); any = 1; A.ult = Math.min(100, A.ult + 1) } }
@@ -301,7 +434,7 @@
   function enemyStrike(e, tgt) {
     let dmg = e.K.atk * (e.elite ? 1.5 : 1) * (e.atkName === 'slam' ? 1.9 : 1);
     if (e.st.atkDown && e.st.atkDown.u > now()) dmg *= 1 - e.st.atkDown.v;
-    if (e.K.ranged) { A.pr.push({ x: e.x, y: e.y - 60, vx: Math.sign(tgt.x - e.x) * 520, arrow: 1, tgt, dmg, src: e, life: 2 }); return }
+    if (e.K.ranged) { A.pr.push({ x: e.x, y: e.y - 60, vx: Math.sign(tgt.x - e.x) * 520, arrow: 1, net: e.kind === 'net', tgt, dmg, src: e, life: 2 }); return }
     const reach = e.K.rng * 1.2; const h = A.hero, pet = A.pet;
     if (Math.abs(pet.x - e.x) < reach && Math.abs(pet.y - e.y) < 50) petHurt();
     if (tgt === h && Math.abs(h.x - e.x) < reach && Math.abs(h.y - e.y) < 50) heroHurt(dmg, e);
@@ -335,29 +468,38 @@
     const a = m.anims[anim] || m.anims.idle; const f = a.frames[Math.floor(t * (a.fps || 8)) % a.frames.length];
     const faceL = (m.face || 'L') === 'L'; const flip = faceL ? e.face > 0 : e.face < 0;
     const [ax, ay] = m.anchor || [m.frame_w / 2, m.frame_h];
-    ctx.save(); ctx.translate(e.x - A.cam, e.y); if (flip) ctx.scale(-1, 1); ctx.scale(sc, sc);
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(e.x - A.cam, e.y); if (flip) ctx.scale(-1, 1); ctx.scale(sc, sc);
     ctx.drawImage(img, f.x, f.y, f.w, f.h, -ax, -ay, f.w, f.h); ctx.restore();
   }
   function render(ctx) {
     const cam = A.cam;
-    ctx.fillStyle = '#3d2f45'; ctx.fillRect(0, 0, 1280, 720);
-    ctx.fillStyle = '#5a4466'; for (let i = 0; i < 12; i++) { const x = ((i * 260 - cam * .4) % 3120 + 3120) % 3120 - 200; ctx.fillRect(x, 200, 120, 200) }
-    ctx.fillStyle = '#6b8f4e'; ctx.fillRect(0, 400, 1280, 320); ctx.fillStyle = '#5c7d42'; for (let x = -((cam) % 80); x < 1280; x += 80) ctx.fillRect(x, 400, 40, 320);
-    ctx.fillStyle = '#1A1016'; ctx.fillRect(0, 398, 1280, 4);
+    if (!(P.drawRescueStageBg && P.drawRescueStageBg(ctx, A))) {
+      ctx.fillStyle = '#3d2f45'; ctx.fillRect(0, 0, 1280, 720);
+      ctx.fillStyle = '#5a4466'; for (let i = 0; i < 12; i++) { const x = ((i * 260 - cam * .4) % 3120 + 3120) % 3120 - 200; ctx.fillRect(x, 200, 120, 200) }
+      ctx.fillStyle = '#6b8f4e'; ctx.fillRect(0, 400, 1280, 320); ctx.fillStyle = '#5c7d42'; for (let x = -((cam) % 80); x < 1280; x += 80) ctx.fillRect(x, 400, 40, 320);
+      ctx.fillStyle = '#1A1016'; ctx.fillRect(0, 398, 1280, 4);
+    }
     for (const z of A.zones) { const x = z.x - cam; if (z.k === 'star') { const a = Math.max(0, (z.u - now()) / 2.5); ctx.fillStyle = `rgba(255,236,140,${(.25 + .5 * a).toFixed(2)})`; for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(x - 18 + i * 11), Math.round(z.y - 4 - (i % 2) * 7), 4, 4) } if (z.k === 'glue') { ctx.fillStyle = 'rgba(255,140,190,.55)'; ctx.beginPath(); ctx.ellipse(x, z.y, z.r, z.r * .35, 0, 0, 7); ctx.fill() } if (z.k === 'banana' && !z.used) P.art.px(ctx, P.art.BANANA, x - 8, z.y - 12, 2); if (z.k === 'bone') P.art.px(ctx, P.art.BONE, x - 8, z.y - 10, 3) }
     const objs = [];
+    if (P.rescueStageProps) P.rescueStageProps(ctx, A).forEach(p => objs.push({ y: p.y, f: p.draw }));
     A.cages.forEach(c => objs.push({ y: c.y, f: () => drawCage(ctx, c) }));
-    A.en.forEach(e => { if (!e.dead) objs.push({ y: e.y, f: () => drawEnemy(ctx, e) }) });
+    A.en.forEach(e => { if (!e.dead || cageExiting(e) || netExiting(e) || dragExiting(e)) objs.push({ y: e.y, f: () => drawEnemy(ctx, e) }) });
     objs.push({ y: A.hero.y, f: () => drawHero(ctx) }); objs.push({ y: A.pet.y, f: () => drawPet(ctx) });
     A.drops.forEach(d => objs.push({ y: d.y, f: () => P.art.px(ctx, d.kind === 'gold' ? P.art.COIN : P.art.BREAD, d.x - cam - 8, d.y - 14 - d.z, 3) }));
     objs.sort((a, b) => a.y - b.y).forEach(o => o.f());
-    for (const p of A.pr) { const x = p.x - cam; if (p.snow) { ctx.fillStyle = '#eef6ff'; ctx.strokeStyle = '#1A1016'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, p.y - p.r / 2, p.r, 0, 7); ctx.fill(); ctx.stroke() } else if (p.arrow) { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 14, p.y - 2, 28, 4) } else { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 7, p.y - 7, 14, 14); ctx.fillStyle = p.c; ctx.fillRect(x - 5, p.y - 5, 10, 10) } }
+    for (const p of A.pr) { const x = p.x - cam; if (p.snow) { ctx.fillStyle = '#eef6ff'; ctx.strokeStyle = '#1A1016'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, p.y - p.r / 2, p.r, 0, 7); ctx.fill(); ctx.stroke() } else if (p.net) {
+      // 前180ms由投網格承載飛網，之後交棒給同張原稿的網；不重複畫第二張網，也不改原有命中／飛行計算。
+      if ((now() >= p.src.netStrikeAt + .18 || p.src.dead || p.src.act === 'hit') && P.art.imageOK(IMG.net_projectile)) {
+        const im = IMG.net_projectile; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(Math.round(x), Math.round(p.y)); if (p.vx > 0) ctx.scale(-1, 1); ctx.drawImage(im, -im.width, -im.height, im.width * 2, im.height * 2); ctx.restore();
+      }
+    } else if (p.arrow) { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 14, p.y - 2, 28, 4) } else { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 7, p.y - 7, 14, 14); ctx.fillStyle = p.c; ctx.fillRect(x - 5, p.y - 5, 10, 10) } }
     for (const f of A.fx) {
       const x = f.x - cam, k = f.t / f.life;
       if (f.k === 'txt') { ctx.globalAlpha = 1 - k * k; ctx.font = `bold ${f.big ? 24 : 17}px sans-serif`; ctx.lineWidth = 4; ctx.strokeStyle = '#1A1016'; ctx.strokeText(f.s, x - ctx.measureText(f.s).width / 2, f.y - k * 40); ctx.fillStyle = f.col; ctx.fillText(f.s, x - ctx.measureText(f.s).width / 2, f.y - k * 40); ctx.globalAlpha = 1 }
       if (f.k === 'poof') { ctx.fillStyle = '#eee'; ctx.globalAlpha = 1 - k; for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; const r = 10 + k * 40; ctx.fillRect(x + Math.cos(a) * r - 6, f.y + Math.sin(a) * r * .6 - 6, 12, 12) } ctx.globalAlpha = 1 }
       if (f.k === 'pan') P.art.px(ctx, P.art.PAN, x - 15, f.y - (1 - k) * 60, 3);
     }
+    if (P.drawRescueStageFg) P.drawRescueStageFg(ctx, A);
     // 血條、食物槽、寵物技能冷卻
     const h = A.hero; ctx.fillStyle = '#1A1016'; ctx.fillRect(16, 56, 304, 22); ctx.fillStyle = '#e04848'; ctx.fillRect(18, 58, 300 * Math.max(0, h.hp) / h.max, 18); if (h.shield) { ctx.fillStyle = '#bde'; ctx.fillRect(18, 58, 300 * h.shield.v / h.max, 6) }
     ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.fillText(`苦達斯 ${Math.round(Math.max(0, h.hp))}`, 24, 73);
@@ -371,34 +513,74 @@
   }
   function drawHero(ctx) {
     const h = A.hero; let f = 'idle'; if (h.swing > .22) f = 'windup'; else if (h.swing > 0) f = 'swing'; else if (h.moving) f = 'run' + (Math.floor(A.t * 10) % 4);
-    const img = IMG['h_' + f]; ctx.save(); ctx.translate(h.x - A.cam, h.y); if (h.face < 0) ctx.scale(-1, 1); if (h.down) { ctx.rotate(1.4) }
+    const img = IMG['h_' + f]; shadowE(ctx, h.x - A.cam, h.y, 40, 0); ctx.save(); ctx.translate(h.x - A.cam, h.y); if (h.face < 0) ctx.scale(-1, 1); if (h.down) { ctx.rotate(1.4) }
     if (P.art.imageOK(img)) ctx.drawImage(img, -200, -284); ctx.restore();
     if (h.hidden > now()) P.art.px(ctx, P.art.BOX, h.x - A.cam - 36, h.y - 100, 6);
   }
   function drawPet(ctx) {
     const pet = A.pet, pi = A.pi; let act = pet.hurt > now() ? 'hurt' : pet.cast > now() ? 'cast' : pet.moving || 'idle';
     const sc = 1.6 * (pet.giantU > now() ? 2 : 1);
+    shadowE(ctx, pet.x - A.cam, pet.y, 26, 0);
     P.art.draw(ctx, { sp: pi.sp, tier: pi.tier, star: pi.star }, pet.x - A.cam, pet.y, { act, t: pet.t, flip: pet.face < 0, scale: sc, appear: A.t });
   }
   function drawCage(ctx, c) {
+    if (A.quest && A.quest.id === 'r1' && P.drawR1RescueCage && P.drawR1RescueCage(ctx, c, A)) return;
+    if (P.drawRescueCage && P.drawRescueCage(ctx, c, A)) return;
     const x = c.x - A.cam;
     if (c.hp > 0) { P.art.draw(ctx, { sp: c.sp, tier: c.tier || 0 }, x, c.y, { act: 'sleep', t: A.t, scale: 1.4 }); ctx.fillStyle = '#1A1016'; for (let i = 0; i < 6; i++) ctx.fillRect(x - 50 + i * 20, c.y - 90, 4, 92); ctx.fillRect(x - 54, c.y - 94, 108, 6); ctx.fillRect(x - 54, c.y, 108, 6); ctx.fillStyle = '#ffd54a'; ctx.fillRect(x - 8, c.y - 50, 16, 14) }
     else if (c.freed) { c.freed.t += 1 / 60; const fx = x - c.freed.t * 60; if (c.freed.t < 4) P.art.draw(ctx, { sp: c.sp, tier: c.tier || 0, star: c.star }, fx, c.y, { act: 'happy', t: A.t, scale: 1.4, flip: true, appear: c.freed.t }) }
     ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#fff'; if (c.hp > 0) ctx.fillText(P.SP[c.sp].name, x - 20, c.y + 24);
   }
+  function drawPixEnemy(ctx, e, x) {
+    const meta = PIX[e.K.pix], SS = MON_SS, flash = e.flash && now() < e.flash;
+    const alpha = e.dead && meta.motion === 'drag' ? Math.max(0, Math.min(1, (DRAG_DEATH - (now() - e.dragDownAt)) / .35)) : e.dead && meta.motion === 'net' ? Math.max(0, Math.min(1, (1 - (now() - e.netDownAt)) / .35)) : e.dead && meta.motion ? Math.max(0, Math.min(1, (CAGE_DEATH - (now() - e.cageDownAt)) / .35)) : 1;
+    ctx.save(); ctx.globalAlpha *= alpha; shadowE(ctx, x, e.y, 36, 0); ctx.restore();
+    let img, pose = '', bob = 0, rot = 0, ring = null;
+    if (meta.motion === 'drag') {
+      pose = String(dragPose(e)).padStart(2, '0');
+      img = IMG[(flash && !e.dead ? 'f' : 's') + '_drag_' + pose];
+    } else if (meta.motion === 'net') {
+      pose = String(netPose(e)).padStart(2, '0');
+      img = IMG[(flash && !e.dead ? 'f' : 's') + '_net_' + pose];
+    } else if (meta.motion) {
+      pose = String(cagePose(e)).padStart(2, '0');
+      img = IMG[(flash && !e.dead ? 'f' : 's') + '_cage_' + pose];
+    } else if (meta.key) {
+      img = IMG[meta.key];
+      if (flash) img = ringImg(img, [255, 255, 255], meta.key + '_fl') || img;
+      if (e.act === 'walk') bob = Math.floor(e.t / 0.14) % 2;
+      if (e.act === 'atk') rot = 4.5; // 尚無專用攻擊格，沿用 mon.js 出招時微傾
+    } else {
+      pose = golemPose(e);
+      img = IMG[(flash ? 'f_' : 's_') + 'golem_' + pose];
+      if (e.act === 'walk' && meta.bow) bob = Math.floor(e.t / 0.14) % 2;
+    }
+    const glow = e.elite ? [255, 60, 40, Math.floor(110 + 50 * Math.sin(A.t * 5 + e.id))] : null;
+    if (glow) ring = meta.motion === 'drag' ? ringImg(IMG['g_drag_' + pose], glow, 'g_drag_' + pose) : meta.motion === 'net' ? ringImg(IMG['g_net_' + pose], glow, 'g_net_' + pose) : meta.motion ? ringImg(IMG['g_cage_' + pose], glow, 'g_cage_' + pose) : meta.key ? ringImg(IMG[meta.key], glow, meta.key + '_gl') : ringImg(IMG['g_golem_' + pose], glow, 'g_' + pose);
+    const flip = meta.face === 'L' ? e.face > 0 : e.face < 0;
+    pixSpr(ctx, img, x, e.y, meta, { flip, flash, dy: bob, rot, glow, ring, alpha });
+  }
   function drawEnemy(ctx, e) {
     const x = e.x - A.cam;
     if (e.poly) { const rows = e.poly.skin === 'pig' ? P.art.PIG : e.poly.skin === 'chick' ? P.art.CHICK : P.art.MOUSE; const s = isBoss(e) ? 8 : 4; ctx.save(); ctx.translate(x, e.y); if (e.ptgt && e.ptgt.x < e.x) ctx.scale(-1, 1); P.art.px(ctx, rows, -rows[0].length * s / 2, -rows.length * s, s); ctx.restore(); if (isBoss(e)) { ctx.fillStyle = '#ffd54a'; ctx.fillRect(x - 20, e.y - rows.length * s - 16, 40, 10) } return }
+    if (e.K.pix) {
+      ctx.save(); if (e.st.dance > now()) { ctx.translate(x, e.y); ctx.rotate(Math.sin(A.t * 12) * .15); ctx.translate(-x, -e.y) }
+      if (e.st.float > now()) ctx.translate(0, -40);
+      drawPixEnemy(ctx, e, x); ctx.restore();
+      if (e.dead) return;
+    } else {
     let anim = e.act === 'atk' ? (MON[e.K.sheet].anims[e.atkName] ? e.atkName : e.K.atkA) : e.act === 'hit' ? 'hit' : e.act === 'walk' ? 'walk' : 'idle';
-    let sc = e.K.sc * (e.st.shrink && e.st.shrink.u > now() ? e.st.shrink.s : 1) * (e.elite ? 1.15 : 1);
+    let sc = monVis(e);
     const t = e.act === 'atk' ? (1 - e.wind / (isBoss(e) ? 1 : .7)) * 1.2 : e.t;
     ctx.save(); if (e.st.dance > now()) { ctx.translate(x, e.y); ctx.rotate(Math.sin(A.t * 12) * .15); ctx.translate(-x, -e.y) }
     if (e.st.float > now()) ctx.translate(0, -40);
     sheetDraw(ctx, e, anim, t, sc); ctx.restore();
+    }
     if (e.st.float > now()) { ctx.strokeStyle = '#bdf'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, e.y - 90, 70, 0, 7); ctx.stroke() }
     const tag = [e.st.sleep > now() && 'Zzz', e.st.dance > now() && '♪', e.st.glue > now() && '黏住', e.st.stun > now() && '暈', e.st.slip > now() && '滑倒', e.st.spin > now() && '轉圈', e.st.taunt > now() && '追寵物', e.st.lure && e.st.lure.u > now() && '♥骨頭', e.st.bound && e.st.bound.u > now() && '毛線'].filter(Boolean).join(' ');
-    const bw = isBoss(e) ? 0 : 70; if (bw) { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 36, e.y - 128 * e.K.sc, 72, 8); ctx.fillStyle = e.elite ? '#ffb030' : '#e04848'; ctx.fillRect(x - 35, e.y - 127 * e.K.sc, 70 * e.hp / e.max, 6) }
-    if (tag) { ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#ffe'; ctx.fillText(tag, x - 20, e.y - 135 * e.K.sc) }
+    const head = monHead(e), barY = e.y - head - 10;
+    const bw = isBoss(e) ? 0 : 70; if (bw) { ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 36, barY, 72, 8); ctx.fillStyle = e.elite ? '#ffb030' : '#e04848'; ctx.fillRect(x - 35, barY + 1, 70 * e.hp / e.max, 6) }
+    if (tag) { ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#ffe'; ctx.fillText(tag, x - 20, barY - 6) }
   }
   // 觸控搖桿
   (function () {

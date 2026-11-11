@@ -36,9 +36,10 @@
       const parts = `血統 ${r1(b[k])}${p.tr[k] ? `＋訓練 ${r1(p.tr[k])}` : ''}${p.perm[k] ? `＋${P.FEAT.cup ? '果實與大會' : '果實'} ${r1(p.perm[k])}` : ''}`;
       h += `<tr${k in fl ? ` style="background:${fl[k] > 0 ? '#3f5a34' : fl[k] < 0 ? '#5a3434' : '#34485a'}"` : ''}><td><b>${A.name}</b>${p.dir[0] === k ? ' ⬆主' : p.dir[1] === k ? ' ↗次' : ''}${p.tal === k ? ' 🧬' : ''}</td><td>${Math.round(a[k])}${fl[k] ? ` <b style="color:${fl[k] > 0 ? '#9f9' : '#f99'}">${fl[k] > 0 ? '▲' : '▼'}${sgn(fl[k])}</b>` : k in fl ? ' <b style="color:#9cf">🧭新方向</b>' : ''}<div class="muted">${parts}</div></td><td>${d ? `${A.pet.txt} +${d.v}%（最多 ${d.cap}%）` : '—'}</td><td>${A.owner.txt} +${o.v}%（最多 ${o.cap}%）</td></tr>`;
     }
+    if(ow.atk) h += `<tr><td><b>返魂之力</b></td><td>額外戰力 ${Math.round((P.SP[p.sp].attackMul-1)*100)}%</td><td>自身普攻與招式 +25%</td><td>主人攻擊力 +${ow.atk.v}%（最多 ${ow.atk.cap}%）</td></tr>`;
     h += '</table>';
     { const per = C.ablLv * C.ablQual[p.q == null ? 1 : p.q] * (p.star === 2 ? C.shinyMul : 1), canLv = p.baby && (p.lv || 1) < C.lvCap[p.tier];
-      h += `<div class="muted">🧭 成長方向：<b>主項 ${P.abName(p.dir[0])}</b>、次項 ${P.abName(p.dir[1])}。${canLv ? `每升 1 級：${P.abName(p.dir[0])} 約 +${r1(per * C.ablDirW[0])}、${P.abName(p.dir[1])} 約 +${r1(per * C.ablDirW[1])}，其他各 +${r1(per * (1 - C.ablDirW[0] - C.ablDirW[1]) / 3)}。` : ''}「主人分到」那一欄不加攻擊，只加生命、速度、少受傷、經驗、金幣。</div>`; }
+      h += `<div class="muted">🧭 成長方向：<b>主項 ${P.abName(p.dir[0])}</b>、次項 ${P.abName(p.dir[1])}。${canLv ? `每升 1 級：${P.abName(p.dir[0])} 約 +${r1(per * C.ablDirW[0])}、${P.abName(p.dir[1])} 約 +${r1(per * C.ablDirW[1])}，其他各 +${r1(per * (1 - C.ablDirW[0] - C.ablDirW[1]) / 3)}。` : ''}一般五項能力分享生命、速度、少受傷、經驗與金幣。${ow.atk ? `返魂之力另把多出的力量按同樣 ${C.ablOwnerShare}% 分給主人，攻擊力 +${ow.atk.v}%（上限 ${ow.atk.cap}%）；不是主人攻擊 +25%。` : '這五項不加主人攻擊。'}</div>`; }
     const btn = [];
     if (P.seen('feather')) btn.push(`<button class="alt" data-a="dirgo">🪶 換成長方向（羽毛 ${S.mat.feather}）</button>`);
     if (P.seen('fruit')) btn.push(`<button class="alt" data-a="fruitgo">🍎 成長果實（${S.mat.fruit}）</button>`);
@@ -134,6 +135,7 @@
     return [...ids].map(x => P.famOf(x)).filter(Boolean);
   }
   function treeScreen(id) {
+    const resident=P.byId(id);if(resident&&P.canBreed&&!P.canBreed(resident))return UI.nav(()=>UI.panel(`<h2>🌳 結緣的記錄</h2>${say('蜜糖媽媽',P.ZOMBIE_STORY.detail)}<div class="tree"><div class="trow">${cell(P.famOf(id),1)}</div></div>`,()=>{}));
     const t = P.tree(id), noble = P.noble(id), first = !t[1][0] && !t[1][1], kids = kidsOf(id);
     const kidRow = kids.length ? `<h3>👶 牠的孩子（${kids.length}）</h3><div class="tree"><div class="trow">${kids.slice(0, 8).map(r => cell(r)).join('')}</div></div>` : '';
     UI.nav(() => UI.panel(`<h2>🌳 家譜</h2>${first
@@ -204,7 +206,7 @@
     return `<div class="card">🏗️ <b>蓋${nm}</b>：${kind === 'annex' ? `住民上限 ${C.houseStep[0]} → ${C.houseStep[1]}，小屋多 ${c.cots} 間` : `住民上限 ${C.houseStep[1]} → ${C.houseStep[2]}，開放農場地圖`}<div class="muted">金幣 ${fmt(c.gold)}、剩食麵包 ${c.bread}、刻印碎片 ${c.shard}；${c.hours} 小時蓋好</div><div class="row"><button class="ok" data-a="xp" data-v="${kind}">開始蓋</button></div></div>`;
   };
   U.counterCards = () => {
-    const S = P.S; let h = xpCard('annex') + xpCard('farm');
+    const S = P.S; let h = (P.HOUSING_KEYS || ['annex','farm']).map(xpCard).join('');
     const n = P.mailCount(); const IC = k => P.ficon ? P.ficon(k) : '';   // P5.1 #15：每個功能自己的像素小圖示
     h += `<div class="card row2">${IC('mail')}<div class="grow"><b>信箱</b>：${n ? `有 ${n} 疊明信片` : '現在沒有信'}${S.mail.q.length ? `｜路上還有 ${S.mail.q.length} 封` : ''}</div><button data-a="mail" ${n ? '' : 'disabled'}>打開信箱</button></div>`;
     if (P.FEAT.cup) h += `<div class="card row2">${IC('cup')}<div class="grow"><b>大會</b>：帶寶寶去比賽，拿獎牌和永久能力。<div class="row"><button class="ok" data-a="cup">去報名</button><button class="alt" data-a="medals">獎牌室</button></div></div></div>`;
@@ -226,9 +228,8 @@
   };
   // ---------- 圖鑑：混血、闖闖的故事 ----------
   U.tales = () => {
-    const S = P.S, seen = Object.keys(P.HYB).filter(k => S.hybSeen[k]), left = Object.keys(P.HYB).length - seen.length;
-    let h = `<h3>🌟 特別的孩子</h3><div class="codex">${seen.map(k => `<div>${UI.av({ sp: k, tier: 2 }, 48)}<br><b>${P.SP[k].name}</b><br><span class="muted">${P.HYB[k].recipe ? '四祖配方' : '混血'}｜${S.hybSeen[k]} 隻</span></div>`).join('')}${left ? `<div><span class="av" style="width:48px;height:48px;filter:brightness(0)">？</span><br><b>還有什麼在等你…</b><br><span class="muted">${left} 種</span></div>` : ''}</div>`;
-    if (left) { const hints = Object.keys(P.HYB).filter(k => !S.hybSeen[k]).map(k => P.HYB[k].hint).filter(Boolean); const pickH = hints[(P.dayKey(P.now()) || 0) % hints.length]; if (pickH && P.repLv() >= 3) h += say(pickH[0], pickH[1]) }
+    const S = P.S, seen = Object.keys(P.HYB).filter(k => S.hybSeen[k]);
+    let h = seen.length ? `<h3>🌟 特別的孩子</h3><div class="codex">${seen.map(k => `<div>${UI.av({ sp: k, tier: 2 }, 48)}<br><b>${P.SP[k].name}</b><br><span class="muted">${P.HYB[k].recipe ? '四祖配方' : '混血'}｜${S.hybSeen[k]} 隻</span></div>`).join('')}</div>` : '';
     if (S.tales.length) h += `<h3>📖 闖闖的故事</h3>` + S.tales.slice(-8).reverse().map(t => `<div class="sk">${UI.av(t.pet, 32)} ${esc(t.pet.name || P.SP[t.pet.sp].name)}${t.end || '寄了信回來'}</div>`).join('');
     return h;
   };
@@ -243,11 +244,11 @@
   let tk = 0;
   U.shelterTick = dt => {
     tk += dt; if (tk < 1) return; tk = 0; const S = P.S; if (!S.unlock) return;
-    if (P.justBuilt) { const k = P.justBuilt; P.justBuilt = null; P.shelterBar(); UI.toast(k === 'annex' ? '西施：「二館蓋好了！往右邊走就到了，小屋也能再蓋 2 間！」' : '西施：「農場成立了！按下面的「🌾 農場」就能過去。」', 5000) }
+    if (P.justBuilt) { const k = P.justBuilt; P.justBuilt = null; P.shelterBar(); UI.toast(P.HOUSING && P.HOUSING[k] ? `西施：「${P.HOUSING[k].name}蓋好了！${P.expansionEffect(k)}。」` : k === 'annex' ? '西施：「二館蓋好了！往右邊走就到了，小屋也能再蓋 2 間！」' : '西施：「農場成立了！按下面的「🌾 農場」就能過去。」', 5000) }
     for (const c of (P.camps || []).splice(0)) { const p = P.byId(c.id); if (p) UI.toast(`獵犬：「汪！${P.label(p)} 集訓回來了：${P.abName(c.a.main)} +${c.gm}、${P.abName(c.a.sub)} +${c.gs}${c.magic ? '，' + c.magic : ''}」`, 5000) }
     for (const r of (P.expBack || []).splice(0)) UI.toast(`獵犬：「汪！探險隊從${r.st}回來了，${r.win ? '成功！' : '這次沒成功，帶回安慰獎。'}」`, 5000);
     if (P.mailCount() !== U._mc) { const was = U._mc; U._mc = P.mailCount(); P.shelterBar(); if (was != null && U._mc > was) UI.toast('蜜糖媽媽：「郵差送明信片來了！」', 3500) }
-    if (!UI.isOpen()) { const k = P.askExpand(); if (k) { S.askAt = P.now(); const l = P.NPC_LINES[k === 'annex' ? 'askAnnex' : 'askFarm'][0]; UI.nav(() => UI.panel(`<h2>${k === 'annex' ? '要蓋二館嗎？' : '要成立農場嗎？'}</h2>${say(l[0], l[1])}${xpCard(k)}<div class="row"><button data-a="close">再想想</button></div>`, (a, v) => { if (a === 'bq' && P.reqAct) return P.reqAct(v, () => UI.close()); if (a === 'xp') { const r = P.buildExpand(v); UI.toast(r.ok ? '開工了！' : r.msg); if (r.ok) UI.close() } })) } }
+    if (!UI.isOpen()) { const k = P.askExpand(); if (k) { S.askAt = P.now(); const l = P.HOUSING && P.HOUSING[k] ? ['西施', `房間快住滿了，可以先蓋${P.HOUSING[k].name}。不用等孩子在外面徘徊，材料齊了就能開工喔。`] : P.NPC_LINES[k === 'annex' ? 'askAnnex' : 'askFarm'][0]; UI.nav(() => UI.panel(`<h2>${P.HOUSING && P.HOUSING[k] ? '要蓋'+P.HOUSING[k].name+'嗎？' : k === 'annex' ? '要蓋二館嗎？' : '要成立農場嗎？'}</h2>${say(l[0], l[1])}${xpCard(k)}<div class="row"><button data-a="close">再想想</button></div>`, (a, v) => { if (a === 'bq' && P.reqAct) return P.reqAct(v, () => UI.close()); if (a === 'xp') { const r = P.buildExpand(v); UI.toast(r.ok ? '開工了！' : r.msg); if (r.ok) UI.close() } })) } }
   };
   // ---------- 外觀（像素小帽子） ----------
   const WEAR = { flower: ['.P.Y.P.', 'PYPYPYP'], melon: ['..GG..', '.GRRG.', 'GRRRRG'], wheat: ['Y.Y.Y.Y', 'yyyyyyy'], snow: ['.S.S.S.', 'SsSsSsS'], cape: ['RRRRRRR', '.RRRRR.', '..RRR..'], journey: ['..oo...', '.oyyo..', 'oyYYyo.', 'oyyyyoY'] };
@@ -271,13 +272,13 @@
     let cup = 'v';
     const NEXT = { s: '季節盃', k: '王國名盃', l: '傳說大會' }, HOWTO = { s: '有寶貝升上「銅級」（村莊小賽拿 3 次冠軍）就會收到邀請。', k: '有寶貝升上「銀級」（季節盃拿 2 次冠軍）就會收到邀請。', l: '有寶貝升上「金級」（王國名盃拿冠軍）就會收到邀請。' };
     const draw = () => {
-      const S = P.S, cs = ['v', 's', 'k', 'l'].filter(P.cupSeen); if (!cs.includes(cup)) cup = 'v';
+      const S = P.S, cs = ['v', 's', 'k', 'l'].filter(c => P.cupStoryVisible ? P.cupStoryVisible(c) : P.cupSeen(c)); if (!cs.includes(cup)) cup = 'v';
       const I = P.cupNow(cup), ev = P.cupEvent(I), cu = P.CUPS[cup], nx = P.cupNextSeen();
       const pets = S.babies.concat(S.pets).filter(p => !P.out(p));
-      const intro = cs.length === 1 ? '咕。村莊小賽每天都有，誰都可以報名。拿 3 次冠軍就升「銅級」，會有更大的盃賽來邀請喔。' : cup === 'l' ? '咕……傳說大會，一季只有一屆。能站上去的，都是傳說裡的名字。' : '咕咕！拿到的獎牌會一直掛在獎牌室，不會不見。';
+      const intro = cs.length === 1 ? '咕。村莊小賽每天都有，誰都可以報名。每一場都慢慢來，讓孩子盡情跑一回吧。' : cup === 'l' ? '咕……傳說大會，一季只有一屆。能站上去的，都是傳說裡的名字。' : '咕咕！拿到的獎牌會一直掛在獎牌室，不會不見。';
       UI.panel(`<h2>🏆 大會</h2>${say('小貓頭鷹', intro)}
         <div class="row">${cs.map(c => `<button class="${c === cup ? 'ok' : 'alt'}" data-a="c" data-v="${c}">${P.CUPS[c].name}</button>`).join('')}</div>
-        ${nx ? `<div class="muted">🔒 下一個：${NEXT[nx]}——${HOWTO[nx]}</div>` : ''}
+
         <div class="card"><b>第 ${I.ed} 屆${I.name}</b>｜今天的項目：<b>${ev.name}</b>（看 ${P.abName(ev.a)} 60%＋${P.abName(ev.b)} 40%${ev.sz ? `；${P.SIZE_INFO[ev.sz].name}的 +5%` : ''}）<div class="muted">${cu.txt}</div><div class="muted">獎品：冠軍 ${cu.prize[0]}｜亞軍 ${cu.prize[1]}｜季軍 ${cu.prize[2]}｜其他 ${cu.prize[3]}</div>${cup === 'v' ? `<div class="muted">今天比了 ${S.cup.day === P.dayKey(P.now()) ? S.cup.n : 0}/${C.cupDaily} 場</div>` : ''}<div class="muted">每一輪都有一點運氣：狀況好的時候會超常發揮，對手也一樣。</div></div>
         ${pets.map(p => { const why = P.cupCan(p, cup), pg = P.cupProg(p), od = why ? null : P.cupOdds(p, cup, ev); return `<div class="sk row2">${UI.av(p, 36)}<div class="grow">${esc(P.label(p))}　${P.RANK[p.rank || 0]}｜${pg.txt}${pg.next ? `（→ ${pg.next}）` : ''}${od ? `<div>這一屆：<b>${od.word}</b></div>` : ''}${why ? `<div class="muted">${why}</div>` : ''}</div><button data-a="go" data-v="${p.id}" ${why ? 'disabled' : ''}>報名</button></div>` }).join('')}`, (a, v) => {
         if (a === 'c') { cup = v; draw() }

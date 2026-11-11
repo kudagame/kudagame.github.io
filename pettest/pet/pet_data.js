@@ -143,7 +143,7 @@ window.PET = window.PET || {};
   // 救援任務（P2：救援只在這些任務裡發生，每個只有一次；不再有常態救援）
   // cages：'all'＝10 種各一籠；數字＝從還沒在收容所的物種挑幾籠。tier：籠子裡的位階（-1＝照投靠機率擲）
   P.QUESTS = [
-    { id: 'r1', name: '蜜糖之家保衛戰', giver: '蜜糖媽媽', main: 1, req: {}, cages: 'all', tier: 0, waves: [['minion', 'minion', 'axe'], ['minion', 'archer', 'axe', 'minion'], ['axe', 'axe', 'archer', 'minion', 'minion']],
+    { id: 'r1', name: '蜜糖之家保衛戰', giver: '蜜糖媽媽', main: 1, req: {}, cages: 'all', tier: 0, waves: [['cage', 'cage', 'minion'], ['cage', 'net', 'drag', 'minion'], ['drag', 'cage', 'net', 'minion', 'axe']],
       desc: '「孩子們被城堡的軍隊關進籠子裡了……拜託你。」打開 10 個籠子、打退 3 波追兵。完成後開放蜜糖之家。', reward: '開放收容所＋蜜糖媽媽送 1 隻寶寶' },
     { id: 'r2', name: '山谷舊路的輪子痕', giver: '獵犬', req: { done: 'r1', rep: 2 }, cages: 3, tier: -1, carrier: 1, waves: [['minion', 'minion', 'archer'], ['axe', 'minion', 'minion', 'archer']],
       desc: '獵犬在舊驛站的路上聞到籠車的味道，叼回一塊碎布。「汪。」（跟我來。）', reward: '救下 3 隻（其中 1 隻帶星痕）' },

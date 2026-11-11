@@ -1477,5 +1477,6 @@
  "compose": "body_tier_<tier>_<act>（tiers.<t>.body 有列的動作＝整隻穿戴好的身體，優先）或 body_<fur>_<act> 底層 + acc_<tier>_<act> 疊層（同格對齊）；eyes_<act>＝眼睛獨立層；火球、金幣、愛心、Z、碗由遊戲另畫（anchors.mouth/head_top）；紫的皮靴＝配件層蓋在腳上；橘＝粉的毛＋配件層含橘光圈",
  "noAccessories": true,
  "source_parent": "cat_v3",
- "hybrid_trait": "狐形燈尾"
+ "hybrid_trait": "根部連續長出的金燈蓬尾",
+ "art_revision": "P5.6 cleanup"
 }

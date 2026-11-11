@@ -1044,5 +1044,6 @@
  "compose": "body_<fur>_<act>（tiers.<t>.fur）＋ acc_<tier>_<act>；橘＝body_tier_orange（粉的身體）＋acc_orange 光圈；愛心、火球、碗由遊戲另畫（anchors.mouth/head_top）",
  "noAccessories": true,
  "source_parent": "rabbit_v3",
- "hybrid_trait": "耳側羽簇"
+ "hybrid_trait": "整對羽翼耳，羽片共用耳根",
+ "art_revision": "P5.6 cleanup"
 }

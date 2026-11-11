@@ -1,0 +1,488 @@
+{
+  "canvas": [
+    104,
+    96
+  ],
+  "anchor": [
+    36,
+    82
+  ],
+  "scale": 1,
+  "runtime_scale": 2,
+  "source": "/workspace/game/design/source/drag_932",
+  "choice": "全部20格使用無甲暮紫泥身版；鐵甲版完整歸檔，不混裝",
+  "sampling_grid": 1.911764705882353,
+  "palette": [
+    [
+      26,
+      16,
+      22
+    ],
+    [
+      67,
+      46,
+      73
+    ],
+    [
+      93,
+      65,
+      92
+    ],
+    [
+      138,
+      100,
+      142
+    ],
+    [
+      159,
+      118,
+      160
+    ],
+    [
+      112,
+      79,
+      119
+    ],
+    [
+      151,
+      110,
+      153
+    ],
+    [
+      55,
+      38,
+      50
+    ],
+    [
+      49,
+      32,
+      34
+    ],
+    [
+      83,
+      58,
+      78
+    ],
+    [
+      122,
+      89,
+      122
+    ],
+    [
+      138,
+      92,
+      83
+    ],
+    [
+      91,
+      61,
+      59
+    ],
+    [
+      174,
+      122,
+      102
+    ],
+    [
+      59,
+      57,
+      64
+    ],
+    [
+      179,
+      139,
+      153
+    ],
+    [
+      62,
+      44,
+      47
+    ],
+    [
+      103,
+      75,
+      87
+    ]
+  ],
+  "frames": [
+    {
+      "index": 0,
+      "action": "idle",
+      "source_frame": 0,
+      "source": "frames/cg_drag_idle_00.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 1,
+      "action": "idle",
+      "source_frame": 1,
+      "source": "frames/cg_drag_idle_01.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 2,
+      "action": "idle",
+      "source_frame": 2,
+      "source": "frames/cg_drag_idle_02.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 3,
+      "action": "idle",
+      "source_frame": 3,
+      "source": "frames/cg_drag_idle_03.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 4,
+      "action": "walk",
+      "source_frame": 0,
+      "source": "frames/cg_drag_walk_00.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 5,
+      "action": "walk",
+      "source_frame": 1,
+      "source": "frames/cg_drag_walk_01.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        83
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 6,
+      "action": "walk",
+      "source_frame": 2,
+      "source": "frames/cg_drag_walk_02.png",
+      "bbox": [
+        11,
+        14,
+        100,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 7,
+      "action": "walk",
+      "source_frame": 3,
+      "source": "frames/cg_drag_walk_03.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 8,
+      "action": "attack",
+      "source_frame": 0,
+      "source": "frames/cg_drag_attack_00.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 9,
+      "action": "attack",
+      "source_frame": 1,
+      "source": "frames/cg_drag_attack_01.png",
+      "bbox": [
+        11,
+        14,
+        101,
+        84
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 10,
+      "action": "attack",
+      "source_frame": 2,
+      "source": "frames/cg_drag_attack_02.png",
+      "bbox": [
+        11,
+        15,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 11,
+      "action": "attack",
+      "source_frame": 3,
+      "source": "frames/cg_drag_attack_03.png",
+      "bbox": [
+        12,
+        16,
+        98,
+        87
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 12,
+      "action": "attack",
+      "source_frame": 4,
+      "source": "frames/cg_drag_attack_04.png",
+      "bbox": [
+        12,
+        15,
+        96,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 13,
+      "action": "attack",
+      "source_frame": 5,
+      "source": "frames/cg_drag_attack_05.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 14,
+      "action": "hurt",
+      "source_frame": 0,
+      "source": "frames/cg_drag_hurt_00.png",
+      "bbox": [
+        10,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 15,
+      "action": "hurt",
+      "source_frame": 1,
+      "source": "frames/cg_drag_hurt_01.png",
+      "bbox": [
+        14,
+        16,
+        101,
+        83
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 16,
+      "action": "down",
+      "source_frame": 0,
+      "source": "frames/cg_drag_down_00.png",
+      "bbox": [
+        12,
+        14,
+        101,
+        82
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 17,
+      "action": "down",
+      "source_frame": 1,
+      "source": "frames/cg_drag_down_01.png",
+      "bbox": [
+        13,
+        21,
+        99,
+        87
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 18,
+      "action": "down",
+      "source_frame": 2,
+      "source": "frames/cg_drag_down_02.png",
+      "bbox": [
+        19,
+        11,
+        98,
+        86
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    },
+    {
+      "index": 19,
+      "action": "down",
+      "source_frame": 3,
+      "source": "frames/cg_drag_down_03.png",
+      "bbox": [
+        16,
+        23,
+        96,
+        88
+      ],
+      "integer_shift": [
+        2,
+        -10
+      ]
+    }
+  ],
+  "mapping": {
+    "idle": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "walk": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "attack": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "hurt": [
+      14,
+      15
+    ],
+    "down": [
+      16,
+      17,
+      18,
+      19
+    ]
+  },
+  "timings_ms": {
+    "idle": 260,
+    "walk": 160,
+    "windup": [
+      220,
+      220,
+      180,
+      80
+    ],
+    "strike_after": 80,
+    "recover": [
+      140,
+      180
+    ],
+    "hurt": [
+      125,
+      125
+    ],
+    "down": [
+      180,
+      220,
+      240,
+      500
+    ],
+    "fade": 350
+  },
+  "warning": "來源本身標示手腳為程序繪製、受擊倒下粗稿；本次僅整理與接入，不冒稱逐張手工精修。"
+}

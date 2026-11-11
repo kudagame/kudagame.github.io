@@ -167,3 +167,15 @@ a.skn{color:#ffe08a;text-decoration:underline dotted #ffe08a88;text-underline-of
  #bar button{min-width:0;min-height:48px;white-space:normal;overflow-wrap:anywhere}
  #panel{bottom:calc(34dvh + env(safe-area-inset-bottom))}
 }
+/* 11/11：寬螢幕維持完整16:9，不裁院子；直向提示獨立保留頂部空間。 */
+#cv{width:min(100vw,177.777778dvh);height:auto;max-width:100%;max-height:100%;aspect-ratio:16/9;object-fit:contain}
+@media(min-aspect-ratio:16/9){#cv{width:177.777778dvh;height:auto}}
+@media(orientation:portrait){
+ #portraitHint{top:env(safe-area-inset-top,0px);left:6px;right:6px;height:78px;font-size:21px;padding-top:6px;background:#1a1016;z-index:2}
+ #portraitHint small{font-size:12px}
+ #hud{top:calc(82px + env(safe-area-inset-top,0px));max-height:22dvh;overflow-y:auto;pointer-events:auto}
+ #sysbar{top:calc(82px + env(safe-area-inset-top,0px))}
+ #wrap{top:calc(82px + env(safe-area-inset-top,0px));bottom:34dvh}
+ #cv{width:100%;height:auto;max-height:100%}
+ #toast{top:calc(82px + env(safe-area-inset-top,0px))}
+}

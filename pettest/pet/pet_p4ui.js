@@ -13,11 +13,14 @@
   const left = t => { const ms = Math.max(0, t - P.now()), h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); return h ? `${h} 小時 ${m} 分` : `${m} 分` };
   const gaugeCol = r => r >= 80 ? '#5fd35f' : r >= 55 ? '#f3d27a' : '#ff6b6b';
   function expScreen() {
-    let sk = (P.S.exp.lastSk && P.ST[P.S.exp.lastSk]) ? P.S.exp.lastSk : 'canyon', sel = [];
+    const stagesOf = () => P.visibleStages ? P.visibleStages() : P.STAGES;
+    let sk = (P.S.exp.lastSk && stagesOf().some(s => s.k === P.S.exp.lastSk)) ? P.S.exp.lastSk : (stagesOf()[0] && stagesOf()[0].k) || 'canyon', sel = [];
     const draw = () => {
-      const S = P.S, st = P.ST[sk], [a, b] = P.partySize(st), pets = sel.map(P.byId).filter(Boolean), r = pets.length ? P.expRate(st, pets) : null;
+      const S = P.S, stages = stagesOf();
+      if (!stages.some(s => s.k === sk)) sk = (stages[0] && stages[0].k) || 'canyon';
+      const st = P.ST[sk], [a, b] = P.partySize(st), pets = sel.map(P.byId).filter(Boolean), r = pets.length ? P.expRate(st, pets) : null;
       const all = S.pets.concat(S.babies);
-      const list = P.STAGES.map(s => `<div class="xd ${s.k === sk ? 'on' : ''}" data-a="s" data-v="${s.k}"><div class="xth" style="background-image:url(${BG(s)})"><img class="xbo" src="${ST_IMG(s.boss[0])}" alt=""><span class="xno">${s.no}</span></div><div class="xin"><b>${esc(s.name)}</b><div class="xst">${'★'.repeat(s.star)}<span class="muted">${'★'.repeat(5 - s.star)}</span></div><div class="muted">建議戰力 ${s.req}｜⏱ ${s.h} 小時｜${(() => { const [x, y] = P.partySize(s); return x === y ? x + ' 隻' : x + '～' + y + ' 隻' })()}</div></div></div>`).join('');
+      const list = stages.map(s => `<div class="xd ${s.k === sk ? 'on' : ''}" data-a="s" data-v="${s.k}"><div class="xth" style="background-image:url(${BG(s)})"><img class="xbo" src="${ST_IMG(s.boss[0])}" alt=""><span class="xno">${s.no}</span></div><div class="xin"><b>${esc(s.name)}</b><div class="xst">${'★'.repeat(s.star)}<span class="muted">${'★'.repeat(5 - s.star)}</span></div><div class="muted">建議戰力 ${s.req}｜⏱ ${s.h} 小時｜${(() => { const [x, y] = P.partySize(s); return x === y ? x + ' 隻' : x + '～' + y + ' 隻' })()}</div></div></div>`).join('');
       const slots = []; for (let i = 0; i < b; i++) { const p = pets[i]; slots.push(p ? `<div class="xs" data-a="p" data-v="${p.id}">${UI.av(p, 58)}<div class="xsp">${P.expPow(p)}</div></div>` : `<div class="xs empty ${i < a ? 'need' : ''}">${i < a ? '必要' : '可選'}</div>`) }
       const rate = r ? r.rate : 0;
       const loot = st.items.map(([ic, nm, k]) => `<span class="xl" title="${nm}"><img src="${ST_IMG(ic)}" alt="">${nm}</span>`).join('') + (st.disk ? `<span class="xl">💿 技能磁片 ${st.disk}%</span>` : '') + (st.chest ? `<span class="xl">🎁 王寶箱 ${st.chest}%</span>` : '') + (st.starF ? `<span class="xl">⭐ 星光碎片 ${st.starF}%</span>` : '') + (st.pollen && P.seen('pollen') ? `<span class="xl">🌕 月光露（偶爾）</span>` : st.pollen ? `<span class="xl">❔ 稀有的東西（偶爾）</span>` : '');

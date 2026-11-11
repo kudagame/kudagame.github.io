@@ -1302,5 +1302,6 @@
  "compose": "body_tier_<tier>_<act>（tiers.<t>.body 有列的動作＝整隻穿戴好的身體，優先）或 body_<fur>_<act> + acc_<tier>_<act>（橘光等特效，同格對齊）；tiers.<t>.head_top.<act>[格]＝含帽子的頭頂（愛心、Z 從這裡畫）；火球、聲波、愛心、Z、碗由遊戲另畫（anchors.mouth/head_top）",
  "noAccessories": true,
  "source_parent": "hound_v3",
- "hybrid_trait": "銀肩月牙斑"
+ "hybrid_trait": "體側與額頭月牙毛紋",
+ "art_revision": "P5.6 cleanup"
 }

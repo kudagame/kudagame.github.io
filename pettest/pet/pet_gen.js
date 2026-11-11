@@ -87,7 +87,6 @@
   const gpSp = (f, m) => { const out = []; for (const p of [f, m]) { const pr = p.par; if (!pr) return null; for (const id of pr) { const x = P.byId(id) || P.S.fam[id]; if (!x) return null; out.push(x.sp) } } return out };
   P.recipeOf = (f, m) => { const g = gpSp(f, m); if (!g || g.length !== 4) return null; const key = g.slice().sort().join(); for (const id in P.HYB) { const h = P.HYB[id]; if (h.recipe && h.recipe.slice().sort().join() === key) return id } return null };
   P.babySp = (f, m, ctx) => {
-    /*DEV*/if (ctx && ctx.forceSp) return ctx.forceSp;/*/DEV*/
     const rc = P.recipeOf(f, m); if (rc && (R() * 100 < G.recipe || (ctx && ctx.recipeForce))) return rc;
     const mk = P.mateKind(f, m), r = R() * 100;
     if (mk === '') return f.sp;
@@ -196,7 +195,6 @@
       const layer = P.pityStep ? P.pityStep(f, m, b) : null;
       const nat = R() * 100 < ch; let hit = nat || !!layer;
       if (!nat && layer) b.mutBy = layer;   // 只記在寶寶身上（只有測試面板看得到，遊戲畫面不顯示）
-      /*DEV*/if (bk.forceMut && i === 0) hit = true;/*/DEV*/
       if (!hit && bk.pollen && !anyMut && i === out.length - 1) hit = true;
       if (hit) { anyMut = 1; P.applyMut(b, bk.mutKind || null); if (P.pityReset) P.pityReset(f, m, b) }
       if (P.birthP4) P.birthP4(b, f, m, bk);

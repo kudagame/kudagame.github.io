@@ -14,7 +14,9 @@
       const timer = setTimeout(failed, 15000);
       im.onload = () => { clearTimeout(timer); A.missing = A.missing.filter(s => s !== im._petSrc); im._petErrorAt = 0; resolve(true); release(); changed() };
       im.onerror = () => { clearTimeout(timer); im._petErrorAt = Date.now(); failed(); changed() };
-      im.src = im._petSrc + (im._petAttempts > 1 ? '?retry=' + im._petAttempts : ''); // stable URL: reuse the HTTP cache on repeat visits
+      // P5.11: refresh only 西施's restored original eyes; other pet URLs stay unchanged.
+      const eyeRevision = (im._petSrc.includes('?') ? '&' : '?') + 'v=pv1-dfcf0683b273'; // 公開版全部圖片一致換版
+      im.src = im._petSrc + eyeRevision + (im._petAttempts > 1 ? (eyeRevision ? '&' : '?') + 'retry=' + im._petAttempts : '');
     }
   }
   A.lazyImage = src => {
@@ -32,7 +34,7 @@
   function tryPacked(dir) { const m = window.PET_ART_MANIFEST || {}; return m[dir] ? { j: m[dir], base: `assets/pets/${dir}/`, live: 0 } : null }
   A.load = async () => {
     A.missing = [];
-    for (const s of P.SPECIES.concat(Object.keys(P.HYB || {}).map(id => ({id})))) {
+    for (const s of P.SPECIES.concat(Object.keys(P.HYB || {}).map(id => ({id})), Object.keys(P.SPECIAL || {}).map(id => ({id})))) {
       const dirs = P.HYB && P.HYB[s.id] ? ['hybrid_' + s.id] : P.SP[s.id].dirs;
       for (const d of dirs) { const set = tryPacked(d); if (set) { A.sets[s.id] = set; A.src[s.id] = '打包 ' + set.base; break } }
     }
@@ -43,8 +45,10 @@
   A.ensurePet = (sp, tier, act) => {
     const fs = A.setFor(sp); if (!fs.set) return [];
     const {j, base} = fs.set; if (!j.anchors[act]) act = 'idle';
-    const tn = P.TIERS[tier], ti = j.tiers[tn] || j.tiers.adult;
-    const parts = [['body_' + ti.fur + '_' + act, 'body_' + ti.fur + '_' + act]];
+    const tn = P.TIERS[tier] || P.TIERS[0];
+    const fur = (j.lookFur && j.lookFur[tier]) || ((j.tiers && (j.tiers[tn] || j.tiers.adult)) || {}).fur || 'adult';
+    const ti = (j.tiers && (j.tiers[tn] || j.tiers.adult)) || { fur };
+    const parts = [['body_' + fur + '_' + act, 'body_' + fur + '_' + act]];
     if ((ti.body || []).includes(act)) parts.push(['tbody_' + tn + '_' + act, 'body_tier_' + tn + '_' + act]);
     if (tn !== 'adult' && !j.noAccessories) parts.push(['acc_' + tn + '_' + act, 'acc_' + tn + '_' + act]);
     return parts.map(([key,file]) => { const im = A.imgs[fs.sp + '|' + key] = A.lazyImage(base + file + '.png'); A.startImage(im); return im._petReady });
@@ -52,9 +56,15 @@
   // Explicit QA/export hook, never called from boot. Tests can verify the full asset set.
   A.preloadAll = async () => {
     const jobs = [];
-    for (const sp of Object.keys(A.sets)) for (let tier = 0; tier < P.TIERS.length; tier++)
-      for (const act of Object.keys(A.sets[sp].j.anchors)) jobs.push(...A.ensurePet(sp, tier, act));
-    for (const sp of Object.keys(window.PET_PORTRAITS || {})) for (let t = 0; t < 5; t++) { const ph = A.photoInfo(sp,t); if (ph && ph.img) jobs.push(ph.img._petReady) }
+    for (const sp of Object.keys(A.sets)) {
+      const n = (A.sets[sp].j.lookFur && A.sets[sp].j.lookFur.length) || P.TIERS.length;
+      for (let tier = 0; tier < n; tier++)
+        for (const act of Object.keys(A.sets[sp].j.anchors)) jobs.push(...A.ensurePet(sp, tier, act));
+    }
+    for (const sp of Object.keys(window.PET_PORTRAITS || {})) {
+      const max = Object.keys(window.PET_PORTRAITS[sp] || {}).length || 5;
+      for (let t = 0; t < max; t++) { const ph = A.photoInfo(sp,t); if (ph && ph.img) jobs.push(ph.img._petReady) }
+    }
     await Promise.all(jobs);
   };
   A.setFor = sp => A.sets[sp] ? { sp, set: A.sets[sp], tint: false } : { sp: 'shihtzu', set: A.sets.shihtzu, tint: sp !== 'shihtzu' };
@@ -105,10 +115,10 @@
     A.ensurePet(sp, tier, act);
     const j = fs.set.j; if (!j.anchors[act]) act = 'idle';
     const n = j.anchors[act].length; f = ((f % n) + n) % n;
-    const tn = P.TIERS[tier], key = `${sp}|${tn}|${act}|${f}|${rare ? 1 : 0}`;
+    const tn = P.TIERS[tier] || P.TIERS[0], fur = (j.lookFur && j.lookFur[tier]) || ((j.tiers && (j.tiers[tn] || j.tiers.adult)) || {}).fur || 'adult';
+    const key = `${sp}|${fur}|${act}|${f}|${rare ? 1 : 0}`;
     if (A.cache[key]) return A.cache[key];
     const [W, Hh] = j.canvas, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const x = cv.getContext('2d');
-    const fur = (j.tiers[tn] || j.tiers.adult).fur;
     const body = A.imgs[`${fs.sp}|tbody_${tn}_${act}`] || A.imgs[`${fs.sp}|body_${fur}_${act}`], acc = A.imgs[`${fs.sp}|acc_${tn}_${act}`];
     const okIm = im => im && (!('complete' in im) || (im.complete && im.naturalWidth > 0));   // P4.1：還在載／載壞的圖不畫（避免 drawImage broken state）
     if (!okIm(body)) return null; // do not cache a permanently blank frame while queued/failed
@@ -158,12 +168,25 @@
   // P5.3：混種專屬圖亦由同一 idle 小人裁出，尾／耳／背斑完整入鏡。
   // P5.2：大頭照改從場上小人的頭裁出來，同一 look 的頭像跟小人同色、同樣子；不再用 PT_REMAP 換檔／改名
   const PM = window.PET_PORTRAITS || {}; A.PHOTO = {}; A.photoMissing = [];
-  A.photoInfo = (sp, tier) => { const h = P.HYB && P.HYB[sp], own = !!PM[sp], base = own ? sp : h ? h.base : sp, g = Math.min(3, Math.max(0, tier || 0)), m = PM[base] && PM[base][g]; if (!m) return null; const o = (tier || 0) >= 4 && m.o; return { base, g, hyb: own ? null : h || null, src: 'assets/portraits/' + (o || m.f), name: m.name, img: portrait(base, o ? 4 : g, o || m.f), orange: !!o, remap: null } };
+  A.photoInfo = (sp, tier) => {
+    const h = P.HYB && P.HYB[sp], own = !!PM[sp], base = own ? sp : h ? h.base : sp, pack = PM[base] || {};
+    const maxG = Math.max(3, ...Object.keys(pack).map(n => +n).filter(n => !isNaN(n)));
+    const g = Math.min(maxG, Math.max(0, tier || 0)), m = pack[g] || pack[String(g)];
+    if (!m) return null;
+    const o = (tier || 0) >= 4 && maxG <= 3 && m.o;
+    return { base, g, hyb: own ? null : h || null, src: 'assets/portraits/' + (o || m.f), name: m.name, img: portrait(base, o ? 4 : g, o || m.f), orange: !!o, remap: null };
+  };
   // 毛色基因（深／淺／雪）：小人、大頭照、像素頭都用同一組濾鏡
   A.COAT_FILT = ['', 'brightness(0.72) saturate(1.15)', 'brightness(1.18) saturate(0.7)', 'grayscale(0.9) brightness(1.5)'];
   A.COAT_DOT = { 4: '#ffe36b', 5: '#ffffff', 6: '#1A1016', 7: '#7a4a22', 8: '#9fe8ff' };
   // 美術用的位階：寶寶照位階（橘＝粉的身體＋橘配件）；大朋友照「長相」look（P5.1 大朋友升階不換毛色、不換衣服）
-  P.artTier = p => !p ? 0 : p.baby ? (p.tier || 0) : (p.look != null ? Math.min(3, p.look) : (p.tier || 0));
+  P.artLookCount = sp => { const j = A.sets[sp] && A.sets[sp].j; return (j && j.lookFur && j.lookFur.length) || 4 };
+  P.artTier = p => {
+    if (!p) return 0;
+    const n = P.artLookCount(p.sp);
+    if (n > 4) return Math.max(0, Math.min(n - 1, p.look != null ? p.look : 2));
+    return p.baby ? (p.tier || 0) : (p.look != null ? Math.min(3, p.look) : (p.tier || 0));
+  };
   const portrait = (sp, g, file) => {
     const key = sp + '|' + g;
     if (!A.PHOTO[key]) A.PHOTO[key] = A.lazyImage('assets/portraits/' + file);

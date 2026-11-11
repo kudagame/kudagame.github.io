@@ -1477,5 +1477,6 @@
  "compose": "body_<fur>_<act> 底層（tiers[t].body 列出的動作改用 body_tier_<t>_<act>＝該位階整隻換身體，例如盔甲狼） + acc_<tier>_<act> 疊層（同格對齊）；eyes_<act>＝眼睛獨立層（anchors.eyes＝[近眼,遠眼]）；火球、聲波、愛心、Z、碗由遊戲程式另畫，位置用 anchors.mouth/head_top；橘＝粉的毛＋配件層含橘光圈",
  "noAccessories": true,
  "source_parent": "wolf_v3",
- "hybrid_trait": "夜藍毛與背星斑"
+ "hybrid_trait": "夜藍狐尾與碎銀護毛",
+ "art_revision": "P5.6 cleanup"
 }
