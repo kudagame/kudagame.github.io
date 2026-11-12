@@ -357,7 +357,7 @@
   function makeBar() {
       const S = P.S;
       const bar = [['🏠 櫃檯', tg(counterScreen)], ['📜 委託', tg(questScreen)], ['🍖 全部餵食', () => { const n = P.feedAll(); UI.toast(`餵了 ${n} 隻乾乾`); P.all().forEach(p => P.shelterAct(p, 'eat', 2)) }], ['🛖 小屋', tg(cotScreen)], ['🏗️ 建造', () => P.openBuild && P.openBuild()], ['📋 名冊', tg(listScreen)], ['⚔️ 出戰', tg(fightScreen), 'ok']];
-      if (!S.unlock) bar.unshift(['🔓 救援任務：蜜糖之家保衛戰', () => P.startQuest('r1'), 'bad']);
+      if (!S.unlock) bar.unshift(['🔓 救援任務：蜜糖之家保衛戰', () => P.openRescueHeroPick ? P.openRescueHeroPick('r1') : P.startQuest('r1'), 'bad']);   // 2026-11-12：先選出戰角色
       // P3：只要有便便就有打掃按鈕
       const n = P.poopN(); if (S.unlock && n >= 1) bar.splice(3, 0, [`🧹 打掃（${n} 坨）`, () => doSweep('all'), 'alt']);
       if (S.unlock && P.ui3) P.ui3.bar(bar);
@@ -406,9 +406,9 @@
         html += `<h3>✨ 天性魔法（出戰時幫主人變強）</h3>` + (p.sub || []).map((s, i) => `<div class="sk">${P.skLink ? P.skLink('sub', s[0], p, P.subText(s[0], s[1])) : P.subText(s[0], s[1])}${shy ? ` <span style="color:#ffe36b">→ ${Math.round(s[1] * C.shinyMul * 10) / 10}%（星彩）</span>` : ''} <button class="alt" data-a="rrgo">去洗</button></div>`).join('');
       }
       if (P.SP[p.sp].breedable === false) html += `<div class="card"><b>蜜糖媽媽輕聲說</b>：「${P.ZOMBIE_STORY.detail}」</div>`;
-      if (!p.baby) html += `<h3>⚔️ 出戰（大朋友）</h3><div class="muted">比同位階寶寶更壯：普攻與招數 ${Math.round(C.adult.atkMul * 100)}%${p.tier ? '' : '（綠色素體也用這個倍率）'}｜${P.fightSk(p).length ? `會用：${P.fightSk(p).map(n => L_('sk', n, P.SK[n].name)).join('、')}` : '只會普攻（升到藍色就會用傳家技）'}｜經驗跟寶寶一樣快｜沒有技能格和天性魔法</div>`;
+      if (!p.baby) html += `<h3>⚔️ 出戰（大朋友）</h3><div class="muted">比同靈性寶寶更壯：普攻與招數 ${Math.round(C.adult.atkMul * 100)}%${p.tier ? '' : '（綠色素體也用這個倍率）'}｜${P.fightSk(p).length ? `會用：${P.fightSk(p).map(n => L_('sk', n, P.SK[n].name)).join('、')}` : '只會普攻（升到藍色就會用傳家技）'}｜經驗跟寶寶一樣快｜沒有技能格和天性魔法</div>`;
       { const u = P.upInfo(p);
-        if (u) html += `<h3>升階 → ${P.TIER_NAME[p.tier + 1]}${u.adult ? '（大朋友：外觀不變）' : ''}</h3><div class="muted">Lv${u.lv}、♡${u.heart}${u.letter ? `、${P.TIER_NAME[p.tier]}幸福信 ×${u.letter}（有 ${P.S.letters[['', 'b', 'p', 'k'][p.tier]]}）` : ''}、金幣 ${u.gold.toLocaleString()}、麵包 ${u.bread}${u.shard ? '、刻印碎片 ' + u.shard : ''}${u.collar ? '、金色項圈 1' : ''}｜成功率 ${u.rate}%</div><div class="row"><button data-a="up" ${lock ? 'disabled' : ''}>升階</button></div>`;
+        if (u) html += `<h3>靈性提升 → ${P.TIER_NAME[p.tier + 1]}${u.adult ? '（大朋友：外觀不變）' : ''}</h3><div class="muted">Lv${u.lv}、♡${u.heart}${u.letter ? `、${P.TIER_NAME[p.tier]}幸福信 ×${u.letter}（有 ${P.S.letters[['', 'b', 'p', 'k'][p.tier]]}）` : ''}、金幣 ${u.gold.toLocaleString()}、麵包 ${u.bread}${u.shard ? '、刻印碎片 ' + u.shard : ''}${u.collar ? '、金色項圈 1' : ''}｜成功率 ${u.rate}%</div><div class="row"><button data-a="up" ${lock ? 'disabled' : ''}>提升靈性</button></div>`;
         html += `<div class="row"><button class="ok" data-a="eq" ${lock || p.away ? 'disabled' : ''}>${P.S.eq === p.id ? '✔ 出戰中' : '帶牠出戰'}</button></div>`; }
       if (P.ui3) html += P.ui3.petExtra(p);
       html += `<h3>其他</h3><div class="row"><button class="bad" data-a="send" ${p.away || p.sp === 'zombiedog' ? 'disabled' : ''}>${p.sp === 'zombiedog' ? '特殊夥伴請到櫃檯寄放' : '放他出去闖闖'}</button>${P.S.sent && P.now() - P.S.sent.t < 10e3 ? '<button data-a="back">叫牠回來</button>' : ''}</div>`;
@@ -421,7 +421,7 @@
       else if (a === 'name') { const n = prompt('幫牠取名字', p.name || ''); if (n != null) p.name = n.slice(0, 10) }
       else if (a === 'rr' || a === 'rrb') { r = P.reroll(p, +v, a === 'rrb' ? 'bread' : 'gold'); if (!r.ok) UI.toast(r.msg); else if (r.choose) chooseSkill(p, r); else UI.toast('洗到：' + P.SK[r.n].name) }
       else if (a === 'rrgo') return rerollOf(p);
-      else if (a === 'up') { r = P.upgrade(p); UI.toast(r.ok ? (r.up ? '升階成功！' : '升階失敗…') : r.msg); if (r.up) P.shelterAct(p, 'happy', 3) }
+      else if (a === 'up') { r = P.upgrade(p); UI.toast(r.ok ? (r.up ? '靈性提升了！' : '這次靈性沒有提升…') : r.msg); if (r.up) P.shelterAct(p, 'happy', 3) }
       else if (a === 'eq') { P.S.eq = p.id; UI.toast(P.label(p) + ' 會跟你出戰') }
       else if (a === 'send') return P.ui3.sendAsk(p, () => { const r=P.sendOff(p); if(!r.ok){UI.toast(r.msg);return} UI.toast('牠背著小包袱出門了', 3000); setTimeout(() => { if (P.S.sent && P.byId(p.id) == null) openSent() }, 50) });
       else if (P.ui3 && P.ui3.petAct(p, a, v)) { }
@@ -450,10 +450,10 @@
       <div class="card">💰 金幣 ${S.gold.toLocaleString()}　🍞 剩食麵包 ${S.bread}${P.seen('disk') ? `　💿 技能磁片 ${S.disk}` : ''}${P.seen('dew') ? `　💧 洗練露水 ${S.mat.dew}` : ''}${P.seen('wish') ? `　🌠 心願星砂 ${S.mat.wish}` : ''}</div>
       <h3>技能（${p.sk.length}/${C.slots[t]} 格）</h3>
       <div class="muted">每洗一次：金幣 ${C.rerollGold[t].toLocaleString()}＋磁片 ${C.rerollDiskGold}，或剩食麵包 ${C.rerollBread[t]}（不用磁片）。保底 ${pity(p.pity || 0, C.rerollPity)}：第 ${C.rerollPity} 次自己 3 選 1。</div>` +
-        (p.sk.map((n, i) => { const s2 = P.SK[n]; const lk = P.skLocked && P.skLocked(n); return `<div class="card rr"><div class="grow">第 ${i + 1} 格：#${s2.n} <b>${s2.name}</b> ${P.skTag ? P.skTag(n) : ''}<div class="muted">${P.CAT_NAME[s2.cat] || ''}｜冷卻 ${s2.cd || '—'}｜${P.skillDesc(s2, p)}</div></div><div class="row">${lk ? `<span class="muted">🔒 ${P.SKT[P.skTier(n)].name}洗不掉</span>` : `<button class="ok" data-a="rrb" data-v="${i}">🍞 洗（麵包 ${C.rerollBread[t]}）</button><button class="alt" data-a="rr" data-v="${i}">💰 洗（金幣 ${C.rerollGold[t].toLocaleString()}＋💿1）</button>`}</div></div>` }).join('') || '<div class="muted">這個位階還沒有技能格</div>') +
+        (p.sk.map((n, i) => { const s2 = P.SK[n]; const lk = P.skLocked && P.skLocked(n); return `<div class="card rr"><div class="grow">第 ${i + 1} 格：#${s2.n} <b>${s2.name}</b> ${P.skTag ? P.skTag(n) : ''}<div class="muted">${P.CAT_NAME[s2.cat] || ''}｜冷卻 ${s2.cd || '—'}｜${P.skillDesc(s2, p)}</div></div><div class="row">${lk ? `<span class="muted">🔒 ${P.SKT[P.skTier(n)].name}洗不掉</span>` : `<button class="ok" data-a="rrb" data-v="${i}">🍞 洗（麵包 ${C.rerollBread[t]}）</button><button class="alt" data-a="rr" data-v="${i}">💰 洗（金幣 ${C.rerollGold[t].toLocaleString()}＋💿1）</button>`}</div></div>` }).join('') || '<div class="muted">靈性還淺，還沒有技能格</div>') +
         `<h3>✨ 天性魔法（出戰時幫主人變強）</h3><div class="muted">每洗一次：金幣 ${C.subGold[t].toLocaleString()} 或剩食麵包 ${C.subBread[t]}${P.seen('dew') ? ' 或 💧洗練露水 1' : ''}。保底 ${pity(p.subPity || 0, C.subPity)}：第 ${C.subPity} 次自己挑——3 個選 1 個，每個都在比較好的那一半。</div>
         <div class="muted">${P.TIER_NAME[Math.max(1, t)]}色的範圍：${(p.sub || []).map(s2 => { const d = P.SUBS.find(x => x.k === s2[0]); const [lo, hi] = d.r[Math.max(1, t) - 1]; return `${d.name} ${lo}～${hi}%` }).join('、')}</div>` +
-        ((p.sub || []).map((s2, i) => `<div class="card rr"><div class="grow"><b>${P.subText(s2[0], s2[1])}</b>${shy ? `（星彩 → ${Math.round(s2[1] * C.shinyMul * 10) / 10}%）` : ''}</div><div class="row"><button class="ok" data-a="rsb" data-v="${i}">🍞 洗（麵包 ${C.subBread[t]}）</button><button class="alt" data-a="rs" data-v="${i}">💰 洗（金幣 ${C.subGold[t].toLocaleString()}）</button>${S.mat.dew ? `<button class="alt" data-a="rsd" data-v="${i}">💧 洗（露水）</button>` : ''}</div></div>`).join('') || '<div class="muted">這個位階還沒有天性魔法</div>') +
+        ((p.sub || []).map((s2, i) => `<div class="card rr"><div class="grow"><b>${P.subText(s2[0], s2[1])}</b>${shy ? `（星彩 → ${Math.round(s2[1] * C.shinyMul * 10) / 10}%）` : ''}</div><div class="row"><button class="ok" data-a="rsb" data-v="${i}">🍞 洗（麵包 ${C.subBread[t]}）</button><button class="alt" data-a="rs" data-v="${i}">💰 洗（金幣 ${C.subGold[t].toLocaleString()}）</button>${S.mat.dew ? `<button class="alt" data-a="rsd" data-v="${i}">💧 洗（露水）</button>` : ''}</div></div>`).join('') || '<div class="muted">靈性還淺，還沒有天性魔法</div>') +
         (S.mat.wish && (p.sub || []).length ? `<div class="row"><button class="alt" data-a="wish">🌠 用心願星砂：保底 +3（有 ${S.mat.wish}）</button></div>` : '') +
         `<div class="row"><button class="alt" data-a="pet">看牠的照顧面板</button></div>`;
       UI.panel(html, (a, v) => {
@@ -536,13 +536,13 @@
   // ---------- 救援委託（救援只在任務裡發生） ----------
   function questScreen() {
     const S = P.S;
-    UI.panel(`<h2>${UI.npc('蜜糖媽媽')} 救援委託</h2><div class="muted">救援是一次性的任務，不是每天的玩法。新委託會隨劇情和名聲出現；平常的新夥伴來自投靠、認養和育兒籃。</div>` +
+    UI.panel(`<h2>${UI.npc('蜜糖媽媽')} 救援委託</h2><div class="muted">救援是一次性的任務，不是每天的玩法。新委託會隨劇情和名聲出現；平常的新夥伴來自投靠、認養和育兒籃。</div>` + (P.rescueHeroRow ? P.rescueHeroRow() : '') +
       (P.visibleQuests ? P.visibleQuests() : P.QUESTS.filter(q => P.questInfo(q).state !== 'locked')).map(q => { const I = P.questInfo(q), st = S.quests[q.id] || {}; const cg = st.cages || null;
         return `<div class="card quest ${I.state}">${UI.npc(q.giver)}<div class="grow"><b>${q.main ? '【主線】' : ''}${q.name}</b> <span class="tag" style="background:${I.state === 'open' ? '#a8e6a1' : I.state === 'done' ? '#ccc' : '#f5a3a3'}">${I.state === 'open' ? '可以接' : '完成'}</span>
         <div class="muted">委託人：${q.giver}｜${q.desc}</div><div class="muted">獎勵：${q.stone && P.stoneIcon ? P.stoneIcon(22) + ' ' : ''}${q.reward}</div>
         ${cg ? `<div class="row">${cg.map(c => UI.av(c.star === 2 && !st.done ? { sp: c.sp, tier: c.tier } : c, 32)).join('')}</div>` : ''}
         ${I.state === 'open' ? `<div class="row"><button class="bad" data-a="go" data-v="${q.id}">出發救援</button></div>` : ''}</div></div>` }).join(''),
-      (a, v) => { if (a === 'go') P.startQuest(v) });
+      (a, v) => { if (P.rescueHeroAct && P.rescueHeroAct(a, v)) return questScreen(); if (a === 'go') P.startQuest(v) });
   }
   questScreen.root = questScreen;
   P.startQuest = id => { const q = P.QU[id]; if (!q || P.questInfo(q).state !== 'open') return UI.toast('這個委託現在不能接'); P.questCages(q); P.save(); P.go('arena', { mode: 'rescue', quest: id }) };
@@ -600,9 +600,10 @@
   // ---------- 出戰 ----------
   function fightScreen() {
     const S = P.S; const ok = S.babies.filter(p => P.unlocked(p) && !p.away), okA = S.pets.filter(p => !p.away && !p.walk);
-    UI.panel(`<h2>⚔️ 出戰（測試場）</h2><div class="muted">一次帶 1 隻：西施、1 隻寶寶，或 1 隻大朋友。大朋友更壯（普攻與招數是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%），藍色以上會用傳家技；寶寶有較多技能格和天性魔法。救援在「📜 委託」裡。</div>
+    UI.panel(`<h2>⚔️ 出戰（測試場）</h2><div class="muted">一次帶 1 隻：西施、1 隻寶寶，或 1 隻大朋友。大朋友更壯（普攻與招數是同靈性寶寶的 ${Math.round(C.adult.atkMul * 100)}%），藍色以上會用傳家技；寶寶有較多技能格和天性魔法。救援在「📜 委託」裡。</div>
       <h3>同行寵物</h3><div class="row"><button data-a="eq" data-v="xishi" class="pbtn ${S.eq === 'xishi' ? 'ok' : ''}">${UI.npc('西施')}西施</button>${ok.map(p => `<button data-a="eq" data-v="${p.id}" class="pbtn ${S.eq === p.id ? 'ok' : ''}">${UI.av(p, 40)}${UI.esc(P.label(p))} ${P.TIER_NAME[p.tier]}</button>`).join('')}</div><h3>大朋友</h3><div class="row">${okA.map(p => `<button data-a="eq" data-v="${p.id}" class="pbtn ${S.eq === p.id ? 'ok' : ''}">${UI.av(p, 40)}${UI.esc(P.label(p))} ${P.TIER_NAME[p.tier]} Lv${p.lv || 1}</button>`).join('') || '<span class="muted">沒有</span>'}</div>
-      <h3>關卡</h3><div class="row"><button class="ok" data-a="go" data-v="normal">小怪 3 波</button><button class="bad" data-a="go" data-v="boss">小怪＋王</button></div>`, (a, v) => {
+      ${P.rescueHeroRow ? P.rescueHeroRow() : ''}<h3>關卡</h3><div class="row"><button class="ok" data-a="go" data-v="normal">小怪 3 波</button><button class="bad" data-a="go" data-v="boss">小怪＋王</button></div>`, (a, v) => {
+        if (P.rescueHeroAct && P.rescueHeroAct(a, v)) return fightScreen();
         if (a === 'eq') { S.eq = v === 'xishi' ? 'xishi' : +v; fightScreen() }
         if (a === 'go') P.go('arena', { mode: v });
       });

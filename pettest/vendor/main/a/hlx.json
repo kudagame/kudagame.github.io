@@ -1,0 +1,260 @@
+{
+"sh_form": {
+"n": 12,
+"w": 220,
+"h": 264,
+"cols": 9,
+"pad": 1,
+"ox": -97,
+"oy": -246,
+"fps": 30,
+"loop": false
+},
+"sh_loop": {
+"n": 24,
+"w": 126,
+"h": 191,
+"cols": 16,
+"pad": 1,
+"ox": -50,
+"oy": -173,
+"fps": 30,
+"loop": true
+},
+"sh_hit": {
+"n": 16,
+"w": 189,
+"h": 190,
+"cols": 10,
+"pad": 1,
+"ox": -50,
+"oy": -172,
+"fps": 30,
+"loop": false
+},
+"sh_break": {
+"n": 24,
+"w": 191,
+"h": 206,
+"cols": 10,
+"pad": 1,
+"ox": -80,
+"oy": -188,
+"fps": 30,
+"loop": false
+},
+"t_heal": {
+"n": 36,
+"w": 59,
+"h": 91,
+"cols": 34,
+"pad": 1,
+"ox": -28,
+"oy": -26,
+"fps": 30,
+"loop": true
+},
+"t_atk": {
+"n": 36,
+"w": 59,
+"h": 91,
+"cols": 34,
+"pad": 1,
+"ox": -28,
+"oy": -26,
+"fps": 30,
+"loop": true
+},
+"bf_s": {
+"n": 7,
+"w": 17,
+"h": 17,
+"cols": 7,
+"pad": 1,
+"ox": -8,
+"oy": -8,
+"fps": 30,
+"loop": true
+},
+"bf_l": {
+"n": 7,
+"w": 29,
+"h": 27,
+"cols": 7,
+"pad": 1,
+"ox": -14,
+"oy": -13,
+"fps": 30,
+"loop": true
+},
+"bf_g": {
+"n": 7,
+"w": 39,
+"h": 31,
+"cols": 7,
+"pad": 1,
+"ox": -19,
+"oy": -16,
+"fps": 30,
+"loop": true
+},
+"ult_in": {
+"n": 39,
+"w": 249,
+"h": 264,
+"cols": 8,
+"pad": 1,
+"ox": -119,
+"oy": -251,
+"fps": 15,
+"loop": false
+},
+"ult_air": {
+"n": 30,
+"w": 185,
+"h": 225,
+"cols": 11,
+"pad": 1,
+"ox": -95,
+"oy": -212,
+"fps": 15,
+"loop": true
+},
+"ult_out": {
+"n": 25,
+"w": 249,
+"h": 242,
+"cols": 8,
+"pad": 1,
+"ox": -121,
+"oy": -229,
+"fps": 15,
+"loop": false
+},
+"ult_meta": {
+"CAST": 78,
+"AIRLEN": 300,
+"END": 378,
+"TOTAL": 428,
+"LIFT": 24,
+"CX": 205,
+"GY": 282,
+"SPD": 0.78
+},
+"pillar": {
+"n": 10,
+"w": 76,
+"h": 608,
+"cols": 10,
+"pad": 1,
+"ox": -37,
+"oy": -600,
+"fps": 30,
+"loop": false
+},
+"burst": {
+"n": 9,
+"w": 688,
+"h": 548,
+"cols": 5,
+"pad": 1,
+"ox": -344,
+"oy": -274,
+"fps": 15,
+"loop": false
+},
+"ph_orb": {
+"n": 1,
+"w": 19,
+"h": 19,
+"cols": 1,
+"pad": 1,
+"ox": -9,
+"oy": -9,
+"fps": 30,
+"loop": false
+},
+"ph_trail": {
+"n": 4,
+"w": 9,
+"h": 9,
+"cols": 4,
+"pad": 1,
+"ox": -4,
+"oy": -4,
+"fps": 30,
+"loop": false
+},
+"ph_boom": {
+"n": 10,
+"w": 113,
+"h": 113,
+"cols": 10,
+"pad": 1,
+"ox": -56,
+"oy": -112,
+"fps": 30,
+"loop": false
+},
+"ph_boom2": {
+"n": 10,
+"w": 156,
+"h": 141,
+"cols": 10,
+"pad": 1,
+"ox": -79,
+"oy": -126,
+"fps": 30,
+"loop": false
+},
+"ph_back": {
+"n": 9,
+"w": 37,
+"h": 37,
+"cols": 9,
+"pad": 1,
+"ox": -18,
+"oy": -18,
+"fps": 30,
+"loop": false
+},
+"ph_aim": {
+"n": 20,
+"w": 73,
+"h": 21,
+"cols": 20,
+"pad": 1,
+"ox": -36,
+"oy": -11,
+"fps": 30,
+"loop": false
+},
+"ko_fall": {
+"n": 27,
+"w": 200,
+"h": 133,
+"cols": 10,
+"pad": 1,
+"ox": -108,
+"oy": -131,
+"fps": 30,
+"loop": false
+},
+"ko_lie": {
+"n": 16,
+"w": 199,
+"h": 92,
+"cols": 10,
+"pad": 1,
+"ox": -112,
+"oy": -90,
+"fps": 30,
+"loop": true
+},
+"ko_meta": {
+"soul_dx": -36,
+"soul_y0": 30,
+"soulN": 40,
+"cx0": 210
+}
+}

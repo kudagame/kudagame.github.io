@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>主遊戲戰鬥模組（寵物救援關用）</title>
+<!-- 2026-11-12 救援關「主遊戲戰鬥模組」宿主頁：同網域 iframe，讓主遊戲 W3.3 原檔（game.js、m2*.js、mob.js…，逐位元組複製、未修改）
+     在自己的 window 裡執行，全域 P／S0／IMG 與寵物頁的 PET 完全隔離。mc_pre.js／mc_post.js 是唯一的轉接層。 -->
+<style>
+@font-face{font-family:'NSerif';src:url(a/serif.otf);font-weight:bold}
+@font-face{font-family:'NSans';src:url(a/sans.otf);font-weight:bold}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}body{position:fixed;inset:0}
+/* 註：主遊戲 mob.js 的手機按鍵是畫在 canvas 上，不是 DOM，下面這條 CSS 實際上沒有作用（保留以防日後 mob.js 改 DOM）。
+   左上系統鈕照主遊戲原樣顯示：暫停／靜音／錄影可用；背包、角色由 mc_post.js 擋下並在寵物頁提示。 */
+#mob .b[data-id=pause],#mob .b[data-id=bagO],#mob .b[data-id=charO],#mob .b[data-id=rec],#mob .b[data-id=use]{display:none!important}
+</style></head><body><div id="wrap"><canvas id="c" width="1280" height="720"></canvas></div>
+<script src="mc_pre.js"></script>
+<script src="game.js"></script>
+<script src="m2.js"></script>
+<script src="ms.js"></script>
+<script src="sp.js"></script>
+<script src="mon.js"></script>
+<script src="m21.js"></script>
+<script src="m22.js"></script>
+<script src="m23.js"></script>
+<script src="m24.js"></script>
+<script src="m25.js"></script>
+<script src="m25b.js"></script>
+<script src="w1.js"></script>
+<script src="m27.js"></script>
+<script src="m28.js"></script>
+<script src="w3cover.js"></script>
+<script src="m29.js"></script>
+<script src="mob.js"></script>
+<script src="mc_post.js"></script>
+</body></html>

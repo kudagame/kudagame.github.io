@@ -3,7 +3,22 @@
 (function (P) {
   const UI = P.ui || (P.ui = {}), C = P.CFG, SC = P.scenes = P.scenes || {};
   const IMG = {}; const li = s => { const i = P.art.lazyImage(s); return i };
-  ['idle', 'run0', 'run1', 'run2', 'run3', 'swing', 'windup'].forEach(f => IMG['h_' + f] = li(`assets/hero/s_kudas_${f}.png`));
+  // 2026-11-12 出戰主角＝玩家選的主遊戲角色（P.RHERO）。全部是主遊戲原始 440×300 幀（dist_web/pk 解包，未修改），腳點同苦達斯 (200,284)。
+  // 一般攻擊時序取主遊戲：苦達斯維持本測試場原揮擊；詩人 b1（0.24s、0.08s 命中）、三杯兔子普通射擊（0.30s、0.06s 放箭）、夾夾 atk1（0.33s、0.13s 命中）。
+  const seq = (p, n) => Array.from({ length: n }, (_, i) => p + i);
+  const HART = {
+    kudas: { idle: ['s_kudas_idle'], it: 1, run: seq('s_kudas_run', 4), rt: .1, atk: ['s_kudas_windup', 's_kudas_swing'], dur: .38, hitLeft: .22, reach: 150 },
+    bard: { idle: seq('s_bh_play', 2), it: .36, run: seq('s_bh_run', 4), rt: .09, atk: ['s_bh_triplet_cast', 's_bh_thrust'], dur: .24, hitLeft: .16, reach: 120, hurt: 's_bh_hurt', down: 's_bh_down' },
+    archer: { idle: seq('s_ar_idle', 6), it: .16, run: seq('s_ar_run', 8), rt: .075, atk: ['s_ar_shot1', 's_ar_shot2', 's_ar_shot3'], atkK: [.2, .45], dur: .30, hitLeft: .24, reach: 0, ranged: { v: 1500, rng: 760 }, hurt: 's_ar_hurt0', down: 's_ar_ko3' },
+    heal: { idle: seq('s_hl_idle', 12), it: .12, run: seq('s_hl_run', 8), rt: .075, atk: seq('s_hl_atk1_', 6), dur: .33, hitLeft: .20, reach: 150, hurt: 's_hl_hurt1' },
+  };
+  const heroFrames = H => [...H.idle, ...H.run, ...H.atk, H.hurt, H.down].filter(Boolean);
+  for (const id in HART) { for (const f of heroFrames(HART[id])) IMG['hero_' + f] = li(`assets/hero/${f}.png`); IMG['por_' + id] = li(`assets/hero/por_${id}.png`) }
+  function heroAtkFrame(H, u) {
+    if (H.atk.length === 2) return u < H.dur - H.hitLeft ? H.atk[0] : H.atk[1];
+    if (H.atkK) { const k = u / H.dur; return k < H.atkK[0] ? H.atk[0] : k < H.atkK[1] ? H.atk[1] : H.atk[2] }
+    return H.atk[Math.min(H.atk.length - 1, Math.floor(u / H.dur * H.atk.length))];
+  }
   const MON = window.PET_MON || {}; for (const k in MON) IMG['m_' + k] = li(`assets/mon/${k}_sheet.png`);
   // 正式遊戲同款像素小兵（1x 原圖、畫面 2 倍最近鄰、腳底橢圓陰影）。r1 主打鐵籠三兵，並混入泥魔像。
   const PIX = {
@@ -13,6 +28,7 @@
     net: { key: 'cg_net', cw: 136, ch: 88, cx: 72, cy: 82, top: 14, face: 'L', motion: 'net' },
     drag: { key: 'cg_drag', cw: 104, ch: 96, cx: 36, cy: 82, top: 14, face: 'L', motion: 'drag' },
   };
+  // 格魯姆 HP：簡易英雄 240000（原設計）；主遊戲戰鬥模組 820000＝主遊戲 W3 頭目「泥魔像隊長」同級（主遊戲斬風單發可達 53 萬，240000 會被一招秒掉，見 out/main_combat_1112/REPORT_zh.md）
   const KIND = {
     minion: { pix: 'golem', hp: 20000, atk: 350, spd: 70, rng: 100, atkA: 'attack', gold: 67, xp: 1 },
     axe: { pix: 'golem', hp: 35000, atk: 600, spd: 55, rng: 110, atkA: 'attack', gold: 67, xp: 1 },
@@ -20,7 +36,7 @@
     cage: { pix: 'cage', hp: 22000, atk: 380, spd: 65, rng: 100, atkA: 'attack', gold: 67, xp: 1 },
     net: { pix: 'net', hp: 18000, atk: 300, spd: 50, rng: 520, atkA: 'attack', gold: 67, xp: 1, ranged: 1 },
     drag: { pix: 'drag', hp: 45000, atk: 500, spd: 35, rng: 110, atkA: 'attack', gold: 67, xp: 1 },
-    boss: { sheet: 'gem_looter', hp: 900000, atk: 1800, spd: 45, rng: 170, sc: 1.15, atkA: 'cleave', gold: 3000, xp: 20, boss: 1 },
+    boss: { grum: 1, hp: 240000, mcHp: 820000, atk: 1000, spd: 45, rng: 170, atkA: 'slam', gold: 3000, xp: 20, boss: 1 },
   };
   ['walk0', 'walk1', 'attack', 'hit', 'down', 'bwalk', 'bdraw', 'bhit'].forEach(f => {
     IMG['s_golem_' + f] = li('assets/mon/golem/s_golem_' + f + '.png');
@@ -81,6 +97,12 @@
     return Math.floor(e.t / .26) % 4;
   }
   function dragExiting(e) { return e.kind === 'drag' && e.dead && e.dragDownAt != null && now() < e.dragDownAt + DRAG_DEATH; }
+  // User-delivered 320px native frames, facing left, baseline boundary y300.
+  // Timings mirror assets/mon/grum/manifest.json; walk is rebuilt from idle, not generated walk art.
+  const GRUM = { idle: [4, .210], walk: [4, .160], lift: [3, .240], slam: [3, .180], recover: [3, .210], hurt: [2, .240], exit: [4, .290] };
+  for (const a in GRUM) for (let i = 0; i < GRUM[a][0]; i++) for (const k of ['s', 'f', 'g']) {
+    const key = k + '_grum_' + a + '_' + String(i).padStart(2, '0'); IMG[key] = li('assets/mon/grum/' + key + '.png');
+  }
   let A = null;  // 這一場的狀態
   const now = () => A.t;
   const rnd = Math.random, ri = P.ri;
@@ -88,12 +110,14 @@
   const worldW = () => (A && A.stageW) || W;
   const MON_SS = 2; // 與正式遊戲 spr() 相同：畫面倍率 SS=2、最近鄰、不平滑
   function monVis(e) {
+    if (e.K && e.K.grum) return 1; // native 1x, never inherit SS=2 or elite scaling
     const shrink = (e.st && e.st.shrink && e.st.shrink.u > now()) ? e.st.shrink.s : 1;
     // 正式主軸小兵不因菁英放大（改用紅色光圈）；舊圖表王怪仍用 1.15
     if (e.K && e.K.pix) return MON_SS * shrink;
     return MON_SS * shrink * (e.elite ? 1.15 : 1);
   }
   function monHead(e) {
+    if (e.K && e.K.grum) return 257;
     if (e.K && e.K.pix && PIX[e.K.pix]) {
       const p = PIX[e.K.pix];
       return (p.cy - (p.top || 0)) * monVis(e);
@@ -167,7 +191,8 @@
   function poof(x, y) { A.fx.push({ k: 'poof', x, y, t: 0, life: 0.4 }) }
   function log(m) { P.emit('arena', m) }
   function spawn(kind, x, y, elite) {
-    const K = KIND[kind]; const e = { id: ++A.nid, kind, K, x, y: y || ri(GY0, GY1), hp: K.hp * (elite ? 3 : 1), max: K.hp * (elite ? 3 : 1), elite: !!elite, face: -1, st: {}, t: rnd() * 2, act: 'walk', at: 0, wind: 0, polyN: 0, dots: [] };
+    const K = KIND[kind], hp0 = (K.mcHp && mcOn()) ? K.mcHp : K.hp; const e = { id: ++A.nid, kind, K, x, y: y || ri(GY0, GY1), hp: hp0 * (elite ? 3 : 1), max: hp0 * (elite ? 3 : 1), elite: !!elite, face: -1, st: {}, t: rnd() * 2, act: 'walk', at: 0, wind: 0, polyN: 0, dots: [] };
+    if (K.grum) { e.act = 'walk'; e.gt = 0; }
     if (kind === 'cage') for (const key in IMG) if (key.includes('_cage_')) P.art.startImage(IMG[key]);
     if (kind === 'net') for (const key in IMG) if (key.includes('_net_') || key === 'net_projectile') P.art.startImage(IMG[key]);
     if (kind === 'drag') for (const key in IMG) if (key.includes('_drag_')) P.art.startImage(IMG[key]);
@@ -190,16 +215,22 @@
     if (src === 'hero' && e.st.float > now()) { d *= 1.6; crit = 1; e.st.float = 0; txt(e.x, e.y - 120, '啵！', '#bdf') }
     if (e.st.sleep > now()) { d *= 1.2; e.st.sleep = 0; txt(e.x, e.y - 120, '醒了', '#ccc') }
     d = Math.round(d); e.hp -= d; A.dmg[src] = (A.dmg[src] || 0) + d;
-    txt(e.x + ri(-20, 20), e.y - monHead(e) - 8, (crit ? '暴擊 ' : '') + d.toLocaleString(), crit ? '#ffd54a' : (col || '#fff'), crit);
+    if (!mcOn()) txt(e.x + ri(-20, 20), e.y - monHead(e) - 8, (crit ? '暴擊 ' : '') + d.toLocaleString(), crit ? '#ffd54a' : (col || '#fff'), crit);
+    else if (src !== 'hero') P.MC.H.dmgNum(e.x + ri(-14, 14), e.y - monHead(e) - 8, d, crit, true);   // 寵物傷害：主遊戲的「寵物」傷害數字樣式；英雄傷害數字由主遊戲 hitMob 自己畫
     if (src !== 'link' && e.st.bound && e.st.bound.u > now() && !e.st.bound.o.dead) hit(e.st.bound.o, d * 0.3, 'link', '', '#f99');
     if (e.poly && !isBoss(e) && (e.poly.perm || e.elite)) e.hp = 0;   // 變成老鼠／小豬：打 1 下就倒（菁英照血量，這裡也一下）
-    e.flash = now() + 0.12; if (!disabled(e) && e.act !== 'atk') { e.act = 'hit'; e.actU = now() + 0.25 }
+    e.flash = now() + 0.12;
+    if (e.K.grum) {
+      // Brief hurt pose has its own cooldown. Hits never cancel telegraph/impact/recovery.
+      if (['idle', 'walk'].includes(e.act) && now() >= (e.hurtAt || 0)) { grumState(e, 'hurt'); e.hurtAt = now() + 2; }
+    } else if (!disabled(e) && e.act !== 'atk') { e.act = 'hit'; e.actU = now() + 0.25 }
     if (e.hp <= 0) kill(e, src, crit);
     return d;
   }
   function drop(kind, x, y, n) { A.drops.push({ kind, x: x + ri(-30, 30), y: y + ri(-10, 10), n, z: 0, vz: 220, t: 0 }) }
   function petFood(n) { if (A.extra >= A.extraCap) return 0; n = Math.min(n, A.extraCap - A.extra); n = P.extraFoodOk(n); A.extra += n; return n }
   function kill(e, src, crit) {
+    if (e.K.grum) { grumState(e, 'exit'); e.exitUntil = now() + GRUM.exit[0] * GRUM.exit[1]; }
     if (e.kind === 'cage') e.cageDownAt = now();
     if (e.kind === 'net') e.netDownAt = now();
     if (e.kind === 'drag') e.dragDownAt = now();
@@ -320,23 +351,34 @@
       A = { mode, t: 0, nid: 0, en: [], pr: [], drops: [], zones: [], fx: [], cages: [], cd: {}, used: {}, dmg: {}, kills: 0, gold: 0, bread: 0, food: 0, extra: 0, bento: 0, ult: 0, wave: 0, polyList: [], bossCtrlU: 0, auto: matchMedia('(pointer:coarse)').matches ? 1 : 0, cam: 0 };
       A.pi = petInfo(); A.poly = { tier: A.pi.tier };
       A.extraCap = C.petFoodCapFight;
-      const hpMax = Math.round(C.heroHp * (1 + ((A.pi.ow || {}).hp || 0) / 100)); A.hero = { x: 200, y: 560, hp: hpMax, max: hpMax, face: 1, atk: 0, swing: 0, inv: 0, buf: {}, hidden: 0 };
+      // 主角：玩家選的主遊戲角色，HP／攻擊＝主遊戲同款計算（P.RHERO）；寵物「主人分享」HP% 仍疊在上面（寵物系統效果）。
+      const RH = P.RHERO ? P.RHERO.current() : { id: 'kudas', name: '苦達斯', hp: 4125, atk: 2815, src: 'fallback' }, HH = HART[RH.id] || HART.kudas;
+      A.heroInfo = RH; heroFrames(HH).forEach(f => P.art.startImage(IMG['hero_' + f])); P.art.startImage(IMG['por_' + RH.id]);
+      const hpMax = Math.round(RH.hp * (1 + ((A.pi.ow || {}).hp || 0) / 100)); A.hero = { id: RH.id, name: RH.name, H: HH, atkBase: RH.atk, x: 200, y: 560, hp: hpMax, max: hpMax, face: 1, atk: 0, swing: 0, inv: 0, buf: {}, hidden: 0, slowU: 0, stunU: 0, hurtT: -9 };
       A.pet = { x: 140, y: 580, t: 0, face: 1, atkT: 2, cast: 0, hurt: 0, giantU: 0 };
       A.quest = mode === 'rescue' ? P.QU[(o && o.quest) || 'r1'] : null;
       if (A.quest) P.questCages(A.quest).forEach((c, i) => A.cages.push({ x: 520 + i * 200, y: 470 + (i % 3) * 70, hp: 3, sp: c.sp, tier: c.tier, star: c.star }));
       if (P.rescueStagePrepare) P.rescueStagePrepare(A);
+      mcEnter(RH);
       A.waves = A.quest ? A.quest.waves.map(w => w.slice()) : mode === 'boss' ? [['minion', 'minion', 'archer', 'axe'], ['boss', 'minion', 'minion']] : [['minion', 'minion', 'minion', 'archer'], ['axe', 'minion', 'archer', 'minion', 'minion'], ['axe', 'axe!', 'archer', 'minion', 'minion', 'minion']];
+      // Warm native boss frames before combat, avoiding first-use blank poses.
+      if (mode === 'boss' || (A.quest && A.quest.id === 'r4')) for (const key in IMG) if (key.includes('_grum_')) P.art.startImage(IMG[key]);
+      if (o && o.startWave) A.wave = Math.max(0, Math.min(A.waves.length - 1, o.startWave | 0));   // DEV：直接從某一波開始（本機 格魯姆 測試用）
       nextWave();
-      UI.bar([['🏳️ 回收容所', () => end(false), 'bad'], ['🤖 自動戰鬥', () => { A.auto ^= 1; UI.toast(A.auto ? '自動戰鬥：開' : '自動戰鬥：關') }], [P.aidLabel ? P.aidLabel(0, C.foodSlot) : '🍞 叫援助', () => { if (A.food >= C.foodSlot) { A.food = 0; A.hero.hp = Math.min(A.hero.max, A.hero.hp + A.hero.max * .3); txt(A.hero.x, A.hero.y - 170, '援助角色來了！', '#ffd', 1) } else UI.toast('食物槽還沒滿') }]]);
+      UI.bar([['🏳️ 回收容所', () => end(false), 'bad'], ['🤖 自動戰鬥', () => { A.auto ^= 1; if (!A.auto) mcAutoRelease(); UI.toast(A.auto ? '自動戰鬥：開' : '自動戰鬥：關') }], [P.aidLabel ? P.aidLabel(0, C.foodSlot) : '🍞 叫援助', () => { if (A.food >= C.foodSlot) { A.food = 0; A.hero.hp = Math.min(A.hero.max, A.hero.hp + A.hero.max * .3); txt(A.hero.x, A.hero.y - 170, '援助角色來了！', '#ffd', 1) } else UI.toast('食物槽還沒滿') }]]);
       document.querySelector('#pad').classList.toggle('hide', !matchMedia('(pointer:coarse)').matches);
-      log(`進入測試場（${mode}），同行：${A.pi.name}（${P.TIER_NAME[A.pi.tier]}），技能：${A.pi.sk.map(n => P.SK[n].name).join('、') || '無'}`);
+      log(`進入測試場（${mode}），出戰：${A.hero.name}（HP ${A.hero.max}、攻擊 ${A.hero.atkBase}），同行：${A.pi.name}（${P.TIER_NAME[A.pi.tier]}），技能：${A.pi.sk.map(n => P.SK[n].name).join('、') || '無'}`);
       P.arena = A;
     },
-    leave() { document.querySelector('#pad').classList.add('hide'); P.arena = null },
-    update(dt) { if (!A) return; if (A.over) { A.overT -= dt; if (A.overT <= 0 && !A.left) { A.left = 1; P.go('shelter') } return } A.t += dt; step(dt) },
-    draw(ctx) { if (A) render(ctx) },
+    leave() { document.querySelector('#pad').classList.add('hide'); mcLeave(); P.arena = null },
+    update(dt) {
+      if (!A) return;
+      if (A.mc && !A.mc.ready) { A.mc.wait += dt; return }   // 主遊戲戰鬥模組還在載入
+      if (mcOn() && P.MC.H.paused()) return;                  // 主遊戲暫停選單開著：整場一起停
+      if (A.over) { A.overT -= dt; if (A.overT <= 0 && !A.left) { A.left = 1; P.go('shelter') } return } A.t += dt; step(dt) },
+    draw(ctx) { if (!A) return; if (mcOn()) mcRender(); else if (A.mc) mcLoading(ctx); else render(ctx) },
     tap(x, y) { },
-    key(c) { if (c === 'KeyJ' || c === 'Space' || c === 'KeyZ') attack() },
+    key(c) { if (A && A.mc) return; if (c === 'KeyJ' || c === 'Space' || c === 'KeyZ') attack() },
     hud() { if (!A) return ''; const h = A.hero; { const bt = [...document.querySelectorAll('#bar button')].find(x => /叫援助/.test(x.textContent)); if (bt && P.aidLabel) { const t = P.aidLabel(A.food, C.foodSlot); if (bt.textContent !== t) bt.textContent = t; bt.style.opacity = A.food >= C.foodSlot ? 1 : .5; bt.classList.toggle('ready', A.food >= C.foodSlot) } } return `<span>❤️ ${Math.max(0, Math.round(h.hp))}/${h.max}</span><span>🍽️ 食物槽 ${A.food}/${C.foodSlot}</span><span>🍞 這場 +${A.bread}（寵物額外 ${A.extra}/${A.extraCap}）</span><span>⚔️ 第 ${A.wave}/${A.waves.length} 波｜擊倒 ${A.kills}</span><span>🐾 ${UI.esc(A.pi.name)}</span>` },
   };
   function nextWave() {
@@ -346,25 +388,28 @@
     w.forEach((k, i) => { const el = k.endsWith('!'); spawn(el ? k.slice(0, -1) : k, Math.min(world - 80, bx + i * 70 + ri(0, 60)), null, el) });
     txt(A.hero.x, A.hero.y - 200, `第 ${A.wave} 波`, '#fff', 1); return true;
   }
-  function attack() { const h = A.hero; if (h.swing > 0 || h.down) return; h.swing = .38; h.hitDone = 0 }
+  function attack() { const h = A.hero; if (h.swing > 0 || h.down || heroStunned(h)) return; h.swing = h.H.dur; h.hitDone = 0 }
   function stickVec() { return P.stick || { x: 0, y: 0 } }
   function step(dt) {
     const h = A.hero, pet = A.pet, hs = heroStat(), K = P.keys;
+    if (mcOn()) mcHeroStep(dt, hs); else {
     // 主角移動
     let mx = (K.ArrowRight || K.KeyD ? 1 : 0) - (K.ArrowLeft || K.KeyA ? 1 : 0), my = (K.ArrowDown || K.KeyS ? 1 : 0) - (K.ArrowUp || K.KeyW ? 1 : 0);
     const sv = stickVec(); if (sv.x || sv.y) { mx = sv.x; my = sv.y }
     if (P.stickAtk) attack();
     if (A.auto && !mx && !my) {
       const tgt = A.cages.find(c => c.hp > 0 && Math.abs(c.x - h.x) < 900 && !A.en.some(e => !e.dead && Math.abs(e.x - h.x) < 500)) || nearest(h.x, h.y, e => !(e.poly && isBoss(e)) || 1, 2000);
-      if (tgt) { const dx = tgt.x - h.x - (tgt.hp != null && tgt.K ? 0 : 0), dy = tgt.y - h.y; if (Math.abs(dx) > 90 || Math.abs(dy) > 25) { mx = Math.sign(dx) * (Math.abs(dx) > 90 ? 1 : 0); my = Math.sign(dy) * (Math.abs(dy) > 25 ? 1 : 0) } else { h.face = Math.sign(dx) || h.face; attack() } }
+      if (tgt) { const dx = tgt.x - h.x - (tgt.hp != null && tgt.K ? 0 : 0), dy = tgt.y - h.y, rr = h.H.ranged && tgt.K ? 520 : 90; if (Math.abs(dx) > rr || Math.abs(dy) > 25) { mx = Math.sign(dx) * (Math.abs(dx) > rr ? 1 : 0); my = Math.sign(dy) * (Math.abs(dy) > 25 ? 1 : 0) } else { h.face = Math.sign(dx) || h.face; attack() } }
       else if (A.mode === 'rescue' && A.cages.some(c => c.hp > 0)) mx = 1;
     }
-    if (h.swing <= 0 && !h.down) { const sp = 260 * hs.spd; h.x += mx * sp * dt; h.y += my * sp * .6 * dt; if (mx) h.face = Math.sign(mx) }
+    if (heroStunned(h)) { mx = 0; my = 0 }
+    if (h.swing <= 0 && !h.down) { const sp = 260 * hs.spd * (heroSlowed(h) ? HERO_SLOW_MUL : 1); h.x += mx * sp * dt; h.y += my * sp * .6 * dt; if (mx) h.face = Math.sign(mx) }
     h.x = Math.max(40, Math.min(worldW() - 40, h.x)); h.y = Math.max(GY0, Math.min(GY1, h.y)); h.moving = !!(mx || my);
-    if (h.swing > 0) { h.swing -= dt; if (h.swing < .22 && !h.hitDone) { h.hitDone = 1; heroHit(hs) } }
+    if (h.swing > 0) { h.swing -= dt; if (h.swing < h.H.hitLeft && !h.hitDone) { h.hitDone = 1; heroHit(hs) } }
     if (h.regen && h.regen.u > now()) h.hp = Math.min(h.max, h.hp + h.regen.v * dt);
     if (h.shield && h.shield.u < now()) h.shield = null;
     A.cam += ((h.x - 640) - A.cam) * Math.min(1, dt * 5); A.cam = Math.max(0, Math.min(worldW() - 1280, A.cam));
+    }
     // 西施／小泡泡（固有）
     const inhLv = A.pi.xishi ? 4 : spm('shihtzu') ? A.pi.tier : 0, inhM = A.pi.xishi ? 1 : spm('shihtzu');
     if (inhLv >= 2 && h.hp <= h.max / 2 && (A.inhCd || 0) < now()) { const v = A.pi.xishi ? .5 : [0, 0, .3, .4, .5][inhLv] * inhM; A.inhCd = now() + (A.pi.xishi ? 30 : [0, 0, 40, 35, 30][inhLv]); h.regen = { u: now() + 10, v: h.max * v / 10 }; txt(pet.x, pet.y - 90, '小泡泡', '#bdf', 1); log(`固有 小泡泡：10 秒回 ${v * 100}% HP`) }
@@ -381,6 +426,8 @@
     // 小怪
     for (const e of A.en) {
       if (e.dead) continue; e.t += dt;
+      if (e.K.grum) { grumStep(e, dt); continue; }
+      if (e.mcR) { e.act = 'hit'; continue }   // 被主遊戲招式打飛／打倒／硬直中：由主遊戲的反應物理控制位置
       if (e.poly && e.poly.u < now()) { e.poly = null; poof(e.x, e.y - 40); if (e.chick) continue }
       if (e.pendPoly && e.act !== 'atk') { e.poly = { skin: e.pendPoly.skin, u: now() + e.pendPoly.sec }; poof(e.x, e.y - 60); e.pendPoly = null }
       for (const d of e.dots) if (d.u > now()) { d.acc = (d.acc || 0) + d.dps * dt; if (d.acc > 300) { const v = d.acc; d.acc = 0; hit(e, v, 'pet', '', d.c) } } e.dots = e.dots.filter(d => d.u > now()); if (e.dead) continue;
@@ -408,7 +455,11 @@
       p.life -= dt;
       if (p.snow) { p.x += p.vx * dt; p.r = Math.min(48, p.r + 14 * dt); for (const e of A.en) if (!e.dead && !p.hitIds[e.id] && Math.abs(e.x - p.x) < p.r + 20 && Math.abs(e.y - p.y) < 50) { p.hitIds[e.id] = 1; pdmg(e, isBoss(e) ? .6 : 1.8, '雪球'); if (!isBoss(e)) e.x += Math.sign(p.vx) * 120 } continue }
       if (p.tx) { if (p.tx.dead) { p.life = 0; continue } const tx = p.tx.x, ty = p.tx.y - 40; const ddx = tx - p.x, ddy = ty - p.y, d = Math.hypot(ddx, ddy); if (d < 20) { p.life = 0; if (p.on) { const P0 = A.pi.P; if (p.mul) A.pi.P = P0 * p.mul; try { p.on(p.tx) } finally { A.pi.P = P0 } } } else { p.x += ddx / d * p.sp * dt; p.y += ddy / d * p.sp * dt } }
-      else if (p.arrow) { p.x += p.vx * dt; const t = p.tgt; if (Math.abs(t.x - p.x) < 30 && Math.abs(t.y - 50 - p.y) < 50) { p.life = 0; if (t === h) heroHurt(p.dmg, p.src); else petHurt() } }
+      else if (p.harrow) { const x0 = p.x; p.x += p.vx * dt; const lo = Math.min(x0, p.x) - 30, hi = Math.max(x0, p.x) + 30;
+        const tg = A.en.filter(e => !e.dead && e.x >= lo && e.x <= hi && Math.abs(e.y - p.gy) < 45 * (isBoss(e) ? 1.3 : 1)).sort((a, b) => (a.x - b.x) * Math.sign(p.vx))[0];
+        if (tg) { p.life = 0; heroDmg(tg, p.hs); continue }
+        const cg = A.cages.find(c => c.hp > 0 && c.x >= lo && c.x <= hi && Math.abs(c.y - p.gy) < 50); if (cg) { p.life = 0; hitCage(cg) } }
+      else if (p.arrow) { p.x += p.vx * dt; const t = p.tgt; if (Math.abs(t.x - p.x) < 30 && Math.abs(t.y - 50 - p.y) < 50) { p.life = 0; if (t === h) { if (heroHurt(p.dmg, p.src) && p.net) heroSlow(h) } else petHurt() } }
     }
     A.pr = A.pr.filter(p => p.life > 0);
     // 掉落物
@@ -421,15 +472,49 @@
     // 籠子
     // 波次與結束
     const alive = A.en.filter(e => !e.dead).length;
-    const exiting = A.en.some(e => cageExiting(e) || netExiting(e) || dragExiting(e));
+    const exiting = A.en.some(e => (e.K.grum && e.dead && now() < e.exitUntil) || cageExiting(e) || netExiting(e) || dragExiting(e));
     if (!alive && !exiting) { if (!nextWave()) { if (A.mode !== 'rescue' || A.cages.every(c => c.hp <= 0)) end(true) } }
     if (alive && A.mode === 'rescue' && A.wave < A.waves.length && A.cages.filter(c => c.hp <= 0).length >= Math.ceil(A.cages.length * A.wave / A.waves.length)) nextWave();
   }
+  function grumState(e, state) { e.act = state; e.gt = 0; e.grumImpact = false; }
+  function grumStep(e, dt) {
+    e.gt = (e.gt || 0) + dt;
+    for (const d of e.dots) if (d.u > now()) { d.acc = (d.acc || 0) + d.dps * dt; if (d.acc > 300) { const v = d.acc; d.acc = 0; hit(e, v, 'pet', '', d.c); } }
+    e.dots = e.dots.filter(d => d.u > now()); if (e.dead) return;
+    const target = e.st.taunt > now() ? A.pet : A.hero;
+    if (e.act === 'lift') { if (e.gt >= .720) { grumState(e, 'slam'); e.atkName = 'grum_slam'; } return; }
+    if (e.act === 'slam') {
+      // The ground-contact drawing is frame 2 (zero-based); one hit test per swing.
+      if (!e.grumImpact && e.gt >= GRUM.slam[1] * 2) {
+        e.grumImpact = true; enemyStrike(e, target); A.shakeUntil = now() + .16; if (mcOn()) P.MC.H.shake(6, .16);
+        A.fx.push({ k: 'poof', x: e.x + e.face * 100, y: e.y, t: 0, life: .22 });
+      }
+      if (e.gt >= .540) grumState(e, 'recover'); return;
+    }
+    if (e.act === 'recover' || e.act === 'hurt') {
+      if (e.gt >= GRUM[e.act][0] * GRUM[e.act][1]) { const recovered = e.act === 'recover'; grumState(e, 'idle'); if (recovered) e.at = now() + 1.4; }
+      return;
+    }
+    if (disabled(e) || (target === A.hero && A.hero.hidden > now())) { if (e.act !== 'idle') grumState(e, 'idle'); return; }
+    const dx = target.x - e.x, dy = target.y - e.y; e.face = Math.sign(dx) || e.face;
+    if (Math.abs(dx) < e.K.rng && Math.abs(dy) < 32) {
+      if (now() >= e.at) grumState(e, 'lift'); else if (e.act !== 'idle') grumState(e, 'idle');
+    } else {
+      if (e.act !== 'walk') grumState(e, 'walk');
+      const slow = e.st.slow && e.st.slow.u > now() ? 1 - e.st.slow.v : 1;
+      mv(e, target.x - Math.sign(dx) * e.K.rng * .7, target.y, e.K.spd * slow * dt);
+    }
+  }
   function mv(e, x, y, v) { const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 2) return; e.x += dx / d * Math.min(v, d); e.y += dy / d * Math.min(v, d) * .7; e.y = Math.max(GY0, Math.min(GY1, e.y)); e.x = Math.max(20, Math.min(worldW() - 20, e.x)) }
+  // 主角一般攻擊：傷害基準＝h.atkBase（主遊戲同款一般攻擊期望值）；暴擊／寵物加成沿用本測試場 heroStat。
+  function heroDmg(e, hs) { const h = A.hero, crit = rnd() * 100 < hs.crit; const d = h.atkBase * hs.atk * (crit ? 1 + hs.cdmg / 100 : 1) * (.9 + rnd() * .2); hit(e, d, 'hero', '', '#fff', crit); A.ult = Math.min(100, A.ult + 1) }
+  function hitCage(c) { c.hp--; txt(c.x, c.y - 120, c.hp > 0 ? '喀！' : '打開了！', '#fff', 1); if (c.hp <= 0) { const p = P.rescue(c.sp, { tier: c.tier, star: c.star, quest: A.quest && A.quest.id }); c.freed = { p, t: 0 }; poof(c.x, c.y - 40) } }
   function heroHit(hs) {
-    const h = A.hero; let any = 0;
-    for (const e of A.en) { if (e.dead) continue; const dx = (e.x - h.x) * h.face; if (dx > -20 && dx < 150 * (isBoss(e) ? 1.3 : 1) && Math.abs(e.y - h.y) < 45) { const crit = rnd() * 100 < hs.crit; let d = C.heroAtk * hs.atk * (crit ? 1 + hs.cdmg / 100 : 1) * (.9 + rnd() * .2); hit(e, d, 'hero', '', '#fff', crit); any = 1; A.ult = Math.min(100, A.ult + 1) } }
-    for (const c of A.cages) { if (c.hp <= 0) continue; const dx = (c.x - h.x) * h.face; if (dx > -20 && dx < 150 && Math.abs(c.y - h.y) < 50) { c.hp--; txt(c.x, c.y - 120, c.hp > 0 ? '喀！' : '打開了！', '#fff', 1); if (c.hp <= 0) { const p = P.rescue(c.sp, { tier: c.tier, star: c.star, quest: A.quest && A.quest.id }); c.freed = { p, t: 0 }; poof(c.x, c.y - 40) } } }
+    const h = A.hero, H = h.H;
+    if (H.ranged) { A.pr.push({ harrow: 1, x: h.x + 60 * h.face, gy: h.y, y: h.y - 92, vx: H.ranged.v * h.face, life: H.ranged.rng / H.ranged.v, hs }); return }   // 三杯兔子：普通射擊（主遊戲 AR.shot：速度 1500、射程 760）
+    const R = H.reach;
+    for (const e of A.en) { if (e.dead) continue; const dx = (e.x - h.x) * h.face; if (dx > -20 && dx < R * (isBoss(e) ? 1.3 : 1) && Math.abs(e.y - h.y) < 45) heroDmg(e, hs) }
+    for (const c of A.cages) { if (c.hp <= 0) continue; const dx = (c.x - h.x) * h.face; if (dx > -20 && dx < R && Math.abs(c.y - h.y) < 50) hitCage(c) }
   }
   function enemyStrike(e, tgt) {
     let dmg = e.K.atk * (e.elite ? 1.5 : 1) * (e.atkName === 'slam' ? 1.9 : 1);
@@ -437,20 +522,29 @@
     if (e.K.ranged) { A.pr.push({ x: e.x, y: e.y - 60, vx: Math.sign(tgt.x - e.x) * 520, arrow: 1, net: e.kind === 'net', tgt, dmg, src: e, life: 2 }); return }
     const reach = e.K.rng * 1.2; const h = A.hero, pet = A.pet;
     if (Math.abs(pet.x - e.x) < reach && Math.abs(pet.y - e.y) < 50) petHurt();
-    if (tgt === h && Math.abs(h.x - e.x) < reach && Math.abs(h.y - e.y) < 50) heroHurt(dmg, e);
+    if (tgt === h && Math.abs(h.x - e.x) < reach && Math.abs(h.y - e.y) < 50) { if (heroHurt(dmg, e) && e.kind === 'drag') heroStun(h) }
   }
+  // 2026-11-12 英雄專屬負面狀態（獨立於敵人 e.st）：只在攻擊真的命中英雄時（非閃避／倒下／無敵）觸發。
+  // 播網兵網射體 → 緩速 2 秒、移速 ×0.6；拖籠兵籠擊 → 暈眩 0.8 秒、不能移動／攻擊並中斷揮擊。重疊命中刷新時長。
+  const HERO_SLOW_T = 2, HERO_SLOW_MUL = .6, HERO_STUN_T = .8;
+  function heroSlowed(h) { return (h.slowU || 0) > now() }
+  function heroStunned(h) { return (h.stunU || 0) > now() }
+  function heroSlow(h) { h.slowU = Math.max(h.slowU || 0, now() + HERO_SLOW_T); txt(h.x, h.y - 210, '緩速', '#b8d4e8'); if (mcOn()) P.MC.H.slow(HERO_SLOW_T, HERO_SLOW_MUL) }
+  function heroStun(h) { h.stunU = Math.max(h.stunU || 0, now() + HERO_STUN_T); h.swing = 0; h.hitDone = 1; txt(h.x, h.y - 210, '暈眩', '#ffe066'); if (mcOn()) P.MC.H.stun(HERO_STUN_T) }
   function petHurt() { A.pet.hurt = now() + .45 }   // 寵物被打到：只閉眼，不扣血、不倒下
   function heroHurt(dmg, e) {
-    const h = A.hero; if (h.down || P.arenaGod) { if (P.arenaGod) txt(h.x, h.y - 150, '無敵', '#aaa'); return }
-    const hs = heroStat(); if (rnd() * 100 < hs.dodge) { txt(h.x, h.y - 150, '閃避', '#9cf'); return }
+    const h = A.hero; if (h.down || P.arenaGod) { if (P.arenaGod) txt(h.x, h.y - 150, '無敵', '#aaa'); return false }
+    if (mcOn()) return mcHurt(dmg, e);
+    const hs = heroStat(); if (rnd() * 100 < hs.dodge) { txt(h.x, h.y - 150, '閃避', '#9cf'); return false }
     dmg *= 1 - hs.dr / 100; dmg = Math.min(dmg, h.max * .65);   // 單一傷害最多 65%
     if (h.shield) { const a = Math.min(h.shield.v, dmg); h.shield.v -= a; dmg -= a; if (h.shield.v <= 0) h.shield = null; txt(h.x, h.y - 180, '泡泡吸收 ' + Math.round(a), '#bdf') }
-    dmg = Math.round(dmg); h.hp -= dmg; txt(h.x, h.y - 150, '-' + dmg, '#ff6b6b');
+    dmg = Math.round(dmg); h.hp -= dmg; h.hurtT = now(); txt(h.x, h.y - 150, '-' + dmg, '#ff6b6b');
     if (dmg >= h.max * .2) heavy();
     if (h.hp <= 0) {
-      if (has(31) && !A.used31) { A.used31 = 1; h.hp = h.max * .25; h.inv = now() + .6; txt(h.x, h.y - 190, '起來呀！', '#ffd', 1); log('#31 起來呀！'); return }
+      if (has(31) && !A.used31) { A.used31 = 1; h.hp = h.max * .25; h.inv = now() + .6; txt(h.x, h.y - 190, '起來呀！', '#ffd', 1); log('#31 起來呀！'); return true }
       h.hp = 0; h.down = 1; heavy(); txt(h.x, h.y - 190, '倒下了…', '#f66', 1); log('主角倒下'); setTimeout(() => A && end(false), 1500);
     }
+    return !h.down;
   }
   function heavy() { const t = A.pi.tier >= 3; if (has(304) && (A.cd[304] || 0) < now()) { A.cd[304] = now() + cdOf(304); A.pet.scaleU = now() + 6; A.used[304] = (A.used[304] || 0) + 1; txt(A.pet.x, A.pet.y - 110, '逆鱗！攻擊 +30%', '#f77'); log('#304 逆鱗：寵物 6 秒攻擊 +30%') } if (has(58) && (A.cd[58] || 0) < now()) { A.cd[58] = now() + 15; buff(58, 'dr', 4, t ? 5 : 4, '不屈的韻味') } if (has(59) && (A.cd[59] || 0) < now()) { A.cd[59] = now() + 10; A.hero.hp = Math.min(A.hero.max, A.hero.hp + A.hero.max * (t ? .03 : .02)) } if (has(61) && (A.cd[61] || 0) < now()) { A.cd[61] = now() + 15; A.pet.rageU = now() + 6 } }
   function end(win) {
@@ -461,6 +555,166 @@
     log(`戰鬥結算：${win ? '通關' : '撤退／倒下'}；寵物傷害佔 ${share}%；技能使用 ${Object.entries(A.used).map(([n, c]) => P.SK[n].name + '×' + c).join('、') || '無'}`);
     UI.toast(`${win ? '通關！' : '回收容所'} 金幣 +${Math.round(A.gold)}｜剩食麵包 +${A.bread}｜寵物傷害 ${share}%`, 3500);
     P.save();
+  }
+  // ======== 2026-11-12 主遊戲戰鬥模組（P.MC，pet_maincombat_1112.js）========
+  // 英雄＝主遊戲的英雄（移動、跳躍、J/K/L/V、閃避、各角色招式、傷害／暴擊、受傷／倒地／無敵、HUD、手機按鍵）；
+  // 這裡把寵物頁的敵人／鐵籠交給主遊戲當「代理怪」，主遊戲算出的傷害再回到寵物頁（掉落、籠兵倒地、格魯姆連籠倒下、救出寵物）。
+  const mcOn = () => !!(A && A.mc && A.mc.ready && P.MC && P.MC.on);
+  const MCN = { ow: 0 };
+  function mcEnter(RH) {
+    A.mc = null; if (!(P.MC && P.MC.usable && P.MC.usable())) return;
+    const mc = A.mc = { ready: false, wait: 0, held: {}, healAcc: 0, atkT: 0 };
+    A.auto = 0;   // 主遊戲英雄預設手動（自己的角色自己打）；上方「自動」可開
+    P.MC.boot().then(() => {
+      if (!A || A.mc !== mc) return;
+      const h = A.hero;
+      const st = P.MC.start({ hero: RH.id, ww: worldW(), gy0: GY0, gy1: GY1, x: h.x, y: h.y, hpShare: ((A.pi.ow || {}).hp || 0) / 100, name: (A.quest && A.quest.name) || '救援' });
+      h.max = st.max; h.hp = st.hp; mc.ready = true; mc.hero = st.hero; mcBar(true);
+      for (const e of A.en) if (e.K.mcHp && !e.dead && e.hp === e.max) { e.hp = e.max = e.K.mcHp * (e.elite ? 3 : 1) }   // 模組載好之前就已經出場的頭目（例如本機直接從第 2 波開始）也換成主遊戲戰鬥用的 HP
+      log(`主遊戲戰鬥模組：${h.name}（主遊戲 HPMAX ${st.max}；招式／傷害／受傷全用主遊戲原檔）`);
+    }).catch(e => { if (!A || A.mc !== mc) return; A.mc = null; A.auto = matchMedia('(pointer:coarse)').matches ? 1 : 0; UI.toast('主遊戲戰鬥模組載入失敗，這場改用簡易英雄', 3500); log('主遊戲戰鬥模組失敗：' + (P.MC.failed || e)) });
+  }
+  function mcLeave() { mcBar(false); mcAutoRelease(); if (A && A.mc && P.MC) P.MC.stop() }
+  // 寵物頁自己的兩顆鈕（主遊戲畫面上方中間、寵物格右邊）：回收容所、自動戰鬥
+  function mcBar(on) {
+    let b = document.getElementById('mcBar');
+    if (!on) { if (b) b.remove(); return }
+    if (!b) { b = document.createElement('div'); b.id = 'mcBar'; document.body.appendChild(b) }
+    b.innerHTML = '<button data-k="quit">回收容所</button><button data-k="auto">自動：關</button>';
+    b.onclick = ev => { const k = ev.target && ev.target.dataset && ev.target.dataset.k; if (!k || !A) return; ev.preventDefault();
+      if (k === 'quit') end(false); else { A.auto ^= 1; if (!A.auto) mcAutoRelease(); ev.target.textContent = A.auto ? '自動：開' : '自動：關'; ev.target.classList.toggle('on', !!A.auto) }
+      try { P.MC.fr.focus() } catch (e) { } };
+    mcPlaceBar();
+  }
+  // 依主遊戲畫布實際位置擺（letterbox／手機 panel 模式都對得上）：畫布座標 x 718～、y 8～
+  function mcPlaceBar() {
+    const b = document.getElementById('mcBar'); if (!b || !P.MC || !P.MC.fr) return;
+    try { const cv = P.MC.W.document.getElementById('c'), r = cv.getBoundingClientRect(), fr = P.MC.fr.getBoundingClientRect(), k = r.width / 1280;
+      b.style.left = Math.round(fr.left + r.left + 718 * k) + 'px'; b.style.top = Math.round(fr.top + r.top + 10 * k) + 'px'; b.style.setProperty('--k', Math.max(0.55, k).toFixed(3)) } catch (e) { }
+  }
+  function mcHeroStep(dt, hs) {
+    const H = P.MC.H, h = A.hero, mc = A.mc;
+    H.setBonus({ atk: hs.atk, crit: (hs.crit - 15) / 100, cdmg: (hs.cdmg - 80) / 100, spd: hs.spd });
+    if (A.auto && !h.down) mcAuto(); else if (Object.keys(mc.held).length || mc.jDown) mcAutoRelease();
+    const st = H.state();
+    h.x = st.x; h.y = st.y; h.face = st.face; h.max = st.max; h.hp = st.hp; h.moving = false;
+    A.food = Math.min(C.foodSlot, st.food);   // 主遊戲「召喚／援助（V）」會吃掉食物
+    if (h.regen && h.regen.u > now()) { mc.healAcc += h.regen.v * dt; if (mc.healAcc >= 1) { const v = Math.floor(mc.healAcc); mc.healAcc -= v; H.heal(v, true); h.hp = H.state().hp } }
+    if (h.shield && h.shield.u < now()) h.shield = null;
+    if (st.dead && !h.down) {
+      if (has(31) && !A.used31) { A.used31 = 1; H.revive(.25); h.hp = H.state().hp; txt(h.x, h.y - 190, '起來呀！', '#ffd', 1); log('#31 起來呀！') }
+      else { h.hp = 0; h.down = 1; heavy(); log('主角倒下'); setTimeout(() => A && end(false), 1800) }
+    }
+    if (H.quitReq) { H.quitReq = false; end(false) }
+    while (H.notes.length) UI.toast(`救援關不開「${H.notes.shift()}」：請回主遊戲調整（救援不寫主遊戲存檔）`, 2600);
+    mcPlaceBar();
+  }
+  function mcHurt(dmg, e) {
+    const h = A.hero, hs = heroStat(), H = P.MC.H;
+    if (rnd() * 100 < hs.dodge) { txt(h.x, h.y - 150, '閃避', '#9cf'); return false }   // 寵物給的閃避（寵物系統效果，疊在主遊戲之前）
+    dmg *= 1 - hs.dr / 100; dmg = Math.min(dmg, h.max * .65);
+    if (h.shield) { const a = Math.min(h.shield.v, dmg); h.shield.v -= a; dmg -= a; if (h.shield.v <= 0) h.shield = null; txt(h.x, h.y - 180, '泡泡吸收 ' + Math.round(a), '#bdf') }
+    if (dmg < 1) return false;
+    const lost = H.hurt(Math.round(dmg), e ? e.x : null), st = H.state(); h.hp = st.hp; h.hurtT = now();
+    if (lost <= 0 && !st.dead) return false;   // 主遊戲的無敵時間／翻滾／後跳／格擋擋掉 → 不上緩速／暈眩
+    if (lost >= h.max * .2) heavy();
+    return !st.dead;
+  }
+  function mcHold(code, on) { const H = P.MC.H, held = A.mc.held; if (!!held[code] === !!on) return; if (on) { held[code] = 1; H.key('keydown', code) } else { delete held[code]; H.key('keyup', code) } }
+  function mcAutoRelease() { if (!A || !A.mc || !P.MC || !P.MC.H) return; for (const k in A.mc.held) P.MC.H.key('keyup', k); A.mc.held = {}; if (A.mc.jDown) { A.mc.jDown = 0; P.MC.H.key('keyup', 'KeyJ') } }
+  // 自動戰鬥（寵物頁原本的規則）：主遊戲沒有可開關的自動，這裡改成「幫你按方向鍵＋J」，招式本身仍是主遊戲的
+  function mcAuto() {
+    const h = A.hero; let mx = 0, my = 0, atk = 0;
+    const tgt = A.cages.find(c => c.hp > 0 && Math.abs(c.x - h.x) < 900 && !A.en.some(e => !e.dead && Math.abs(e.x - h.x) < 500)) || nearest(h.x, h.y, e => !(e.poly && isBoss(e)) || 1, 2000);
+    if (tgt) { const dx = tgt.x - h.x, dy = tgt.y - h.y, rr = A.mc.hero === 'archer' && tgt.K ? 520 : 90;
+      if (Math.abs(dx) > rr || Math.abs(dy) > 22) { mx = Math.abs(dx) > rr ? Math.sign(dx) : 0; my = Math.abs(dy) > 22 ? Math.sign(dy) : 0 }
+      else if ((Math.sign(dx) || h.face) !== h.face) mx = Math.sign(dx); else atk = 1 }
+    else if (A.mode === 'rescue' && A.cages.some(c => c.hp > 0)) mx = 1;
+    mcHold('ArrowRight', mx > 0); mcHold('ArrowLeft', mx < 0); mcHold('ArrowDown', my > 0); mcHold('ArrowUp', my < 0);
+    const H = P.MC.H; if (A.mc.jDown) { A.mc.jDown = 0; H.key('keyup', 'KeyJ') }   // 放開放在下一格（不靠 setTimeout，加速模擬測試也一樣）
+    if (atk && A.mc.atkT < now()) { A.mc.atkT = now() + .2; A.mc.jDown = 1; H.key('keydown', 'KeyJ') }
+  }
+  function mcList() {
+    const L = [];
+    for (const e of A.en) if (!e.dead) L.push({ id: e.id, x: e.x, y: e.y, face: e.face || -1, hp: Math.max(1, e.hp), max: e.max, kind: isBoss(e) ? 'boss' : 'mob', head: monHead(e) + 12, elite: !!e.elite, name: isBoss(e) ? (e.K.grum ? '格魯姆・背籠看守' : (e.K.name || '頭目')) : '' });
+    A.cages.forEach((c, i) => { if (c.hp > 0) L.push({ id: 'c' + i, x: c.x, y: c.y, face: -1, hp: 1, max: 1, kind: 'cage' }) });
+    return L;
+  }
+  function mcApply(list) {
+    for (const r of list) {
+      if (typeof r.id === 'string') { const c = A.cages[+r.id.slice(1)]; if (c && c.hp > 0 && r.d > 0 && now() >= (c.mcT || 0)) { c.mcT = now() + .22; hitCage(c) } continue }
+      const e = A.en.find(x => x.id === r.id); if (!e) continue;
+      if (!e.K.grum && !e.dead) { const react = r.state === 'air' || r.state === 'down' || r.state === 'stun'; e.mcR = react ? 1 : 0; e.mcS = r.state; e.mcH = r.h || 0; e.mcRot = r.rot || 0; if (react) e.x = Math.max(20, Math.min(worldW() - 20, r.x)) }
+      if (r.d > 0 && !e.dead) { hit(e, r.d, 'hero', '', '#fff', false); A.ult = Math.min(100, A.ult + 1) }
+      if (e.dead) e.mcR = 0;
+    }
+  }
+  function mcRender() {
+    const H = P.MC.H;
+    H.setFood(A.food); H.setGold(Math.round(A.gold));
+    H.sync(mcList());
+    H.frame({ bg: mcBg, ents: mcEnts, after: mcAfter, hud: mcHud });
+    mcApply(H.collect());
+    A.cam = H.cam || 0;
+  }
+  function mcBg(X, cx0) {
+    A.cam = cx0; const cam = cx0;
+    if (!(P.drawRescueStageBg && P.drawRescueStageBg(X, A))) { X.fillStyle = '#3d2f45'; X.fillRect(0, 0, 1280, 720); X.fillStyle = '#6b8f4e'; X.fillRect(0, 400, 1280, 320); X.fillStyle = '#1A1016'; X.fillRect(0, 398, 1280, 4) }
+    if (P.drawRescueStageDecals) P.drawRescueStageDecals(X, A);
+    for (const z of A.zones) { const x = z.x - cam; if (z.k === 'star') { const a = Math.max(0, (z.u - now()) / 2.5); X.fillStyle = `rgba(255,236,140,${(.25 + .5 * a).toFixed(2)})`; for (let i = 0; i < 4; i++) X.fillRect(Math.round(x - 18 + i * 11), Math.round(z.y - 4 - (i % 2) * 7), 4, 4) } if (z.k === 'glue') { X.fillStyle = 'rgba(255,140,190,.55)'; X.beginPath(); X.ellipse(x, z.y, z.r, z.r * .35, 0, 0, 7); X.fill() } if (z.k === 'banana' && !z.used) P.art.px(X, P.art.BANANA, x - 8, z.y - 12, 2); if (z.k === 'bone') P.art.px(X, P.art.BONE, x - 8, z.y - 10, 3) }
+  }
+  // 寵物頁的場景物件插進主遊戲同一張「依腳底 y 排序」清單（主遊戲英雄也在裡面）→ 前後遮擋一致
+  function mcEnts(ents, cx0, shy) {
+    A.cam = cx0; const ctx = P.MC.W.document.getElementById('c').getContext('2d');
+    const at = (y, f) => ents.push([y, () => { ctx.save(); if (shy) ctx.translate(0, shy); try { f() } finally { ctx.restore() } }]);
+    if (P.rescueStageProps) P.rescueStageProps(ctx, A).forEach(p => at(p.y, p.draw));
+    A.cages.forEach(c => at(c.y, () => drawCage(ctx, c)));
+    A.en.forEach(e => { if (!e.dead || (e.K.grum && now() < e.exitUntil) || cageExiting(e) || netExiting(e) || dragExiting(e)) at(e.y, () => mcDrawEnemy(ctx, e)) });
+    at(A.pet.y, () => drawPet(ctx));
+    A.drops.forEach(d => at(d.y, () => P.art.px(ctx, d.kind === 'gold' ? P.art.COIN : P.art.BREAD, d.x - A.cam - 8, d.y - 14 - d.z, 3)));
+    const h = A.hero; if (h.hidden > now()) at(h.y + .5, () => P.art.px(ctx, P.art.BOX, h.x - A.cam - 36, h.y - 100, 6));
+  }
+  // 被主遊戲打飛（air）／倒地（down）時，籠兵跟主遊戲小怪一樣離地、轉圈、躺下
+  function mcDrawEnemy(ctx, e) {
+    if (!e.mcR || e.dead) return drawEnemy(ctx, e);
+    const x = e.x - A.cam; ctx.save();
+    if (e.mcS === 'air') { ctx.translate(0, -Math.round(e.mcH)); const r = (e.mcRot || 0) * Math.PI / 180; if (r) { ctx.translate(x, e.y - 60); ctx.rotate(r * (e.face > 0 ? -1 : 1)); ctx.translate(-x, -(e.y - 60)) } }
+    else if (e.mcS === 'down') { ctx.translate(x, e.y - 8); ctx.rotate((e.face > 0 ? -1 : 1) * 1.45); ctx.translate(-x, -(e.y - 8)) }
+    try { drawEnemy(ctx, e) } finally { ctx.restore() }
+  }
+  function mcAfter(X) {
+    const cam = A.cam, h = A.hero;
+    for (const p of A.pr) { const x = p.x - cam; if (p.harrow) continue; if (p.snow) { X.fillStyle = '#eef6ff'; X.strokeStyle = '#1A1016'; X.lineWidth = 3; X.beginPath(); X.arc(x, p.y - p.r / 2, p.r, 0, 7); X.fill(); X.stroke() } else if (p.net) {
+      if ((now() >= p.src.netStrikeAt + .18 || p.src.dead || p.src.act === 'hit') && P.art.imageOK(IMG.net_projectile)) { const im = IMG.net_projectile; X.save(); X.imageSmoothingEnabled = false; X.translate(Math.round(x), Math.round(p.y)); if (p.vx > 0) X.scale(-1, 1); X.drawImage(im, -im.width, -im.height, im.width * 2, im.height * 2); X.restore() }
+    } else if (p.arrow) { X.fillStyle = '#1A1016'; X.fillRect(x - 14, p.y - 2, 28, 4) } else { X.fillStyle = '#1A1016'; X.fillRect(x - 7, p.y - 7, 14, 14); X.fillStyle = p.c; X.fillRect(x - 5, p.y - 5, 10, 10) } }
+    const W2 = P.MC.H;
+    for (const f of A.fx) { const x = f.x - cam, k = f.t / f.life;
+      if (f.k === 'txt') { W2.T(f.s, x, f.y - k * 40, W2.FN(f.big ? 22 : 16), hexRGB(c), 3, [26, 16, 22], 'mm', 1 - k * k) }
+      if (f.k === 'poof') { X.fillStyle = '#eee'; X.globalAlpha = 1 - k; for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; const r = 10 + k * 40; X.fillRect(x + Math.cos(a) * r - 6, f.y + Math.sin(a) * r * .6 - 6, 12, 12) } X.globalAlpha = 1 }
+      if (f.k === 'pan') P.art.px(X, P.art.PAN, x - 15, f.y - (1 - k) * 60, 3) }
+    if (P.drawRescueStageFg) P.drawRescueStageFg(X, A);
+    const slowed = heroSlowed(h) && !h.down, stunned = heroStunned(h) && !h.down; if (slowed || stunned) drawHeroStatus(X, h, slowed, stunned);
+  }
+  const hexRGB = c => { c = String(c || '#fff').replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join(''); const n = parseInt(c.slice(0, 6), 16) || 0xffffff; return [n >> 16 & 255, n >> 8 & 255, n & 255] };
+  // 主遊戲 HUD 上：主遊戲自己寵物量表那一格換成「同行寵物」；寵物技能冷卻、加成、波次用主遊戲字型畫在左上面板下方
+  function mcHud(X) {
+    const W2 = P.MC.H, T = W2.T, FN = W2.FN, FS = W2.FS, pet = A.pet, pi = A.pi, h = A.hero;
+    X.save(); X.beginPath(); X.arc(640, 58, 46, 0, 7); X.fillStyle = 'rgba(16,10,8,0.88)'; X.fill(); X.lineWidth = 4; X.strokeStyle = 'rgb(214,172,84)'; X.stroke(); X.clip();
+    P.art.draw(X, { sp: pi.sp, tier: pi.tier, star: pi.star }, 640, 92, { act: pet.hurt > now() ? 'hurt' : 'idle', t: pet.t, scale: 1.05, appear: 9 }); X.restore();
+    T(pi.name, 640, 118, FN(14), [255, 236, 200], 2, [0, 0, 0], 'mm');
+    let y = 168; const row = (s, col) => { const w = Math.min(380, W2.tw ? W2.tw(s, FN(14)) + 16 : 240); X.fillStyle = 'rgba(12,8,10,0.66)'; X.fillRect(10, y - 11, w, 21); T(s, 18, y, FN(14), col, 2, [0, 0, 0], 'lm'); y += 23 };
+    for (const n of pi.sk) { const sk = P.SK[n], r = Math.max(0, (A.cd[n] || 0) - now()); const done = SKILL[n] || n <= 7 || (sk.use && sk.use.some(u => u[0] <= 7 || SKILL[u[0]])); row(`寵物技能 #${n} ${sk.name}　${done ? (r > 0 ? r.toFixed(0) + 's' : '就緒') : '（還沒做）'}`, r > 0 ? [200, 196, 190] : [168, 230, 161]) }
+    for (const k in h.buf) { const b = h.buf[k]; if (b.u > now()) row(`▲ ${b.name}`, [255, 230, 160]) }
+    if (heroStunned(h)) row('▼ 暈眩', [255, 224, 102]); if (heroSlowed(h)) row('▼ 緩速（移動 ×0.6）', [184, 212, 232]);
+    if (h.shield) row(`泡泡護盾 ${Math.round(h.shield.v)}`, [190, 220, 255]);
+    T(`${A.quest ? A.quest.name + '　' : ''}第 ${A.wave}/${A.waves.length} 波　擊倒 ${A.kills}　救出 ${A.cages.filter(c => c.hp <= 0).length}/${A.cages.length}`, 1268, 132, FN(15), [255, 244, 214], 2, [0, 0, 0], 'rm');
+    if (A.over) { X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(0, 300, 1280, 100); T(A.mode === 'rescue' && A.cages.every(c => c.hp <= 0) ? (A.quest && A.quest.id === 'r1' ? '救援成功！大家搬去總匯總部' : '委託完成！救出來的孩子在候補名冊') : '回收容所…', 640, 350, FS(34), [255, 255, 255], 4, [0, 0, 0], 'mm') }
+    if (P.arenaView) P.arenaView(X, A);
+  }
+  function mcLoading(ctx) {
+    ctx.fillStyle = '#120c10'; ctx.fillRect(0, 0, 1280, 720); ctx.fillStyle = '#f3d27a'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`載入主遊戲戰鬥… ${A.hero.name}`, 640, 350); ctx.font = '16px sans-serif'; ctx.fillStyle = '#cbb'; ctx.fillText('第一次約需數秒（主遊戲角色、招式、按鍵）', 640, 386); ctx.textAlign = 'left';
+    if (A.mc.wait > 50) { A.mc = null; UI.toast('主遊戲戰鬥模組載入太久，這場改用簡易英雄', 3500) }
   }
   // ---------- 畫面 ----------
   function sheetDraw(ctx, e, anim, t, sc) {
@@ -473,21 +727,24 @@
   }
   function render(ctx) {
     const cam = A.cam;
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    if (A.shakeUntil > now()) ctx.translate(Math.round(Math.sin(A.t * 110) * 2), Math.round(Math.cos(A.t * 90) * 2));
     if (!(P.drawRescueStageBg && P.drawRescueStageBg(ctx, A))) {
       ctx.fillStyle = '#3d2f45'; ctx.fillRect(0, 0, 1280, 720);
       ctx.fillStyle = '#5a4466'; for (let i = 0; i < 12; i++) { const x = ((i * 260 - cam * .4) % 3120 + 3120) % 3120 - 200; ctx.fillRect(x, 200, 120, 200) }
       ctx.fillStyle = '#6b8f4e'; ctx.fillRect(0, 400, 1280, 320); ctx.fillStyle = '#5c7d42'; for (let x = -((cam) % 80); x < 1280; x += 80) ctx.fillRect(x, 400, 40, 320);
       ctx.fillStyle = '#1A1016'; ctx.fillRect(0, 398, 1280, 4);
     }
+    if (P.drawRescueStageDecals) P.drawRescueStageDecals(ctx, A); // 地面貼條（車轍／鐵軌），永遠在腳下
     for (const z of A.zones) { const x = z.x - cam; if (z.k === 'star') { const a = Math.max(0, (z.u - now()) / 2.5); ctx.fillStyle = `rgba(255,236,140,${(.25 + .5 * a).toFixed(2)})`; for (let i = 0; i < 4; i++) ctx.fillRect(Math.round(x - 18 + i * 11), Math.round(z.y - 4 - (i % 2) * 7), 4, 4) } if (z.k === 'glue') { ctx.fillStyle = 'rgba(255,140,190,.55)'; ctx.beginPath(); ctx.ellipse(x, z.y, z.r, z.r * .35, 0, 0, 7); ctx.fill() } if (z.k === 'banana' && !z.used) P.art.px(ctx, P.art.BANANA, x - 8, z.y - 12, 2); if (z.k === 'bone') P.art.px(ctx, P.art.BONE, x - 8, z.y - 10, 3) }
     const objs = [];
     if (P.rescueStageProps) P.rescueStageProps(ctx, A).forEach(p => objs.push({ y: p.y, f: p.draw }));
     A.cages.forEach(c => objs.push({ y: c.y, f: () => drawCage(ctx, c) }));
-    A.en.forEach(e => { if (!e.dead || cageExiting(e) || netExiting(e) || dragExiting(e)) objs.push({ y: e.y, f: () => drawEnemy(ctx, e) }) });
+    A.en.forEach(e => { if (!e.dead || (e.K.grum && now() < e.exitUntil) || cageExiting(e) || netExiting(e) || dragExiting(e)) objs.push({ y: e.y, f: () => drawEnemy(ctx, e) }) });
     objs.push({ y: A.hero.y, f: () => drawHero(ctx) }); objs.push({ y: A.pet.y, f: () => drawPet(ctx) });
     A.drops.forEach(d => objs.push({ y: d.y, f: () => P.art.px(ctx, d.kind === 'gold' ? P.art.COIN : P.art.BREAD, d.x - cam - 8, d.y - 14 - d.z, 3) }));
     objs.sort((a, b) => a.y - b.y).forEach(o => o.f());
-    for (const p of A.pr) { const x = p.x - cam; if (p.snow) { ctx.fillStyle = '#eef6ff'; ctx.strokeStyle = '#1A1016'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, p.y - p.r / 2, p.r, 0, 7); ctx.fill(); ctx.stroke() } else if (p.net) {
+    for (const p of A.pr) { const x = p.x - cam; if (p.harrow) { drawHeroArrow(ctx, x, p.y, Math.sign(p.vx) || 1); continue } if (p.snow) { ctx.fillStyle = '#eef6ff'; ctx.strokeStyle = '#1A1016'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, p.y - p.r / 2, p.r, 0, 7); ctx.fill(); ctx.stroke() } else if (p.net) {
       // 前180ms由投網格承載飛網，之後交棒給同張原稿的網；不重複畫第二張網，也不改原有命中／飛行計算。
       if ((now() >= p.src.netStrikeAt + .18 || p.src.dead || p.src.act === 'hit') && P.art.imageOK(IMG.net_projectile)) {
         const im = IMG.net_projectile; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(Math.round(x), Math.round(p.y)); if (p.vx > 0) ctx.scale(-1, 1); ctx.drawImage(im, -im.width, -im.height, im.width * 2, im.height * 2); ctx.restore();
@@ -500,22 +757,66 @@
       if (f.k === 'pan') P.art.px(ctx, P.art.PAN, x - 15, f.y - (1 - k) * 60, 3);
     }
     if (P.drawRescueStageFg) P.drawRescueStageFg(ctx, A);
+    ctx.restore(); // screen shake affects the world only; HUD stays stable
     // 血條、食物槽、寵物技能冷卻
-    const h = A.hero; ctx.fillStyle = '#1A1016'; ctx.fillRect(16, 56, 304, 22); ctx.fillStyle = '#e04848'; ctx.fillRect(18, 58, 300 * Math.max(0, h.hp) / h.max, 18); if (h.shield) { ctx.fillStyle = '#bde'; ctx.fillRect(18, 58, 300 * h.shield.v / h.max, 6) }
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.fillText(`苦達斯 ${Math.round(Math.max(0, h.hp))}`, 24, 73);
-    for (let i = 0; i < C.foodSlot; i++) { ctx.globalAlpha = i < A.food ? 1 : .3; P.art.px(ctx, P.art.BREAD, 330 + i * 30, 58, 3); ctx.globalAlpha = 1 }
-    const boss = A.en.find(e => isBoss(e) && !e.dead); if (boss) { ctx.fillStyle = '#1A1016'; ctx.fillRect(390, 90, 504, 20); ctx.fillStyle = '#c050ff'; ctx.fillRect(392, 92, 500 * boss.hp / boss.max, 16); ctx.fillStyle = '#fff'; ctx.fillText('王：寶石劫掠者（測試用）', 400, 106) }
+    const h = A.hero, HX = 64; ctx.fillStyle = '#1A1016'; ctx.fillRect(16, 44, 44, 44); { const pi = IMG['por_' + h.id]; if (P.art.imageOK(pi)) { ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(pi, 18, 46, 40, 40); ctx.restore() } }
+    ctx.fillStyle = '#1A1016'; ctx.fillRect(HX, 56, 304, 22); ctx.fillStyle = '#e04848'; ctx.fillRect(HX + 2, 58, 300 * Math.max(0, h.hp) / h.max, 18); if (h.shield) { ctx.fillStyle = '#bde'; ctx.fillRect(HX + 2, 58, 300 * h.shield.v / h.max, 6) }
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.fillText(`${h.name} ${Math.round(Math.max(0, h.hp))}`, HX + 8, 73);
+    for (let i = 0; i < C.foodSlot; i++) { ctx.globalAlpha = i < A.food ? 1 : .3; P.art.px(ctx, P.art.BREAD, HX + 314 + i * 30, 58, 3); ctx.globalAlpha = 1 }
+    const boss = A.en.find(e => isBoss(e) && !e.dead); if (boss) { ctx.fillStyle = '#1A1016'; ctx.fillRect(390, 90, 504, 20); ctx.fillStyle = '#c050ff'; ctx.fillRect(392, 92, 500 * boss.hp / boss.max, 16); ctx.fillStyle = '#fff'; ctx.fillText('格魯姆・背籠看守', 400, 106) }
     let y = 100; ctx.font = '13px sans-serif';
     for (const n of A.pi.sk) { const s = P.SK[n], r = Math.max(0, (A.cd[n] || 0) - now()); ctx.fillStyle = 'rgba(26,16,22,.7)'; ctx.fillRect(16, y - 14, 230, 19); ctx.fillStyle = r > 0 ? '#aaa' : '#a8e6a1'; ctx.fillText(`#${n} ${s.name} ${(SKILL[n] || n <= 7 || (s.use && s.use.some(u => u[0] <= 7 || SKILL[u[0]]))) ? (r > 0 ? r.toFixed(0) + 's' : '就緒') : '（還沒做）'}`, 20, y); y += 21 }
     for (const k in h.buf) { const b = h.buf[k]; if (b.u > now()) { ctx.fillStyle = '#ffe6a0'; ctx.fillText(`▲ ${b.name}`, 20, y); y += 18 } }
+    if (heroStunned(h)) { ctx.fillStyle = '#ffe066'; ctx.fillText('▼ 暈眩', 20, y); y += 18 }
+    if (heroSlowed(h)) { ctx.fillStyle = '#b8d4e8'; ctx.fillText('▼ 緩速', 20, y); y += 18 }
     if (A.over) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 300, 1280, 100); ctx.fillStyle = '#fff'; ctx.font = 'bold 34px sans-serif'; ctx.fillText(A.mode === 'rescue' && A.cages.every(c => c.hp <= 0) ? (A.quest && A.quest.id === 'r1' ? '救援成功！大家搬去總匯總部' : '委託完成！救出來的孩子在候補名冊') : '回收容所…', 420, 362) }
     if (P.arenaView) P.arenaView(ctx, A);
   }
   function drawHero(ctx) {
-    const h = A.hero; let f = 'idle'; if (h.swing > .22) f = 'windup'; else if (h.swing > 0) f = 'swing'; else if (h.moving) f = 'run' + (Math.floor(A.t * 10) % 4);
-    const img = IMG['h_' + f]; shadowE(ctx, h.x - A.cam, h.y, 40, 0); ctx.save(); ctx.translate(h.x - A.cam, h.y); if (h.face < 0) ctx.scale(-1, 1); if (h.down) { ctx.rotate(1.4) }
+    const h = A.hero, H = h.H; let f, rot = 0;
+    if (h.down) { if (H.down) f = H.down; else { f = H.idle[0]; rot = 1.4 } }
+    else if (h.swing > 0) f = heroAtkFrame(H, H.dur - h.swing);
+    else if (H.hurt && now() - h.hurtT < .22) f = H.hurt;
+    else if (h.moving) f = H.run[Math.floor(A.t / H.rt) % H.run.length];
+    else f = H.idle[Math.floor(A.t / H.it) % H.idle.length];
+    h.frame = f;
+    const img = IMG['hero_' + f]; shadowE(ctx, h.x - A.cam, h.y, 40, 0); ctx.save(); ctx.translate(h.x - A.cam, h.y); if (h.face < 0) ctx.scale(-1, 1); if (rot) { ctx.rotate(rot) }
+    // 緩速：英雄整體微蒼（降飽和＋略亮），不加光暈
+    const slowed = heroSlowed(h) && !h.down, stunned = heroStunned(h) && !h.down;
+    if (slowed && 'filter' in ctx) ctx.filter = 'saturate(.35) brightness(1.12)';
     if (P.art.imageOK(img)) ctx.drawImage(img, -200, -284); ctx.restore();
     if (h.hidden > now()) P.art.px(ctx, P.art.BOX, h.x - A.cam - 36, h.y - 100, 6);
+    if (slowed || stunned) drawHeroStatus(ctx, h, slowed, stunned);
+  }
+  // 三杯兔子普通箭：照主遊戲 m27 arPx（黑框、淺色箭身 36×3、箭頭、紅色尾羽）＋白色拖尾，整數座標。
+  function drawHeroArrow(ctx, sx, sy, dir) {
+    const x = Math.round(sx), y = Math.round(sy), p = 3, L = 36, th = 3;
+    ctx.save(); ctx.translate(x, y); if (dir < 0) ctx.scale(-1, 1);
+    for (let i = 0; i < 6; i++) { ctx.fillStyle = `rgba(255,255,255,${(.5 * (1 - i / 6)).toFixed(2)})`; ctx.fillRect(-L - 16 - i * 16, -2, 16, 4) }
+    ctx.fillStyle = '#1A1016'; ctx.fillRect(-L - p, -th / 2 - p, L + p, th + 2 * p); ctx.fillRect(0, -p * 3, p * 3, p * 6);
+    ctx.fillStyle = 'rgb(240,240,250)'; ctx.fillRect(-L, -th / 2, L, th);
+    ctx.fillStyle = 'rgb(230,230,240)'; ctx.fillRect(0, -p * 2, p, p * 4); ctx.fillRect(p, -p, p, p * 2); ctx.fillRect(p * 2, -p / 2, p, p);
+    ctx.fillStyle = 'rgb(200,60,60)'; ctx.fillRect(-L, -p * 2, p * 3, p); ctx.fillRect(-L, p, p * 3, p);
+    ctx.restore();
+  }
+  // 點陣狀態標示：緩速＝腳邊兩條灰藍網線＋頭上「緩」；暈眩＝頭上三顆 4px 方星繞圈＋「暈」。全部整數座標、無模糊。
+  function drawHeroStatus(ctx, h, slowed, stunned) {
+    const x = Math.round(h.x - A.cam), y = Math.round(h.y);
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    if (slowed) {
+      ctx.fillStyle = '#b8d4e8';
+      for (let i = -3; i <= 3; i++) { ctx.fillRect(x + i * 10 - 2, y - 6, 4, 4); ctx.fillRect(x + i * 10 + 3, y - 1, 4, 4) }
+    }
+    if (stunned) {
+      for (let i = 0; i < 3; i++) {
+        const a = A.t * 6 + i * 2.094, sx = Math.round(x + Math.cos(a) * 30), sy = Math.round(y - 250 + Math.sin(a) * 8);
+        ctx.fillStyle = '#1A1016'; ctx.fillRect(sx - 4, sy - 4, 8, 8); ctx.fillStyle = '#ffe066'; ctx.fillRect(sx - 2, sy - 2, 4, 4);
+      }
+    }
+    const tag = stunned ? '暈' : '緩';
+    ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#1A1016'; ctx.fillRect(x - 12, y - 292, 24, 22);
+    ctx.fillStyle = stunned ? '#ffe066' : '#b8d4e8'; ctx.fillText(tag, x - 8, y - 275);
+    ctx.restore();
   }
   function drawPet(ctx) {
     const pet = A.pet, pi = A.pi; let act = pet.hurt > now() ? 'hurt' : pet.cast > now() ? 'cast' : pet.moving || 'idle';
@@ -560,8 +861,23 @@
     const flip = meta.face === 'L' ? e.face > 0 : e.face < 0;
     pixSpr(ctx, img, x, e.y, meta, { flip, flash, dy: bob, rot, glow, ring, alpha });
   }
+  function drawGrum(ctx, e, x) {
+    const act = GRUM[e.act] ? e.act : 'idle', meta = GRUM[act];
+    const t = e.dead ? now() - (e.exitUntil - 1.160) : (e.gt || 0);
+    const loop = act === 'idle' || act === 'walk';
+    const frame = loop ? Math.floor(t / meta[1]) % meta[0] : Math.min(meta[0] - 1, Math.max(0, Math.floor((t + 1e-7) / meta[1])));
+    const suffix = '_grum_' + act + '_' + String(frame).padStart(2, '0');
+    const image = IMG[(e.flash > now() && !e.dead ? 'f' : 's') + suffix];
+    shadowE(ctx, x, e.y, 57, 0);
+    if (!P.art.imageOK(image)) return;
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(Math.round(x), Math.round(e.y));
+    if (e.face > 0) ctx.scale(-1, 1);
+    if (e.elite) { ctx.globalAlpha = (110 + 50 * Math.sin(A.t * 5 + e.id)) / 255; const glow = IMG['g' + suffix]; if (P.art.imageOK(glow)) ctx.drawImage(glow, -160, -300); ctx.globalAlpha = 1; }
+    ctx.drawImage(image, -160, -300); ctx.restore();
+  }
   function drawEnemy(ctx, e) {
     const x = e.x - A.cam;
+    if (e.K.grum) { drawGrum(ctx, e, x); return; }
     if (e.poly) { const rows = e.poly.skin === 'pig' ? P.art.PIG : e.poly.skin === 'chick' ? P.art.CHICK : P.art.MOUSE; const s = isBoss(e) ? 8 : 4; ctx.save(); ctx.translate(x, e.y); if (e.ptgt && e.ptgt.x < e.x) ctx.scale(-1, 1); P.art.px(ctx, rows, -rows[0].length * s / 2, -rows.length * s, s); ctx.restore(); if (isBoss(e)) { ctx.fillStyle = '#ffd54a'; ctx.fillRect(x - 20, e.y - rows.length * s - 16, 40, 10) } return }
     if (e.K.pix) {
       ctx.save(); if (e.st.dance > now()) { ctx.translate(x, e.y); ctx.rotate(Math.sin(A.t * 12) * .15); ctx.translate(-x, -e.y) }

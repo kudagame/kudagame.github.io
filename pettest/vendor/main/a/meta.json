@@ -1,0 +1,949 @@
+{
+ "can": {
+  "kudas": [
+   220,
+   150,
+   100,
+   140
+  ],
+  "pet": [
+   80,
+   64,
+   40,
+   58
+  ],
+  "bard": [
+   90,
+   96,
+   45,
+   90
+  ],
+  "golem": [
+   140,
+   110,
+   70,
+   100
+  ],
+  "bh": [
+   220,
+   150,
+   100,
+   141
+  ],
+  "ar": [
+   220,
+   150,
+   100,
+   141
+  ],
+  "hl": [
+   220,
+   150,
+   100,
+   141
+  ]
+ },
+ "spr": {
+  "bard_cast": [
+   90,
+   96
+  ],
+  "bard_play0": [
+   90,
+   96
+  ],
+  "bard_play1": [
+   90,
+   96
+  ],
+  "bard_wave": [
+   90,
+   96
+  ],
+  "golem_attack": [
+   140,
+   110
+  ],
+  "golem_bdraw": [
+   140,
+   110
+  ],
+  "golem_bhit": [
+   140,
+   110
+  ],
+  "golem_bwalk": [
+   140,
+   110
+  ],
+  "golem_down": [
+   140,
+   110
+  ],
+  "golem_hit": [
+   140,
+   110
+  ],
+  "golem_walk0": [
+   140,
+   110
+  ],
+  "golem_walk1": [
+   140,
+   110
+  ],
+  "kudas_airdive": [
+   440,
+   300
+  ],
+  "kudas_charge": [
+   440,
+   300
+  ],
+  "kudas_follow": [
+   440,
+   300
+  ],
+  "kudas_idle": [
+   440,
+   300
+  ],
+  "kudas_jump": [
+   440,
+   300
+  ],
+  "kudas_lowwind": [
+   440,
+   300
+  ],
+  "kudas_run0": [
+   440,
+   300
+  ],
+  "kudas_run1": [
+   440,
+   300
+  ],
+  "kudas_run2": [
+   440,
+   300
+  ],
+  "kudas_run3": [
+   440,
+   300
+  ],
+  "kudas_slam": [
+   440,
+   300
+  ],
+  "kudas_swing": [
+   440,
+   300
+  ],
+  "kudas_upswing": [
+   440,
+   300
+  ],
+  "kudas_windup": [
+   440,
+   300
+  ],
+  "kudas_windup2": [
+   440,
+   300
+  ],
+  "pet_idle": [
+   80,
+   64
+  ],
+  "pet_run0": [
+   80,
+   64
+  ],
+  "pet_run1": [
+   80,
+   64
+  ],
+  "pet_spit": [
+   80,
+   64
+  ],
+  "bh_ko00": [
+   220,
+   150
+  ],
+  "bh_ko01": [
+   220,
+   150
+  ],
+  "bh_ko02": [
+   220,
+   150
+  ],
+  "bh_ko03": [
+   220,
+   150
+  ],
+  "bh_ko04": [
+   220,
+   150
+  ],
+  "bh_ko05": [
+   220,
+   150
+  ],
+  "bh_ko06": [
+   220,
+   150
+  ],
+  "bh_ko07": [
+   220,
+   150
+  ],
+  "bh_ko08": [
+   220,
+   150
+  ],
+  "bh_ko09": [
+   220,
+   150
+  ],
+  "bh_ko10": [
+   220,
+   150
+  ],
+  "bh_ko11": [
+   220,
+   150
+  ],
+  "bh_ko12": [
+   220,
+   150
+  ],
+  "bh_ko13": [
+   220,
+   150
+  ],
+  "bh_ko14": [
+   220,
+   150
+  ],
+  "bh_ko15": [
+   220,
+   150
+  ],
+  "bh_ko16": [
+   220,
+   150
+  ],
+  "bh_ko17": [
+   220,
+   150
+  ],
+  "bh_ko18": [
+   220,
+   150
+  ],
+  "bh_ko19": [
+   220,
+   150
+  ],
+  "bh_ko20": [
+   220,
+   150
+  ],
+  "bh_ko21": [
+   220,
+   150
+  ],
+  "bh_ko22": [
+   220,
+   150
+  ],
+  "bh_ko23": [
+   220,
+   150
+  ],
+  "bh_ko24": [
+   220,
+   150
+  ],
+  "bh_ko25": [
+   220,
+   150
+  ],
+  "bh_ko26": [
+   220,
+   150
+  ],
+  "bh_ko27": [
+   220,
+   150
+  ],
+  "bh_ko28": [
+   220,
+   150
+  ],
+  "bh_ko29": [
+   220,
+   150
+  ],
+  "bh_ko30": [
+   220,
+   150
+  ],
+  "bh_ko31": [
+   220,
+   150
+  ],
+  "bh_ko32": [
+   220,
+   150
+  ],
+  "bh_ko33": [
+   220,
+   150
+  ],
+  "bh_ko34": [
+   220,
+   150
+  ],
+  "bh_ko35": [
+   220,
+   150
+  ],
+  "bh_ko36": [
+   220,
+   150
+  ],
+  "bh_ko37": [
+   220,
+   150
+  ],
+  "bh_ko38": [
+   220,
+   150
+  ],
+  "bh_ko39": [
+   220,
+   150
+  ],
+  "bh_ko40": [
+   220,
+   150
+  ],
+  "bh_ko41": [
+   220,
+   150
+  ],
+  "bh_ko42": [
+   220,
+   150
+  ],
+  "bh_ko43": [
+   220,
+   150
+  ],
+  "bh_ko44": [
+   220,
+   150
+  ],
+  "bh_ko45": [
+   220,
+   150
+  ],
+  "kudas_ko00": [
+   220,
+   150
+  ],
+  "kudas_ko01": [
+   220,
+   150
+  ],
+  "kudas_ko02": [
+   220,
+   150
+  ],
+  "kudas_ko03": [
+   220,
+   150
+  ],
+  "kudas_ko04": [
+   220,
+   150
+  ],
+  "kudas_ko05": [
+   220,
+   150
+  ],
+  "kudas_ko06": [
+   220,
+   150
+  ],
+  "kudas_ko07": [
+   220,
+   150
+  ],
+  "kudas_ko08": [
+   220,
+   150
+  ],
+  "kudas_ko09": [
+   220,
+   150
+  ],
+  "kudas_ko10": [
+   220,
+   150
+  ],
+  "kudas_ko11": [
+   220,
+   150
+  ],
+  "kudas_ko12": [
+   220,
+   150
+  ],
+  "kudas_ko13": [
+   220,
+   150
+  ],
+  "kudas_ko14": [
+   220,
+   150
+  ],
+  "kudas_ko15": [
+   220,
+   150
+  ],
+  "kudas_ko16": [
+   220,
+   150
+  ],
+  "kudas_ko17": [
+   220,
+   150
+  ],
+  "kudas_ko18": [
+   220,
+   150
+  ],
+  "kudas_ko19": [
+   220,
+   150
+  ],
+  "kudas_ko20": [
+   220,
+   150
+  ],
+  "kudas_ko21": [
+   220,
+   150
+  ],
+  "kudas_ko22": [
+   220,
+   150
+  ],
+  "kudas_ko23": [
+   220,
+   150
+  ],
+  "kudas_ko24": [
+   220,
+   150
+  ],
+  "kudas_ko25": [
+   220,
+   150
+  ],
+  "kudas_ko26": [
+   220,
+   150
+  ],
+  "kudas_ko27": [
+   220,
+   150
+  ],
+  "kudas_ko28": [
+   220,
+   150
+  ],
+  "kudas_ko29": [
+   220,
+   150
+  ],
+  "kudas_ko30": [
+   220,
+   150
+  ],
+  "kudas_ko31": [
+   220,
+   150
+  ],
+  "kudas_ko32": [
+   220,
+   150
+  ],
+  "kudas_ko33": [
+   220,
+   150
+  ],
+  "kudas_ko34": [
+   220,
+   150
+  ],
+  "kudas_ko35": [
+   220,
+   150
+  ],
+  "kudas_ko36": [
+   220,
+   150
+  ],
+  "kudas_ko37": [
+   220,
+   150
+  ],
+  "kudas_ko38": [
+   220,
+   150
+  ],
+  "kudas_ko39": [
+   220,
+   150
+  ],
+  "kudas_ko40": [
+   220,
+   150
+  ],
+  "kudas_ko41": [
+   220,
+   150
+  ],
+  "kudas_ko42": [
+   220,
+   150
+  ],
+  "kudas_ko43": [
+   220,
+   150
+  ],
+  "kudas_ko44": [
+   220,
+   150
+  ],
+  "kudas_ko45": [
+   220,
+   150
+  ],
+  "kudas_ko46": [
+   220,
+   150
+  ],
+  "kudas_ko47": [
+   220,
+   150
+  ],
+  "kudas_sh0": [
+   440,
+   300
+  ],
+  "kudas_sh1": [
+   440,
+   300
+  ],
+  "kudas_sh2": [
+   440,
+   300
+  ],
+  "kudas_sh3": [
+   440,
+   300
+  ],
+  "kudas_st0": [
+   440,
+   300
+  ],
+  "kudas_st2": [
+   440,
+   300
+  ],
+  "kudas_faceplant": [
+   440,
+   300
+  ],
+  "kudas_scramble0": [
+   440,
+   300
+  ],
+  "kudas_scramble1": [
+   440,
+   300
+  ]
+ },
+ "names": [
+  "bard_cast",
+  "bard_play0",
+  "bard_play1",
+  "bard_wave",
+  "golem_attack",
+  "golem_bdraw",
+  "golem_bhit",
+  "golem_bwalk",
+  "golem_down",
+  "golem_hit",
+  "golem_walk0",
+  "golem_walk1",
+  "kudas_airdive",
+  "kudas_charge",
+  "kudas_follow",
+  "kudas_idle",
+  "kudas_jump",
+  "kudas_lowwind",
+  "kudas_run0",
+  "kudas_run1",
+  "kudas_run2",
+  "kudas_run3",
+  "kudas_slam",
+  "kudas_swing",
+  "kudas_upswing",
+  "kudas_windup",
+  "kudas_windup2",
+  "pet_idle",
+  "pet_run0",
+  "pet_run1",
+  "pet_spit",
+  "kudas_sh0",
+  "kudas_sh1",
+  "kudas_sh2",
+  "kudas_sh3",
+  "kudas_st0",
+  "kudas_st2",
+  "bh_run0",
+  "bh_run1",
+  "bh_run2",
+  "bh_run3",
+  "bh_jump",
+  "bh_overhead",
+  "bh_air_shot",
+  "bh_thrust",
+  "bh_sweep",
+  "bh_tune_bonk0",
+  "bh_tune_bonk1",
+  "bh_backstep0",
+  "bh_backstep1",
+  "bh_fakehit",
+  "bh_hurt",
+  "bh_down",
+  "bh_tech_roll",
+  "bh_triplet_cast",
+  "bh_triplet_swing",
+  "bh_melody_crouch",
+  "bh_melody_spin",
+  "bh_kneel_jump",
+  "bh_knee_slide",
+  "bh_kneel_play",
+  "bh_ult_kick",
+  "bh_ult_headback",
+  "bh_ult_hairwhip",
+  "bh_ult_headbang",
+  "bh_ult_play0",
+  "bh_ult_play1",
+  "bh_ult_leap",
+  "bh_ult_layback",
+  "bh_ult_land",
+  "bh_play0",
+  "bh_play1",
+  "bh_cast",
+  "bh_wave",
+  "kudas_faceplant",
+  "kudas_scramble0",
+  "kudas_scramble1",
+  "bh_emo_d0",
+  "bh_emo_u0",
+  "bh_emo_draw",
+  "bh_emo_dL",
+  "bh_emo_uR",
+  "bh_emo_dL2",
+  "bh_emo_uR2",
+  "bh_emo_strum",
+  "bh_emo_fin",
+  "bh_emoD00",
+  "bh_emoD01",
+  "bh_emoD02",
+  "bh_emoD10",
+  "bh_emoD11",
+  "bh_emoD12",
+  "bh_emoD20",
+  "bh_emoD21",
+  "bh_emoD22",
+  "bh_emoD30",
+  "bh_emoD31",
+  "bh_emoD32",
+  "bh_emoD40",
+  "bh_emoD41",
+  "bh_emoD42",
+  "bh_emoU00",
+  "bh_emoU01",
+  "bh_emoU02",
+  "bh_emoU10",
+  "bh_emoU11",
+  "bh_emoU12",
+  "bh_emoU20",
+  "bh_emoU21",
+  "bh_emoU22",
+  "bh_emoU30",
+  "bh_emoU31",
+  "bh_emoU32",
+  "bh_emoU40",
+  "bh_emoU41",
+  "bh_emoU42",
+  "ar_idle0",
+  "ar_idle1",
+  "ar_idle2",
+  "ar_idle3",
+  "ar_idle4",
+  "ar_idle5",
+  "ar_walk0",
+  "ar_walk1",
+  "ar_walk2",
+  "ar_walk3",
+  "ar_walk4",
+  "ar_walk5",
+  "ar_walk6",
+  "ar_walk7",
+  "ar_run0",
+  "ar_run1",
+  "ar_run2",
+  "ar_run3",
+  "ar_run4",
+  "ar_run5",
+  "ar_run6",
+  "ar_run7",
+  "ar_shot0",
+  "ar_shot1",
+  "ar_shot2",
+  "ar_shot3",
+  "ar_ch0",
+  "ar_ch1",
+  "ar_ch2",
+  "ar_ch3",
+  "ar_ch4",
+  "ar_ch5",
+  "ar_ch6",
+  "ar_ch7",
+  "ar_ch8",
+  "ar_ch9",
+  "ar_ch10",
+  "ar_sn_in0",
+  "ar_sn_in1",
+  "ar_sn_in2",
+  "ar_sn_in3",
+  "ar_sn_in4",
+  "ar_sn_hold0",
+  "ar_sn_hold1",
+  "ar_sn_hold2",
+  "ar_sn_hold3",
+  "ar_sn_shot0",
+  "ar_sn_shot1",
+  "ar_sn_shot2",
+  "ar_sn_shot3",
+  "ar_sn_shot4",
+  "ar_sn_out0",
+  "ar_sn_out1",
+  "ar_sn_out2",
+  "ar_roll0",
+  "ar_roll1",
+  "ar_roll2",
+  "ar_roll3",
+  "ar_roll4",
+  "ar_roll5",
+  "ar_jump0",
+  "ar_jump1",
+  "ar_jump2",
+  "ar_jump3",
+  "ar_hurt0",
+  "ar_hurt1",
+  "ar_ko0",
+  "ar_ko1",
+  "ar_ko2",
+  "ar_ko3",
+  "ar_getup0",
+  "ar_getup1",
+  "ar_getup2",
+  "ar_up0",
+  "ar_up1",
+  "ar_flip0",
+  "ar_flip1",
+  "ar_flip2",
+  "ar_flip3",
+  "ar_flip4",
+  "ar_ult0",
+  "ar_ult1",
+  "ar_ult2",
+  "ar_ult3",
+  "bh_ko00",
+  "bh_ko01",
+  "bh_ko02",
+  "bh_ko03",
+  "bh_ko04",
+  "bh_ko05",
+  "bh_ko06",
+  "bh_ko07",
+  "bh_ko08",
+  "bh_ko09",
+  "bh_ko10",
+  "bh_ko11",
+  "bh_ko12",
+  "bh_ko13",
+  "bh_ko14",
+  "bh_ko15",
+  "bh_ko16",
+  "bh_ko17",
+  "bh_ko18",
+  "bh_ko19",
+  "bh_ko20",
+  "bh_ko21",
+  "bh_ko22",
+  "bh_ko23",
+  "bh_ko24",
+  "bh_ko25",
+  "bh_ko26",
+  "bh_ko27",
+  "bh_ko28",
+  "bh_ko29",
+  "bh_ko30",
+  "bh_ko31",
+  "bh_ko32",
+  "bh_ko33",
+  "bh_ko34",
+  "bh_ko35",
+  "bh_ko36",
+  "bh_ko37",
+  "bh_ko38",
+  "bh_ko39",
+  "bh_ko40",
+  "bh_ko41",
+  "bh_ko42",
+  "bh_ko43",
+  "bh_ko44",
+  "bh_ko45",
+  "kudas_ko00",
+  "kudas_ko01",
+  "kudas_ko02",
+  "kudas_ko03",
+  "kudas_ko04",
+  "kudas_ko05",
+  "kudas_ko06",
+  "kudas_ko07",
+  "kudas_ko08",
+  "kudas_ko09",
+  "kudas_ko10",
+  "kudas_ko11",
+  "kudas_ko12",
+  "kudas_ko13",
+  "kudas_ko14",
+  "kudas_ko15",
+  "kudas_ko16",
+  "kudas_ko17",
+  "kudas_ko18",
+  "kudas_ko19",
+  "kudas_ko20",
+  "kudas_ko21",
+  "kudas_ko22",
+  "kudas_ko23",
+  "kudas_ko24",
+  "kudas_ko25",
+  "kudas_ko26",
+  "kudas_ko27",
+  "kudas_ko28",
+  "kudas_ko29",
+  "kudas_ko30",
+  "kudas_ko31",
+  "kudas_ko32",
+  "kudas_ko33",
+  "kudas_ko34",
+  "kudas_ko35",
+  "kudas_ko36",
+  "kudas_ko37",
+  "kudas_ko38",
+  "kudas_ko39",
+  "kudas_ko40",
+  "kudas_ko41",
+  "kudas_ko42",
+  "kudas_ko43",
+  "kudas_ko44",
+  "kudas_ko45",
+  "kudas_ko46",
+  "kudas_ko47",
+  "hl_idle0",
+  "hl_idle1",
+  "hl_idle2",
+  "hl_idle3",
+  "hl_idle4",
+  "hl_idle5",
+  "hl_idle6",
+  "hl_idle7",
+  "hl_idle8",
+  "hl_idle9",
+  "hl_idle10",
+  "hl_idle11",
+  "hl_walk0",
+  "hl_run0",
+  "hl_walk1",
+  "hl_run1",
+  "hl_walk2",
+  "hl_run2",
+  "hl_walk3",
+  "hl_run3",
+  "hl_walk4",
+  "hl_run4",
+  "hl_walk5",
+  "hl_run5",
+  "hl_walk6",
+  "hl_run6",
+  "hl_walk7",
+  "hl_run7",
+  "hl_atk1_0",
+  "hl_atk1_1",
+  "hl_atk1_2",
+  "hl_atk1_3",
+  "hl_atk1_4",
+  "hl_atk1_5",
+  "hl_atk2_0",
+  "hl_atk2_1",
+  "hl_atk2_2",
+  "hl_atk2_3",
+  "hl_atk2_4",
+  "hl_atk2_5",
+  "hl_atk3_0",
+  "hl_atk3_1",
+  "hl_atk3_2",
+  "hl_atk3_3",
+  "hl_atk3_4",
+  "hl_atk3_5",
+  "hl_link0",
+  "hl_link1",
+  "hl_link2",
+  "hl_link3",
+  "hl_link4",
+  "hl_link5",
+  "hl_link6",
+  "hl_link7",
+  "hl_link8",
+  "hl_hurt0",
+  "hl_hurt1",
+  "hl_depart0",
+  "hl_depart1",
+  "hl_dash0",
+  "hl_dash1",
+  "hl_dash2",
+  "hl_dash3",
+  "hl_dash4",
+  "hl_dash5"
+ ],
+ "statue": [
+  44,
+  96
+ ]
+}

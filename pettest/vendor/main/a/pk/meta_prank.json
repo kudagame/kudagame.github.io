@@ -1,0 +1,165 @@
+{
+ "can": {
+  "prank": [
+   220,
+   150,
+   100,
+   140
+  ]
+ },
+ "spr": {
+  "prank_idle": [
+   220,
+   150
+  ],
+  "prank_idle1": [
+   220,
+   150
+  ],
+  "prank_idle2": [
+   220,
+   150
+  ],
+  "prank_idle3": [
+   220,
+   150
+  ],
+  "prank_run0": [
+   220,
+   150
+  ],
+  "prank_run1": [
+   220,
+   150
+  ],
+  "prank_run2": [
+   220,
+   150
+  ],
+  "prank_run3": [
+   220,
+   150
+  ],
+  "prank_windup": [
+   220,
+   150
+  ],
+  "prank_swing": [
+   220,
+   150
+  ],
+  "prank_follow": [
+   220,
+   150
+  ],
+  "prank_lowwind": [
+   220,
+   150
+  ],
+  "prank_upswing": [
+   220,
+   150
+  ],
+  "prank_windup2": [
+   220,
+   150
+  ],
+  "prank_slam": [
+   220,
+   150
+  ],
+  "prank_charge": [
+   220,
+   150
+  ],
+  "prank_airdive": [
+   220,
+   150
+  ],
+  "prank_jump": [
+   220,
+   150
+  ],
+  "prank_walk0": [
+   220,
+   150
+  ],
+  "prank_walk1": [
+   220,
+   150
+  ],
+  "prank_walk2": [
+   220,
+   150
+  ],
+  "prank_walk3": [
+   220,
+   150
+  ],
+  "prank_bash": [
+   220,
+   150
+  ],
+  "prank_stomp0": [
+   220,
+   150
+  ],
+  "prank_stomp1": [
+   220,
+   150
+  ],
+  "prank_skill0": [
+   220,
+   150
+  ],
+  "prank_skill1": [
+   220,
+   150
+  ],
+  "prank_hit": [
+   220,
+   150
+  ],
+  "prank_down": [
+   220,
+   150
+  ],
+  "prank_getup": [
+   220,
+   150
+  ]
+ },
+ "names": [
+  "prank_idle",
+  "prank_idle1",
+  "prank_idle2",
+  "prank_idle3",
+  "prank_run0",
+  "prank_run1",
+  "prank_run2",
+  "prank_run3",
+  "prank_windup",
+  "prank_swing",
+  "prank_follow",
+  "prank_lowwind",
+  "prank_upswing",
+  "prank_windup2",
+  "prank_slam",
+  "prank_charge",
+  "prank_airdive",
+  "prank_jump",
+  "prank_walk0",
+  "prank_walk1",
+  "prank_walk2",
+  "prank_walk3",
+  "prank_bash",
+  "prank_stomp0",
+  "prank_stomp1",
+  "prank_skill0",
+  "prank_skill1",
+  "prank_hit",
+  "prank_down",
+  "prank_getup"
+ ],
+ "statue": []
+}

@@ -20,9 +20,9 @@
     wrap('interact', (r, p, kind, arg, opt) => { if (r && r.ok && !(opt && opt.auto)) P.sfx.play(FEED.has(kind) ? 's_pet_feed' : 's_pet_tap') });
     wrap('sweepPoop', r => { if (r && (r.n || r.ok)) P.sfx.play('s_pet_sweep') });
     wrap('knockEgg', r => { if (!r || !r.ok) return; P.sfx.play('s_pet_knock'); if (r.hatched) setTimeout(() => P.sfx.play('s_pet_hatch'), 260) });
-    // 寶寶出生、升階成功：短曲（背景樂先壓低）。開遊戲時補算的離線出生不響。
+    // 寶寶出生、靈性提升：短曲（背景樂先壓低）。開遊戲時補算的離線出生不響。
     let lastJ = 0; const j = n => { if (!P.booted || Date.now() - lastJ < 8000 || !P.bgm || !P.bgm.sting) return; lastJ = Date.now(); P.bgm.sting(n, 3.8) };
-    P.on && P.on(e => { if (e.type === 'birth' && on) j('j_pet_birth'); else if (e.type === 'up' && /升階成功/.test(e.msg || '') && on) j('j_pet_tierup') });
+    P.on && P.on(e => { if (e.type === 'birth' && on) j('j_pet_birth'); else if (e.type === 'up' && /靈性提升 →/.test(e.msg || '') && on) j('j_pet_tierup') });
     for (const n of N) pool[n] = new Audio(DIR + n + '.ogg');
   }, 0));
   // 按鈕：小木片聲（瀏覽器要先點一下才能出聲，第一下就順便打開）

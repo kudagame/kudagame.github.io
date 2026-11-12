@@ -55,7 +55,7 @@
     h += `<div class="row"><button class="alt" data-a="tree">🌳 看家譜</button></div>`;
     // 熟練
     if (p.baby && p.sk.length) h += `<div class="muted">技能熟練（出戰用到 +${G.mstFight}，最多 100；教給孩子時會帶一半過去）：${p.sk.map(n => `${P.SK[n].name} ${p.mst[n] || 0}`).join('、')}</div>`;
-    if ((p.hid || []).length) h += `<div class="muted">🔒 潛藏的本事（升階有空格就會先覺醒）：${p.hid.map(n => P.SK[n] ? P.SK[n].name : n).join('、')}</div>`;
+    if ((p.hid || []).length) h += `<div class="muted">🔒 潛藏的本事（靈性提升、有空格就會先覺醒）：${p.hid.map(n => P.SK[n] ? P.SK[n].name : n).join('、')}</div>`;
     if ((p.mut || []).length) h += `<div class="muted">🧬 突變：${p.mut.map(m => ({ coat: '毛色花紋', size: '體型', tal: '能力天賦', sub: '天性魔法異彩', skill: '突變技能' }[m.k])).join('、')}</div>`;
     // 獎牌
     if ((p.medals || []).length) h += `<h3>🏅 獎牌（${p.medals.length}）｜${P.RANK[p.rank || 0]}</h3><div class="muted">${p.medals.slice(-6).reverse().map(m => esc(m.name)).join('<br>')}</div>`;
@@ -164,7 +164,7 @@
         <div class="row2">${UI.av(f, 44)} ＋ ${UI.av(m, 44)} <div class="grow">${esc(P.label(f))} ＆ ${esc(P.label(m))}<div class="muted">血緣：${P.coiText(coi)}${mk && mk !== 'same' ? '｜不同物種：會生出什麼呢？' : ''}${bk.pollen ? '｜🌕 月光露：這一籃一定有寶寶突變' : ''}</div></div></div>
         <h3>📚 第一志願（教成功率）</h3><div class="row">${optBtns(0)}</div>
         <h3>📚 第二志願</h3><div class="row">${optBtns(1)}</div>
-        <div class="muted">兩位爸媽都會的 ${T.both[0]}%／${T.both[1]}%，只有一位會的 ${T.one[0]}%／${T.one[1]}%，傳家技再 +${T.heir}%。寶寶位階還不夠用的技能，會先「潛藏」起來，升階時再覺醒。${evo.length ? `<br>✨ ${evo.map(n => P.SK[n].name).join('、')}：爸媽都很熟練，教成功會變成進化版「${evo.map(n => P.SK[P.EVO[n]].name).join('、')}」！` : ''}${mix && Math.max((f.mst || {})[mix.a] || 0, (m.mst || {})[mix.a] || 0) >= G.mixMin && Math.max((f.mst || {})[mix.b] || 0, (m.mst || {})[mix.b] || 0) >= G.mixMin ? `<br>✨ 這兩招有機會（${G.mixChance}%）合成一招新的本事……` : ''}</div>
+        <div class="muted">兩位爸媽都會的 ${T.both[0]}%／${T.both[1]}%，只有一位會的 ${T.one[0]}%／${T.one[1]}%，傳家技再 +${T.heir}%。寶寶靈性還淺、還用不上的技能，會先「潛藏」起來，靈性提升時再覺醒。${evo.length ? `<br>✨ ${evo.map(n => P.SK[n].name).join('、')}：爸媽都很熟練，教成功會變成進化版「${evo.map(n => P.SK[P.EVO[n]].name).join('、')}」！` : ''}${mix && Math.max((f.mst || {})[mix.a] || 0, (m.mst || {})[mix.a] || 0) >= G.mixMin && Math.max((f.mst || {})[mix.b] || 0, (m.mst || {})[mix.b] || 0) >= G.mixMin ? `<br>✨ 這兩招有機會（${G.mixChance}%）合成一招新的本事……` : ''}</div>
         <h3>🤝 託付（可以不選）</h3><div class="muted">託付的那一位會把本事全部教給寶寶（成功率 +${T.entrust}%，熟練不打折），寶寶出生那天牠就會出門闖闖，不會回來。</div>
         <div class="row"><button class="${!bk.entrust ? 'ok' : 'alt'}" data-a="en" data-v="0">不託付</button><button class="${bk.entrust === f.id ? 'ok' : 'alt'}" data-a="en" data-v="${f.id}">託付 ${esc(P.label(f))}</button><button class="${bk.entrust === m.id ? 'ok' : 'alt'}" data-a="en" data-v="${m.id}">託付 ${esc(P.label(m))}</button></div>`, (a, v) => {
         if (a === 't0' || a === 't1') { const slot = +a[1], w = /^b/.test(v) ? v : +v; const t = (bk.teach || [f.heir, m.heir]).slice(); t[slot] = w; if (t[0] === t[1]) t[1 - slot] = null; bk.teach = t }

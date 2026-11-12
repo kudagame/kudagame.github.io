@@ -10,7 +10,7 @@ window.PET = window.PET || {};
   P.TIER_NAME = ['成年', '藍', '紫', '粉', '橘'];
   P.TIER_COLOR = ['#8fbf7a', '#5aa0ff', '#b070ff', '#ff7fc0', '#ff8c14'];
   P.PERS = ['活潑', '溫和', '貪吃', '愛睡', '好奇'];
-  P.HEROES = ['苦達斯', '尋歡作樂', '三杯兔子'];
+  P.HEROES = ['苦達斯', '尋歡作樂', '三杯兔子', '夾夾'];   // 2026-11-12：夾夾加在索引 3；舊寵物最愛英雄 0–2 不變
   P.SPOTS = ['頭', '下巴', '肚子', '背'];
   P.QUAL = ['C', 'B', 'A', 'S'];
   P.QUAL_MUL = [0.97, 1.0, 1.02, 1.03];
@@ -222,7 +222,7 @@ window.PET = window.PET || {};
     skillCdMul: 1, bossCtrlShare: 20, transformMax: 3,
     ratBread: [0, 0, 1, 1.5, 2], pigBread: [0, 0, 0, 2, 3],
     petFoodCapFight: 5, petFoodCapSpec: 7, petFoodCapBest: 10, petFoodDaySoft: 40,
-    foodDrop: 55, foodSlot: 3, heroAtk: 3000, heroHp: 10000,
+    foodDrop: 55, foodSlot: 3, heroAtk: 3000, heroHp: 10000,   // 舊測試墊高值，2026-11-12 起救援戰鬥不再使用：改用 P.RHERO（主遊戲同款 HP／攻擊）
     // 認養價格
     adoptGold: [20000, 40000, 80000, 120000], adoptBread: [30, 60, 100, 150],
     cotCost: [[120000, 80, 20], [300000, 150, 40], [600000, 250, 80], [800000, 300, 100], [1000000, 350, 120]], cotMax: 3, houseCap: 5,

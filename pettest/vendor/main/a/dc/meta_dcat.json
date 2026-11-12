@@ -1,0 +1,170 @@
+{
+ "can": {
+  "dcat": [
+   220,
+   150,
+   100,
+   140
+  ]
+ },
+ "spr": {
+  "dcat_idle": [
+   220,
+   150
+  ],
+  "dcat_idle1": [
+   220,
+   150
+  ],
+  "dcat_idle2": [
+   220,
+   150
+  ],
+  "dcat_idle3": [
+   220,
+   150
+  ],
+  "dcat_run0": [
+   220,
+   150
+  ],
+  "dcat_run1": [
+   220,
+   150
+  ],
+  "dcat_run2": [
+   220,
+   150
+  ],
+  "dcat_run3": [
+   220,
+   150
+  ],
+  "dcat_windup": [
+   220,
+   150
+  ],
+  "dcat_swing": [
+   220,
+   150
+  ],
+  "dcat_follow": [
+   220,
+   150
+  ],
+  "dcat_lowwind": [
+   220,
+   150
+  ],
+  "dcat_upswing": [
+   220,
+   150
+  ],
+  "dcat_windup2": [
+   220,
+   150
+  ],
+  "dcat_slam": [
+   220,
+   150
+  ],
+  "dcat_charge": [
+   220,
+   150
+  ],
+  "dcat_airdive": [
+   220,
+   150
+  ],
+  "dcat_jump": [
+   220,
+   150
+  ],
+  "dcat_walk0": [
+   220,
+   150
+  ],
+  "dcat_walk1": [
+   220,
+   150
+  ],
+  "dcat_walk2": [
+   220,
+   150
+  ],
+  "dcat_walk3": [
+   220,
+   150
+  ],
+  "dcat_claw": [
+   220,
+   150
+  ],
+  "dcat_bash": [
+   220,
+   150
+  ],
+  "dcat_stomp0": [
+   220,
+   150
+  ],
+  "dcat_stomp1": [
+   220,
+   150
+  ],
+  "dcat_skill0": [
+   220,
+   150
+  ],
+  "dcat_skill1": [
+   220,
+   150
+  ],
+  "dcat_hit": [
+   220,
+   150
+  ],
+  "dcat_down": [
+   220,
+   150
+  ],
+  "dcat_getup": [
+   220,
+   150
+  ]
+ },
+ "names": [
+  "dcat_idle",
+  "dcat_idle1",
+  "dcat_idle2",
+  "dcat_idle3",
+  "dcat_run0",
+  "dcat_run1",
+  "dcat_run2",
+  "dcat_run3",
+  "dcat_windup",
+  "dcat_swing",
+  "dcat_follow",
+  "dcat_lowwind",
+  "dcat_upswing",
+  "dcat_windup2",
+  "dcat_slam",
+  "dcat_charge",
+  "dcat_airdive",
+  "dcat_jump",
+  "dcat_walk0",
+  "dcat_walk1",
+  "dcat_walk2",
+  "dcat_walk3",
+  "dcat_claw",
+  "dcat_bash",
+  "dcat_stomp0",
+  "dcat_stomp1",
+  "dcat_skill0",
+  "dcat_skill1",
+  "dcat_hit",
+  "dcat_down",
+  "dcat_getup"
+ ],
+ "statue": []
+}

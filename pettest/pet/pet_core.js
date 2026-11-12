@@ -387,7 +387,7 @@
   P.present = id => { const S = P.S; return S.pets.some(p => P.indId(p.sp, p.look) === id) || S.wander.some(p => P.indId(p.sp, p.look) === id) || S.wait.some(p => P.indId(p.sp, p.look) === id) || (S.stay || []).some(p => P.indId(p.sp, p.look) === id) };
   P.spawnAnimal = (why) => {
     const S = P.S, odds = P.tierOdds(); const r = R() * 100; let t = 0, acc = 0; for (let i = 0; i < 4; i++) { acc += odds[i]; if (r < acc) { t = i; break } }
-    P.emit('roll', `位階擲骰 ${r.toFixed(1)} → ${P.TIER_NAME[t]}（機率 ${odds.map(x => x.toFixed(1)).join('/')}）`);
+    P.emit('roll', `靈性擲骰 ${r.toFixed(1)} → ${P.TIER_NAME[t]}（機率 ${odds.map(x => x.toFixed(1)).join('/')}）`);
     for (let tt = t; tt >= 0; tt--) {
       const ok = P.SPECIES.filter(s => { const id = P.indId(s.id, tt), ro = S.roster[id]; return !P.present(id) && !(ro && ro.back > P.now()) });
       if (ok.length) { const sp = pick(ok).id; return P.makeAnimal({ sp, tier: tt, look: tt, aff: 50, why }) }
@@ -534,7 +534,7 @@
       const { tier, tr, blood, star, mut } = I.info; const baby = I.baby;
       const b = P.makeAnimal(baby); if (P.nurseryUsed() >= P.nurseryCap()) b.wq = 1; S.babies.push(b); S.births.n++; out.push(b); if (P.famRec) { P.famRec(f); P.famRec(m); P.famRec(b) }
       if (star === 2) P.codexSee(b.sp, b.look, 2);
-      P.emit('birth', `寶寶出生！${P.SP[b.sp].name}（${P.TIER_NAME[b.tier]}、資質 ${P.QUAL[b.q]}${blood ? '（血統）' : ''}、第 ${b.g + 1} 代${star === 2 ? '、✦星彩' + (mut ? '（突變）' : '') : star === 1 ? '、帶星痕' : ''}${baby.sk.length ? '、繼承家傳技 ' + P.SK[baby.sk[0]].name : ''}）位階擲 ${tr.toFixed(1)}`, { id: b.id });
+      P.emit('birth', `寶寶出生！${P.SP[b.sp].name}（${P.TIER_NAME[b.tier]}、資質 ${P.QUAL[b.q]}${blood ? '（血統）' : ''}、第 ${b.g + 1} 代${star === 2 ? '、✦星彩' + (mut ? '（突變）' : '') : star === 1 ? '、帶星痕' : ''}${baby.sk.length ? '、繼承家傳技 ' + P.SK[baby.sk[0]].name : ''}）靈性擲 ${tr.toFixed(1)}`, { id: b.id });
     }
     P.addRep(5 * out.length, '寶寶出生');
     const wq = out.filter(b => b.wq); if (wq.length) P.emit('wq', `蜜糖媽媽：「育兒室住滿了，${wq.map(P.label).join('、')} 先在育兒室門口『等待入住』。別擔心，孩子不會不見，照樣可以陪牠玩、餵牠、帶牠出門；只是還不能當爸媽。到櫃檯看看怎麼空出位子吧。」`, { ids: wq.map(b => b.id) });
@@ -560,7 +560,7 @@
   };
   P.upInfo = p => { const u = C.up[p.tier]; if (!p.baby || !u) return null; return u };
   P.upgrade = p => {
-    const S = P.S, u = P.upInfo(p); if (!u) return { ok: 0, msg: '不能升階' };
+    const S = P.S, u = P.upInfo(p); if (!u) return { ok: 0, msg: '靈性暫時無法再提升' };
     const L = ['', 'b', 'p', 'k'][p.tier];
     const lack = []; if (p.lv < u.lv) lack.push('等級 ' + u.lv); if (P.heart(p.aff) < u.heart) lack.push('♡' + u.heart);
     if (S.letters[L] < u.letter) lack.push(`${P.TIER_NAME[p.tier]}幸福信 ×${u.letter}`); if (S.gold < u.gold) lack.push('金幣'); if (S.bread < u.bread) lack.push('剩食麵包');
@@ -574,12 +574,12 @@
       S.letters[L] -= u.letter; if (u.shard) S.shards -= u.shard; if (u.collar) S.collar -= u.collar;
       if (p.tier === 1) S.upPity[1] = 0; if (p.tier === 2 && forced) S.frag.star -= 35; if (p.tier === 3 && forced) S.frag.dusk -= 60;
       p.tier++; p.look = Math.min(3, p.tier); P.fillSkills(p); P.fillSubs(p);
-      P.emit('up', `${P.label(p)} 升階成功 → ${P.TIER_NAME[p.tier]}${forced ? '（保底）' : ''}`); return { ok: 1, up: 1 };
+      P.emit('up', `${P.label(p)} 靈性提升 → ${P.TIER_NAME[p.tier]}${forced ? '（保底）' : ''}`); return { ok: 1, up: 1 };
     }
     if (p.tier === 1) S.gold += Math.floor(u.gold / 2);
     if (p.tier === 2) { S.letters[L] -= 1; S.frag.star += 7 } if (p.tier === 3) { S.letters[L] -= 1; S.frag.dusk += 10 }
     if (p.tier === 2 && u.shard) S.shards -= u.shard; if (p.tier === 3 && u.shard) S.shards -= u.shard;
-    P.emit('up', `${P.label(p)} 升階失敗（成功率 ${u.rate}%）`); return { ok: 1, up: 0 };
+    P.emit('up', `${P.label(p)} 這次靈性沒有提升（成功率 ${u.rate}%）`); return { ok: 1, up: 0 };
   };
 
   // ---------- 出戰結算 ----------

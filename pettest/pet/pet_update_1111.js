@@ -203,7 +203,7 @@
     const p=P.makeAnimal({sp:'zombiedog',tier:2,look:0,q:1,aff:250,heir:8,dir:['str','vit'],lv:1,baby:0,star:0});
     P.S.zombieBond={at:P.now(),id:p.id};P.addResident(p,'在舊驛站穀倉門前與你結緣');P.save();return {ok:1,p,msg:P.ZOMBIE_STORY.join};
   };
-  P.zombieCard=()=>{const I=P.zombieInfo();if(I.state==='locked')return '';return `<div class="card"><b>舊驛站的返魂犬</b><div>蜜糖媽媽：「${P.ZOMBIE_STORY.intro}」</div><div class="muted">${I.why}｜紫階中型犬，自身普攻與招式 +25%；額外力量按通常10%分享，主人攻擊 +${Math.min(z.ownerAttackCap,Math.round((z.attackMul-1)*100*C.ablOwnerShare)/100)}%（最多2.5%）。</div>${I.state==='open'?'<button class="ok" data-a="zombie">迎接殭屍狗</button>':''}</div>`};
+  P.zombieCard=()=>{const I=P.zombieInfo();if(I.state==='locked')return '';return `<div class="card"><b>舊驛站的返魂犬</b><div>蜜糖媽媽：「${P.ZOMBIE_STORY.intro}」</div><div class="muted">${I.why}｜紫色靈性中型犬，自身普攻與招式 +25%；額外力量按通常10%分享，主人攻擊 +${Math.min(z.ownerAttackCap,Math.round((z.attackMul-1)*100*C.ablOwnerShare)/100)}%（最多2.5%）。</div>${I.state==='open'?'<button class="ok" data-a="zombie">迎接殭屍狗</button>':''}</div>`};
   P.crystalInfo=()=>{
     const S=P.S;if(S.crystalBond)return {state:'done',why:'已迎接（每份存檔僅一次）'};
     if(!P.redeyeCleared())return {state:'locked',why:'先走通紅眼礦道'};
@@ -215,7 +215,7 @@
     const p=P.makeAnimal({sp:'crystalhound',tier:2,look:2,q:1,aff:200,heir:8,dir:['str','agi'],lv:1,baby:0,star:0});
     P.S.crystalBond={at:P.now(),id:p.id,look:2};P.addResident(p,'從紅眼礦道把魔晶獵犬接回家');P.save();return {ok:1,p,msg:P.CRYSTAL_STORY.join};
   };
-  P.crystalCard=()=>{const I=P.crystalInfo();if(I.state==='locked')return '';return `<div class="card"><div class="row2"><img src="assets/scenes/w4/collar_icon_32.png" width="32" height="32" alt="打開的空項圈" style="image-rendering:pixelated"><b>紅眼礦道裡救回的孩子</b></div><div>蜜糖媽媽：「${P.CRYSTAL_STORY.intro}」</div><div class="row2"><img src="assets/scenes/w4/collar_ground_48.png" width="96" height="64" alt="礦道地上留下的空項圈" style="image-rendering:pixelated"><span class="muted">礦道裡留下的空項圈。它只是這段相遇的證物，不是升階用的金色項圈。</span></div><div class="muted">${I.why}</div>${I.state==='open'?'<button class="ok" data-a="crystal">迎接魔晶獵犬</button>':''}</div>`};
+  P.crystalCard=()=>{const I=P.crystalInfo();if(I.state==='locked')return '';return `<div class="card"><div class="row2"><img src="assets/scenes/w4/collar_icon_32.png" width="32" height="32" alt="打開的空項圈" style="image-rendering:pixelated"><b>紅眼礦道裡救回的孩子</b></div><div>蜜糖媽媽：「${P.CRYSTAL_STORY.intro}」</div><div class="row2"><img src="assets/scenes/w4/collar_ground_48.png" width="96" height="64" alt="礦道地上留下的空項圈" style="image-rendering:pixelated"><span class="muted">礦道裡留下的空項圈。它只是這段相遇的證物，不是提升靈性用的金色項圈。</span></div><div class="muted">${I.why}</div>${I.state==='open'?'<button class="ok" data-a="crystal">迎接魔晶獵犬</button>':''}</div>`};
   // 天數解鎖必須先由 NPC 口頭提醒，不可默默出現。農場小屋第 2～5 間依開張後第 7／21／42／70 天開地，櫃檯常駐這句。
   P.farmHutHintLine=()=>{
     const n=P.farmHutNext&&P.farmHutNext();if(!n)return '';
@@ -461,7 +461,10 @@
   P.WAGON_AT={r4:{cx:1600,by:460}};
   P.castleWagonState=A=>{
     if(!(A&&A.cages&&A.cages.length))return 'closed';
-    return A.cages.every(c=>c.hp<=0)?'empty':'closed';
+    // In the full r4 build, leave the curtain closed through Grum's exit animation.
+    const grum = A.en && A.en.find(e=>e.K && e.K.grum);
+    const bossGone = !grum || (grum.dead && A.t >= grum.exitUntil);
+    return A.cages.every(c=>c.hp<=0) && bossGone ? 'empty' : 'closed';
   };
   P.drawCastleWagon=(ctx,cx,by,opt)=>{
     opt=opt||{};

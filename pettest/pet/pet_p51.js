@@ -155,9 +155,9 @@
     } else if (kind === 'inh') {
       const sp = P.SP[ref]; if (!sp) return null; o.name = sp.inh[0]; o.cat = '固有技能（物種天生）'; o.type = '被動'; o.cd = '—';
       o.desc = P.inhDesc(sp.inh[1], p); o.tiers = [[T[1], '未覺醒（還沒有效果）'], [T[2], '覺醒'], [T[3], 'S'], [T[4], 'SS']];
-      o.learn = '固有技能是物種天生的，不用學、也不能洗。位階越高越強：紫色覺醒、粉色 S、橘色 SS。';
+      o.learn = '固有技能是物種天生的，不用學、也不能洗。靈性越深越強：紫色覺醒、粉色 S、橘色 SS。';
       o.inherit = '跟著物種走：同一種的孩子一定會有。';
-      o.heirNote = adult ? `大朋友出戰也有固有技能（照牠現在的位階：${['', '未覺醒', '覺醒', 'S', 'SS'][p.tier || 0] || '還沒覺醒'}）。` : '';
+      o.heirNote = adult ? `大朋友出戰也有固有技能（照牠現在的靈性：${['', '未覺醒', '覺醒', 'S', 'SS'][p.tier || 0] || '還沒覺醒'}）。` : '';
     } else if (kind === 'sub') {
       const d = P.SUBS.find(x => x.k === ref); if (!d) return null; o.name = d.name; o.cat = '天性魔法'; o.type = d.who === 'owner' ? '幫主人' : '幫寵物自己'; o.cd = '—（出戰時一直有效）';
       o.desc = `出戰時${d.who === 'owner' ? '主人' : '寵物'}得到「${P.subText(d.k, '？')}」的加成。`;
@@ -306,7 +306,7 @@
   // ---------- 第 9 項：上方資訊都可以點 ----------
   const HINT = {
     '🕐': () => ({ t: '🕐 時間（台北）', b: `遊戲照台灣時間走。每天 <b>05:00</b> 換日：每天的照顧次數重算、小屋門口出現育兒籃、剛出生的寶寶解鎖。晚上 18:00～06:00 是夜景，大家會睏。` }),
-    '💰': () => ({ t: '💰 金幣', b: `現在有 ${fmt(P.S.gold)}。出戰打怪、救援委託、大會、明信片都會拿到。用在：認養、洗技能、升階、蓋小屋／二館／農場／雜物倉、訂做家具。`, a: [['fight', '⚔️ 去出戰']] }),
+    '💰': () => ({ t: '💰 金幣', b: `現在有 ${fmt(P.S.gold)}。出戰打怪、救援委託、大會、明信片都會拿到。用在：認養、洗技能、提升靈性、蓋小屋／二館／農場／雜物倉、訂做家具。`, a: [['fight', '⚔️ 去出戰']] }),
     '🍞': () => ({ t: '🍞 剩食麵包', b: `現在有 ${P.S.bread}。出戰時撿到的剩食麵包。可以餵寵物（每次 ${C.breadPerFeed} 個）、用麵包洗技能（不用磁片），蓋房子也要用。`, a: [['fight', '⚔️ 去出戰']] }),
     '🍪': () => ({ t: '🍪 零食材料', b: `現在有 ${P.S.snackMat}。做「特製零食」用的，好感加比較多。出戰和探險會撿到。` }),
     '💿': () => ({ t: '💿 技能磁片', b: `現在有 ${P.S.disk}。用金幣洗技能時每次要 ${C.rerollDiskGold} 片；用麵包洗就不用磁片。`, a: [['reroll', '🎲 去洗技能']] }),
@@ -431,14 +431,14 @@
     q('full', '住民滿了怎麼辦？', () => { const r = P.nextHousing && !P.nextHousing() ? {state:'done'} : P.buildReq((P.nextHousing && P.nextHousing()) || 'farm'); return `住民（大朋友）現在 ${P.S.pets.length}/${P.houseCap()}。有三個辦法：<br>① <b>擴建</b>：${r.state === 'done' ? '都蓋好了' : r.state === 'building' ? `${r.name}正在蓋` : `${r.name}${r.state === 'can' ? '條件都夠了，去「🏗️ 建造」就能蓋' : '還差 ' + r.lack.join('、')}`}。<br>② <b>寄放</b>：櫃檯的「寄放處」免費，隨時接回來。<br>③ <b>放他出去闖闖</b>：在寵物面板最下面，3 天後可能再相遇，還會寄明信片回來。` }),
     q('build', '怎麼加蓋？農場怎麼蓋？', () => `先按順序蓋<b>一館側廂（名聲 Lv2、8萬金幣、50麵包、12刻印、4小時，上限12）→側院（Lv3、15萬、100麵包、20刻印、8小時，上限18）→二館</b>（名聲 Lv${C.annex.rep}、金幣 ${fmt(C.annex.gold)}、麵包 ${C.annex.bread}、刻印 ${C.annex.shard}，${C.annex.hours} 小時），蓋好住民上限變 ${C.houseStep[1]}、小屋多 ${C.annex.cots} 間。再蓋<b>舊驛站穀倉（名聲 Lv6、50萬、250麵包、50刻印、12小時，上限32）</b>。之後的<b>農場</b>只開地圖、不加床位。農場（名聲 Lv${C.farm.rep}、金幣 ${fmt(C.farm.gold)}、麵包 ${C.farm.bread}、刻印 ${C.farm.shard}，${C.farm.hours} 小時），住民上限維持 32。下方「🏗️ 建造」可以看到每一樣還差什麼。`),
     q('ware', '雜物倉是做什麼的？', () => `雜物倉收家具（飯碗、餵食器、風鈴架、玩具箱、小床），拿出來就能擺在院子裡，可以選朝左、正面、朝右，之後也能搬、轉、收回去。先要蓋雜物倉（名聲 Lv${C.ware.rep}、金幣 ${fmt(C.ware.cost[0])}、麵包 ${C.ware.cost[1]}、刻印 ${C.ware.cost[2]}），一開始收 ${C.ware.slots[0]} 件，擴建最多 ${C.ware.slots[C.ware.slots.length - 1]} 件。`),
-    q('fight', '寵物要怎麼出戰？', () => `按下方「⚔️ 出戰」挑一隻同行。<b>寶寶</b>和<b>大朋友</b>都能跟主人出戰。大朋友更壯：普攻和招數是同位階寶寶的 ${Math.round(C.adult.atkMul * 100)}%，藍色以上會用傳家技；寶寶有較多技能格和天性魔法，養成、傳承還是很值得。剛出生的寶寶要等隔天 05:00 才能出戰。`),
+    q('fight', '寵物要怎麼出戰？', () => `按下方「⚔️ 出戰」挑一隻同行。<b>寶寶</b>和<b>大朋友</b>都能跟主人出戰。大朋友更壯：普攻和招數是同靈性寶寶的 ${Math.round(C.adult.atkMul * 100)}%，藍色以上會用傳家技；寶寶有較多技能格和天性魔法，養成、傳承還是很值得。剛出生的寶寶要等隔天 05:00 才能出戰。`),
     q('basket', '育兒籃怎麼來的？', () => `兩隻同物種、都 ♡3 以上的大朋友住同一間小屋，每天 05:00 有機會在門口出現育兒籃，隔天孵出寶寶。小屋裡「一起玩」默契會變好。育兒室要有空位，育兒籃才會出現。`),
-    q('up', '升階要什麼？', () => `寶寶：藍→紫 Lv${C.up[1].lv}、♡${C.up[1].heart}、藍色幸福信 ×${C.up[1].letter}、金幣 ${fmt(C.up[1].gold)}、麵包 ${C.up[1].bread}（成功率 ${C.up[1].rate}%，失敗 ${C.up[1].pity} 次保底）；紫→粉、粉→橘還要刻印碎片。大朋友也能升階：綠→藍 Lv${C.adult.up0.lv}、♡${C.adult.up0.heart}、金幣 ${fmt(C.adult.up0.gold)}、麵包 ${C.adult.up0.bread}；之後跟寶寶一樣的花費。大朋友升階不會換毛色。`),
+    q('up', '提升靈性要什麼？', () => `寶寶：藍→紫 Lv${C.up[1].lv}、♡${C.up[1].heart}、藍色幸福信 ×${C.up[1].letter}、金幣 ${fmt(C.up[1].gold)}、麵包 ${C.up[1].bread}（成功率 ${C.up[1].rate}%，失敗 ${C.up[1].pity} 次保底）；紫→粉、粉→橘還要刻印碎片。大朋友也能提升靈性：綠→藍 Lv${C.adult.up0.lv}、♡${C.adult.up0.heart}、金幣 ${fmt(C.adult.up0.gold)}、麵包 ${C.adult.up0.bread}；之後跟寶寶一樣的花費。大朋友提升靈性不會換外觀（毛色）。`),
     q('stay', '寄放是什麼？', () => `櫃檯的「寄放處」：家裡住不下的時候，把孩子免費寄放在蜜糖媽媽這裡，隨時可以接回來。寄放中的不算住民、也不算育兒室。`),
     q('send', '「放他出去闖闖」會怎樣？', () => `牠會背著小包袱出門，10 秒內可以反悔叫回來。之後會寄明信片回來（有小禮物），3 天後可能在路上再相遇、重新收留。`),
     q('rep', '名聲怎麼升？', () => `${P.repHow}現在 ${P.S.rep}（Lv${P.repLv()}）。名聲等級會打開二館、雜物倉、農場。`),
     q('vol', '聲音太大／想關掉？', () => `右上角 🔊 按一下就靜音，再按一下打開；🎚️ 可以分開調背景音樂和音效。設定會存在存檔裡。`),
-    q('skill', '技能的說明在哪裡看？', () => `寵物面板裡，技能的名字（固有技能、傳家技、學到的技能、天性魔法）都可以點，會跳出：做什麼、每個位階的數字、冷卻、種類、怎麼學／洗、怎麼遺傳。`),
+    q('skill', '技能的說明在哪裡看？', () => `寵物面板裡，技能的名字（固有技能、傳家技、學到的技能、天性魔法）都可以點，會跳出：做什麼、每段靈性的數字、冷卻、種類、怎麼學／洗、怎麼遺傳。`),
   ];
   function qaScreen(sel) {
     const visible=P.QA.filter(x=>!P.qaVisible||P.qaVisible(x)); const it = sel && visible.find(x => x.k === sel);
@@ -454,7 +454,7 @@
     pop(`<h3>${head}｜${o.n ? '#' + o.n + ' ' : ''}${esc(o.name)} ${o.sktName && kind !== 'inh' ? `<span class="skt" style="background:${P.SKT[o.skt].col}">${o.sktName}</span>` : ''}</h3>
       <div class="kv"><span>種類</span><b>${o.cat}${o.type && o.type !== o.cat ? `（${o.type}）` : ''}</b><span>冷卻</span><b>${o.cd ? o.cd + (typeof o.cd === 'number' ? ' 秒' : '') : '—'}</b></div>
       <div class="sdesc">${o.desc}${o.impl === false ? '（測試場還沒做效果）' : ''}</div>
-      <h4>各位階</h4><table class="tt">${o.tiers.length > 1 && o.tiers.every(r => r[1] === o.tiers[0][1]) ? `<tr><th>${o.tiers[0][0]}～${o.tiers[o.tiers.length - 1][0]}</th><td>${o.tiers[0][1]}<br><span class="muted">（這一招每個位階都一樣；位階高的寵物攻擊力比較高，普攻跟「寵物攻擊力 %」的招數才會跟著變強）</span></td></tr>` : o.tiers.map(([t, d]) => `<tr><th>${t}</th><td>${d}</td></tr>`).join('')}</table>
+      <h4>各段靈性</h4><table class="tt">${o.tiers.length > 1 && o.tiers.every(r => r[1] === o.tiers[0][1]) ? `<tr><th>${o.tiers[0][0]}～${o.tiers[o.tiers.length - 1][0]}</th><td>${o.tiers[0][1]}<br><span class="muted">（這一招每段靈性都一樣；靈性深厚的寵物攻擊力比較高，普攻跟「寵物攻擊力 %」的招數才會跟著變強）</span></td></tr>` : o.tiers.map(([t, d]) => `<tr><th>${t}</th><td>${d}</td></tr>`).join('')}</table>
       <h4>怎麼學／怎麼洗</h4><div>${o.learn}</div><h4>遺傳／傳家</h4><div>${o.inherit}</div>${o.heirNote ? `<h4>出戰</h4><div>${o.heirNote}</div>` : ''}`, null, 'skill');
   };
   // 面板裡的技能名字被點（data-a="skd" data-v="種類:編號"）

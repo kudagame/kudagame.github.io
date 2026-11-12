@@ -1,0 +1,87 @@
+{
+  "character": "格魯姆 / Grum",
+  "canvas": [
+    320,
+    320
+  ],
+  "feet_baseline_y": 300,
+  "orientation": "left",
+  "outline": "#1A1016",
+  "alpha": "binary 0/255",
+  "total_frames": 23,
+  "actions": {
+    "idle": {
+      "label": "待機",
+      "frames": 4,
+      "frame_ms": 210,
+      "png_dir": "idle_4f",
+      "sheet": "grum_idle_4f_sheet.png",
+      "gif": "grum_idle_4f.gif"
+    },
+    "walk": {
+      "label": "走路",
+      "frames": 4,
+      "frame_ms": 160,
+      "png_dir": "walk_4f",
+      "sheet": "grum_walk_4f_sheet.png",
+      "gif": "grum_walk_4f.gif"
+    },
+    "lift": {
+      "label": "舉籠預備",
+      "frames": 3,
+      "frame_ms": 240,
+      "png_dir": "lift_3f",
+      "sheet": "grum_lift_3f_sheet.png",
+      "gif": "grum_lift_3f.gif"
+    },
+    "slam": {
+      "label": "重砸",
+      "frames": 3,
+      "frame_ms": 180,
+      "png_dir": "slam_3f",
+      "sheet": "grum_slam_3f_sheet.png",
+      "gif": "grum_slam_3f.gif"
+    },
+    "recover": {
+      "label": "收招",
+      "frames": 3,
+      "frame_ms": 210,
+      "png_dir": "recover_3f",
+      "sheet": "grum_recover_3f_sheet.png",
+      "gif": "grum_recover_3f.gif"
+    },
+    "hurt": {
+      "label": "受傷",
+      "frames": 2,
+      "frame_ms": 240,
+      "png_dir": "hurt_2f",
+      "sheet": "grum_hurt_2f_sheet.png",
+      "gif": "grum_hurt_2f.gif"
+    },
+    "exit": {
+      "label": "倒下離場",
+      "frames": 4,
+      "frame_ms": 290,
+      "png_dir": "exit_4f",
+      "sheet": "grum_exit_4f_sheet.png",
+      "gif": "grum_exit_4f.gif"
+    }
+  },
+  "limitations": "首版動作補完：原始角色姿勢為主，走路使用生成的不同步伐影格；部分過渡、受擊與倒下為像素變形，不是逐部位重畫。適合先在引擎內測試，正式商用前建議逐幀微調。",
+  "integration": {
+    "walk_source": "walk_4f_redraw, rebuilt from idle_00..03; original generated walk not used",
+    "unchanged_upper_body_rows": [
+      0,
+      266
+    ],
+    "native_scale": 1,
+    "anchor": [
+      160,
+      300
+    ],
+    "baseline_convention": "boundary y300; last opaque row299",
+    "impact_slam_frame_zero_based": 2,
+    "hp": 240000,
+    "slam_damage": 1000
+  }
+}

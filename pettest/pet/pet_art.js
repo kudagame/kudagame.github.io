@@ -15,7 +15,7 @@
       im.onload = () => { clearTimeout(timer); A.missing = A.missing.filter(s => s !== im._petSrc); im._petErrorAt = 0; resolve(true); release(); changed() };
       im.onerror = () => { clearTimeout(timer); im._petErrorAt = Date.now(); failed(); changed() };
       // P5.11: refresh only 西施's restored original eyes; other pet URLs stay unchanged.
-      const eyeRevision = (im._petSrc.includes('?') ? '&' : '?') + 'v=pv1-dfcf0683b273'; // 公開版全部圖片一致換版
+      const eyeRevision = (im._petSrc.includes('?') ? '&' : '?') + 'v=pv1-ce40586ef997'; // 公開版全部圖片一致換版
       im.src = im._petSrc + eyeRevision + (im._petAttempts > 1 ? (eyeRevision ? '&' : '?') + 'retry=' + im._petAttempts : '');
     }
   }
